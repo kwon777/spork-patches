@@ -1,0 +1,135 @@
+diff --git a/mvcs-interface/.classpath b/mvcs-interface/.classpath
+index 416598d..4ca847b 100644
+--- a/mvcs-interface/.classpath
++++ b/mvcs-interface/.classpath
+@@ -1,6 +1,5 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <classpath>
+-	<classpathentry kind="src" path="src/main/resources"/>
+ 	<classpathentry kind="src" path="src/main/java"/>
+ 	<classpathentry kind="src" path="src/test/java"/>
+ 	<classpathentry exported="true" kind="lib" path="lib/gson-2.2.2.jar"/>
+diff --git a/mvcs-mission-builder/.classpath b/mvcs-mission-builder/.classpath
+index 008295c..9200684 100644
+--- a/mvcs-mission-builder/.classpath
++++ b/mvcs-mission-builder/.classpath
+@@ -1,7 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <classpath>
+ 	<classpathentry kind="src" path="src/main/java"/>
+-	<classpathentry kind="src" path="src/main/resources"/>
+ 	<classpathentry kind="src" path="src/main/test"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+diff --git a/mvcs-plugin-haf100/.classpath b/mvcs-plugin-haf100/.classpath
+index 56950f8..4fc8952 100644
+--- a/mvcs-plugin-haf100/.classpath
++++ b/mvcs-plugin-haf100/.classpath
+@@ -2,7 +2,6 @@
+ <classpath>
+ 	<classpathentry kind="src" path="src/java"/>
+ 	<classpathentry kind="src" path="src/test"/>
+-	<classpathentry kind="src" path="src/resources"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+ 	<classpathentry kind="lib" path="/mvcs-common/lib/castor-1.3-core.jar"/>
+ 	<classpathentry kind="lib" path="/mvcs-common/lib/castor-1.3.jar"/>
+diff --git a/mvcs-plugin-mcg101/.classpath b/mvcs-plugin-mcg101/.classpath
+index aa1fe38..4beac5b 100644
+--- a/mvcs-plugin-mcg101/.classpath
++++ b/mvcs-plugin-mcg101/.classpath
+@@ -1,7 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <classpath>
+ 	<classpathentry excluding="mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpGetItem.java" kind="src" path="src/main/java"/>
+-	<classpathentry kind="src" path="src/main/resources"/>
+ 	<classpathentry kind="src" path="src/main/test"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+diff --git a/mvcs-plugin-scu/.classpath b/mvcs-plugin-scu/.classpath
+old mode 100755
+new mode 100644
+index 7716122..96885aa
+--- a/mvcs-plugin-scu/.classpath
++++ b/mvcs-plugin-scu/.classpath
+@@ -1,7 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <classpath>
+ 	<classpathentry kind="src" path="src/main/java"/>
+-	<classpathentry kind="src" path="src/main/resources"/>
+ 	<classpathentry kind="src" path="src/main/test"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+ 	<classpathentry kind="lib" path="deploy/cajo.jar"/>
+diff --git a/mvcs-troubleshooting-tool/.classpath b/mvcs-troubleshooting-tool/.classpath
+index 507aa7e..16ed421 100644
+--- a/mvcs-troubleshooting-tool/.classpath
++++ b/mvcs-troubleshooting-tool/.classpath
+@@ -1,23 +1,22 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<classpath>
+-	<classpathentry kind="src" path="src/main/resources"/>
+-	<classpathentry kind="src" path="src/main/java"/>
+-	<classpathentry kind="src" path="src/main/test"/>
+-	<classpathentry kind="lib" path="lib/appframework-1.0.3.jar"/>
+-	<classpathentry kind="lib" path="lib/swing-worker-1.1.jar"/>
+-	<classpathentry kind="lib" path="lib/ganymed-ssh2-build210.jar"/>
+-	<classpathentry kind="lib" path="lib/jasypt-1.5.jar"/>
+-	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
+-	<classpathentry kind="lib" path="lib/snmpagent.jar"/>
+-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+-	<classpathentry kind="lib" path="lib/commons-codec-1.4.jar"/>
+-	<classpathentry kind="lib" path="lib/commons-io-1.2.jar"/>
+-	<classpathentry kind="lib" path="lib/commons-lang-2.1.jar"/>
+-	<classpathentry kind="lib" path="lib/jh.jar"/>
+-	<classpathentry kind="lib" path="lib/jhall.jar"/>
+-	<classpathentry kind="lib" path="lib/jhbasic.jar"/>
+-	<classpathentry kind="lib" path="lib/jsearch.jar"/>
+-	<classpathentry kind="lib" path="lib/logging_1_3.jar"/>
+-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+-	<classpathentry kind="output" path="bin"/>
+-</classpath>
++<?xml version="1.0" encoding="UTF-8"?>
++<classpath>
++	<classpathentry kind="src" path="src/main/java"/>
++	<classpathentry kind="src" path="src/main/test"/>
++	<classpathentry kind="lib" path="lib/appframework-1.0.3.jar"/>
++	<classpathentry kind="lib" path="lib/swing-worker-1.1.jar"/>
++	<classpathentry kind="lib" path="lib/ganymed-ssh2-build210.jar"/>
++	<classpathentry kind="lib" path="lib/jasypt-1.5.jar"/>
++	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
++	<classpathentry kind="lib" path="lib/snmpagent.jar"/>
++	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
++	<classpathentry kind="lib" path="lib/commons-codec-1.4.jar"/>
++	<classpathentry kind="lib" path="lib/commons-io-1.2.jar"/>
++	<classpathentry kind="lib" path="lib/commons-lang-2.1.jar"/>
++	<classpathentry kind="lib" path="lib/jh.jar"/>
++	<classpathentry kind="lib" path="lib/jhall.jar"/>
++	<classpathentry kind="lib" path="lib/jhbasic.jar"/>
++	<classpathentry kind="lib" path="lib/jsearch.jar"/>
++	<classpathentry kind="lib" path="lib/logging_1_3.jar"/>
++	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
++	<classpathentry kind="output" path="bin"/>
++</classpath>
+diff --git a/mvcs-vca/.classpath b/mvcs-vca/.classpath
+index 062ccc5..2651944 100644
+--- a/mvcs-vca/.classpath
++++ b/mvcs-vca/.classpath
+@@ -1,7 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <classpath>
+ 	<classpathentry kind="src" path="src/main/java"/>
+-	<classpathentry kind="src" path="src/main/resources"/>
+ 	<classpathentry kind="src" path="src/main/developmentTests"/>
+ 	<classpathentry kind="src" path="src/main/test"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+diff --git a/mvcs-webgui/.classpath b/mvcs-webgui/.classpath
+index 54f8b63..79340e1 100644
+--- a/mvcs-webgui/.classpath
++++ b/mvcs-webgui/.classpath
+@@ -2,7 +2,6 @@
+ <classpath>
+ 	<classpathentry kind="src" path="src"/>
+ 	<classpathentry kind="src" path="test.unit"/>
+-	<classpathentry kind="src" path="test.integration"/>
+ 	<classpathentry kind="src" path="test.system"/>
+ 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4">
