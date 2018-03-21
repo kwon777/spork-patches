@@ -1,0 +1,15 @@
+diff --git a/mvcs-webgui/WebContent/nodeInfo.html b/mvcs-webgui/WebContent/nodeInfo.html
+index 4d7cfa9..ed58aa9 100644
+--- a/mvcs-webgui/WebContent/nodeInfo.html
++++ b/mvcs-webgui/WebContent/nodeInfo.html
+@@ -486,9 +486,7 @@
+ 
+                     <tr>
+                       <!-- MVCSSRS0023, MVCSSRS776,MVCSSRS777(Requirements)MVCS01367(PCR): Maintenance Button -->
+-                      <td><button class="controlButton" id="maintenanceMode"
+-                          data-bind="click: requestMaintenance.bind($data)">Maintenance
+-                          Mode</button></td>
++                      <!--  MVCS-34: Remove Maintenance Mode button due to it making the software crashing -->
+                       <!--  MVCS001414 - Added Warm Shutdown ability -->
+                       <td><button class="controlButton" id="warmShutdownButton"
+                           data-bind="click: requestWarmShutdown.bind($data)">Warm Shutdown</button></td>
