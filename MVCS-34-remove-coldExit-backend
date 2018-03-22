@@ -1,0 +1,92 @@
+diff --git a/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/app/ExitAction.java b/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/app/ExitAction.java
+index 86583e2..c1e83ba 100644
+--- a/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/app/ExitAction.java
++++ b/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/app/ExitAction.java
+@@ -13,8 +13,6 @@
+  * @version 1.0
+  */
+ public enum ExitAction {
+-   /** Used for Maintenance Mode with database cleared **/
+-   COLD_EXIT(10),
+    /** Used for a cold shutdown **/
+    COLD_SHUTDOWN(6),
+    /** Used to initiate a vehicle restart **/
+diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java
+index 325ae7f..818e387 100644
+--- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java
++++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java
+@@ -221,7 +221,7 @@
+                managerCleanup(false);
+ 
+                // Fires a property change on the shutdown method and then exits.
+-               haltReady.firePropertyChange("shutdown", " ", ExitAction.COLD_EXIT.toString());
++               haltReady.firePropertyChange("shutdown", " ", ExitAction.COLD_SHUTDOWN.toString());
+ 
+             }
+ 
+@@ -246,8 +246,7 @@
+       }
+       catch (Exception e)
+       {
+-         errorLog.error("Exception occurred during a startup. The system is going into COLD maintenance mode...,", e);
+-         shutdown(ExitAction.COLD_EXIT);
++         errorLog.error("Exception occurred during a startup. The system is going into unknown mode...,", e);
+       }
+    }
+ 
+@@ -412,10 +411,6 @@
+             AlertsManager.getInstance().addAlert("", AlertType.MAIN_WARM_EXIT);
+             enterMaintenanceMode(true);
+             break;
+-         case COLD_EXIT:
+-            AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_EXIT);
+-            enterMaintenanceMode(false);
+-            break;
+          case RESTART:
+             AlertsManager.getInstance().addAlert("", AlertType.MAIN_RESTART);
+             managerCleanup(false);
+diff --git a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java
+index 6e87f4b..d2d422b 100644
+--- a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java
++++ b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java
+@@ -120,7 +120,7 @@
+             else
+             {
+                // JVM was shutdown for an unknown reason. Shutting down the ship in a COLD State.
+-               primaryLog.debug("Vehicle MVCS system is shutting down. This call was made external to MVCS. Shutting Down in COLD Maintenance Mode.");
++               primaryLog.debug("Vehicle MVCS system is shutting down. This call was made external to MVCS.");
+ 
+                // Attempts to send a stop message to the ship before it is shutdown.
+                VehicleState.handler.getMessageQueue().add(new StopMessage(ExitAction.COLD_SHUTDOWN));
+@@ -130,7 +130,7 @@
+                managerCleanup(false);
+ 
+                // Fires a property change on the shutdown method and then exits.
+-               haltReady.firePropertyChange("shutdown", " ", ExitAction.COLD_EXIT.toString());
++               haltReady.firePropertyChange("shutdown", " ", ExitAction.COLD_SHUTDOWN.toString());
+ 
+             }
+ 
+@@ -491,9 +491,6 @@
+          case RESTART:
+             shutdown(false, code);
+             break;
+-         case COLD_EXIT:
+-            shutdown(false, code);
+-            break;
+          default:
+             errorLog.error("Unknown exit code " + code.exitCode);
+             break;
+diff --git a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+index da33a38..7f3361a 100644
+--- a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
++++ b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+@@ -246,7 +246,7 @@
+    {
+       node.setShutdown(exitAction);
+       logger.debug("Got shutdown request to exit with action {}", exitAction);
+-      if (exitAction == ExitAction.COLD_SHUTDOWN || exitAction == ExitAction.COLD_EXIT)
++      if (exitAction == ExitAction.COLD_SHUTDOWN)
+       {
+          // MVCSSRS0098 and MVCS01368 - Power off all radios and amplifiers during cold shutdown.
+          requestPowerAll(false);
