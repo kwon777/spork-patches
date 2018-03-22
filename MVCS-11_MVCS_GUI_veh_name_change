@@ -1,0 +1,541 @@
+diff --git a/mvcs-mission-builder/src/main/java/mil/navy/lcs/mvcs/mission/server/RestoreFactoryDefaultMission.java b/mvcs-mission-builder/src/main/java/mil/navy/lcs/mvcs/mission/server/RestoreFactoryDefaultMission.java
+index b8b39ca..f9c2468 100644
+--- a/mvcs-mission-builder/src/main/java/mil/navy/lcs/mvcs/mission/server/RestoreFactoryDefaultMission.java
++++ b/mvcs-mission-builder/src/main/java/mil/navy/lcs/mvcs/mission/server/RestoreFactoryDefaultMission.java
+@@ -507,7 +507,7 @@
+       sb.append("</vehicle>").append("\n");
+       sb.append("<vehicle>").append("\n");
+       sb.append("<id>3</id>").append("\n");
+-      sb.append("<vehicleName>USV1</vehicleName>").append("\n");
++      sb.append("<vehicleName>USV3</vehicleName>").append("\n");
+       sb.append("<typeId>usv</typeId>").append("\n");
+       sb.append("<type>USV</type>").append("\n");
+       sb.append("<img>Asw1_shadowed_px60.jpg</img>").append("\n");
+@@ -515,7 +515,7 @@
+       sb.append("<ipAddress>172.20.13.2</ipAddress>").append("\n");
+       sb.append("<rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>").append("\n");
+       sb.append("<snmpAgentPort>1560</snmpAgentPort>").append("\n");
+-      sb.append("<mpsName>USV1</mpsName>").append("\n");
++      sb.append("<mpsName>USV3</mpsName>").append("\n");
+       sb.append("<networkTimeout>300</networkTimeout>").append("\n");
+       sb.append("<!-- Units in seconds -->").append("\n");
+       sb.append("<switchoverModeDefault>MANUAL</switchoverModeDefault>").append("\n");
+@@ -602,7 +602,7 @@
+       sb.append("</vehicle>").append("\n");
+       sb.append("<vehicle>").append("\n");
+       sb.append(" <id>4</id>").append("\n");
+-      sb.append("<vehicleName>USV2</vehicleName>").append("\n");
++      sb.append("<vehicleName>USV4</vehicleName>").append("\n");
+       sb.append("<typeId>usv</typeId>").append("\n");
+       sb.append("<type>USV</type>").append("\n");
+       sb.append("<img>Asw1_shadowed_px60.jpg</img>").append("\n");
+@@ -610,7 +610,7 @@
+       sb.append("<ipAddress>172.20.14.2</ipAddress>").append("\n");
+       sb.append("<rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>").append("\n");
+       sb.append("<snmpAgentPort>1560</snmpAgentPort>").append("\n");
+-      sb.append("<mpsName>USV2</mpsName>").append("\n");
++      sb.append("<mpsName>USV4</mpsName>").append("\n");
+       sb.append("<networkTimeout>300</networkTimeout>").append("\n");
+       sb.append("<!-- Units in seconds -->").append("\n");
+       sb.append("<switchoverModeDefault>MANUAL</switchoverModeDefault>").append("\n");
+@@ -697,7 +697,7 @@
+       sb.append("</vehicle>").append("\n");
+       sb.append("<vehicle>").append("\n");
+       sb.append("<id>5</id>").append("\n");
+-      sb.append("<vehicleName>UUV1</vehicleName>").append("\n");
++      sb.append("<vehicleName>UUV5</vehicleName>").append("\n");
+       sb.append("<typeId>uuv</typeId>").append("\n");
+       sb.append("<type>UUV</type>").append("\n");
+       sb.append("<img>Asw1_shadowed_px60.jpg</img>").append("\n");
+@@ -705,7 +705,7 @@
+       sb.append("<ipAddress>172.20.15.2</ipAddress>").append("\n");
+       sb.append("<rmsDliIpAddress>10.30.30.238</rmsDliIpAddress>").append("\n");
+       sb.append("<snmpAgentPort>1560</snmpAgentPort>").append("\n");
+-      sb.append("<mpsName>UUV1</mpsName>").append("\n");
++      sb.append("<mpsName>UUV5</mpsName>").append("\n");
+       sb.append("<networkTimeout>300</networkTimeout><!-- Units in seconds -->").append("\n");
+       sb.append("<switchoverModeDefault>MANUAL</switchoverModeDefault>").append("\n");
+       sb.append("<depthLimit>-30.5</depthLimit>").append("\n");
+diff --git a/mvcs-sca/missions/default-mission.xml b/mvcs-sca/missions/default-mission.xml
+index b4113d4..6a17432 100644
+--- a/mvcs-sca/missions/default-mission.xml
++++ b/mvcs-sca/missions/default-mission.xml
+@@ -511,7 +511,7 @@
+    </vehicle>
+    <vehicle>
+       <id>3</id>
+-      <name>USV1</name>
++      <name>USV3</name>
+       <typeId>usv</typeId>
+       <type>USV</type>
+       <img>Asw1_shadowed_px60.jpg</img>
+@@ -519,7 +519,7 @@
+       <ipAddress>172.20.13.2</ipAddress>
+       <rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+       <snmpAgentPort>1560</snmpAgentPort>
+-      <mpsName>USV1</mpsName>
++      <mpsName>USV3</mpsName>
+       <networkTimeout>300</networkTimeout>
+       <!-- Units in seconds -->
+       <switchoverModeDefault>MANUAL</switchoverModeDefault>
+@@ -611,7 +611,7 @@
+    </vehicle>
+    <vehicle>
+       <id>4</id>
+-      <name>USV2</name>
++      <name>USV4</name>
+       <typeId>usv</typeId>
+       <type>USV</type>
+       <img>Asw1_shadowed_px60.jpg</img>
+@@ -619,7 +619,7 @@
+       <ipAddress>172.20.14.2</ipAddress>
+       <rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+       <snmpAgentPort>1560</snmpAgentPort>
+-      <mpsName>USV2</mpsName>
++      <mpsName>USV4</mpsName>
+       <networkTimeout>300</networkTimeout>
+       <!-- Units in seconds -->
+       <switchoverModeDefault>MANUAL</switchoverModeDefault>
+@@ -711,7 +711,7 @@
+    </vehicle>
+    <vehicle>
+       <id>5</id>
+-      <name>UUV1</name>
++      <name>UUV5</name>
+       <typeId>uuv</typeId>
+       <type>UUV</type>
+       <img>Asw1_shadowed_px60.jpg</img>
+@@ -719,7 +719,7 @@
+       <ipAddress>172.20.15.2</ipAddress>
+       <rmsDliIpAddress>10.30.30.238</rmsDliIpAddress>
+       <snmpAgentPort>1560</snmpAgentPort>
+-      <mpsName>UUV1</mpsName>
++      <mpsName>UUV5</mpsName>
+       <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+       <switchoverModeDefault>MANUAL</switchoverModeDefault>
+       <depthLimit>-30.5</depthLimit>
+@@ -804,7 +804,7 @@
+    </vehicle>
+       <vehicle>
+       <id>6</id>
+-      <name>UUV2</name>
++      <name>UUV6</name>
+       <typeId>uuv</typeId>
+       <type>UUV</type>
+       <img>Asw1_shadowed_px60.jpg</img>
+@@ -812,7 +812,7 @@
+       <ipAddress>172.20.16.2</ipAddress>
+       <rmsDliIpAddress>10.30.30.238</rmsDliIpAddress>
+       <snmpAgentPort>1560</snmpAgentPort>
+-      <mpsName>UUV2</mpsName>
++      <mpsName>UUV6</mpsName>
+       <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+       <switchoverModeDefault>MANUAL</switchoverModeDefault>
+       <depthLimit>-30.5</depthLimit>
+diff --git a/mvcs-sca/missions/generated-mission-RMMV.xml b/mvcs-sca/missions/generated-mission-RMMV.xml
+index 8aff05d..e16d532 100644
+--- a/mvcs-sca/missions/generated-mission-RMMV.xml
++++ b/mvcs-sca/missions/generated-mission-RMMV.xml
+@@ -1,3 +1,173 @@
+-<?xml version="1.0" encoding="UTF-8"?><mission><title>Factory Mission Configuration</title><name>default-mission.xml</name><author>MVCS Administrator</author><description> This mission is responsible for managing the LCS1 and two
++<?xml version="1.0" encoding="UTF-8"?>
++<mission>
++	<title>Factory Mission Configuration</title>
++	<name>default-mission.xml</name>
++	<author>MVCS Administrator</author>
++	<description> This mission is responsible for managing the LCS1 and two
+ 		Vehicles: USV and MTV. Both vehicles have similar configurations. The
+-		radios on-board are the RT-1944 and the Iridium SCU. </description><dateCreated>2013-08-15T17:06:26-05:00</dateCreated><ship><id>1111</id><typeId>lcs1</typeId><type>LCS1</type><ipAddress>172.20.10.2</ipAddress><rmsDliIpAddress>10.30.28.219</rmsDliIpAddress><snmpAgentPort>1460</snmpAgentPort><snmpTrapPort>1462</snmpTrapPort><networkTimeout>300</networkTimeout><radio><id>rt1944-00</id><typeId>rt1944</typeId><linkType>RT-1944</linkType><networkId>1</networkId><lnrFrequency>2367</lnrFrequency><missionFrequency>2212</missionFrequency><relayFrequency>3000</relayFrequency></radio><radio><id>prc117-0</id><typeId>prc117</typeId><linkType>PRC-117</linkType><networkId>1</networkId></radio><radio><id>rt1988-0</id><typeId>iridium</typeId><linkType>RT-1988</linkType><networkId>1</networkId></radio><snmp><timeout>10000</timeout><numberOfRetries>1</numberOfRetries><version>3</version></snmp></ship><vehicle><id>RMMV1</id><vehicleNum>1</vehicleNum><typeId>rmv</typeId><type>RMV</type><ipAddress>172.20.11.2</ipAddress><snmpAgentPort>1560</snmpAgentPort><mpsName>RMMV1</mpsName><networkTimeout>300</networkTimeout><depthLimit>-30.5</depthLimit><router><id>router-45</id><typeId>router</typeId><type>Router</type><testing>false</testing><ipAddress>172.20.11.1</ipAddress><connectionType>SSH</connectionType><connectionPort>22</connectionPort><serialPort>/dev/ttyM0</serialPort><sysLogPort>13514</sysLogPort><lanBypassEthernetPortName>Vlan28</lanBypassEthernetPortName></router><lanBypass><id>lanbypass-1</id><typeId>lanbypass</typeId><linkType>LAN Bypass</linkType><linkNumber>1</linkNumber><priority>1</priority><networkId>1</networkId></lanBypass><radio><id>rt1944-1</id><typeId>rt1944</typeId><linkType>RT-1944</linkType><linkNumber>2</linkNumber><priority>2</priority><networkId>1</networkId><encrypterTypeId>ips250</encrypterTypeId><ampId>rt1944Amp-1</ampId><secondaryAmpId>rt1944Amp-1</secondaryAmpId><sleepRadio>false</sleepRadio><heartbeatFrequency>1</heartbeatFrequency><heartbeatWindowSize>10</heartbeatWindowSize><goodPercentage>80</goodPercentage><warningPercentage>60</warningPercentage><losRange>20</losRange><losLowerGuardLine>2</losLowerGuardLine><lrRange>50</lrRange><lrLowerGuardLine>2</lrLowerGuardLine><slaTimeout>10</slaTimeout><snmpAgentIpAddress>172.20.11.3</snmpAgentIpAddress><snmpAgentPortNumber>5001</snmpAgentPortNumber></radio><radio><id>prc117-1</id><typeId>prc117</typeId><linkType>PRC-117</linkType><linkNumber>4</linkNumber><priority>4</priority><networkId>1</networkId><encrypterTypeId/><ampId>prc117Amp-1</ampId><sleepRadio>true</sleepRadio><heartbeatFrequency>10</heartbeatFrequency><heartbeatWindowSize>300</heartbeatWindowSize><goodPercentage>80</goodPercentage><warningPercentage>60</warningPercentage><losRange>2000</losRange><losLowerGuardLine>2</losLowerGuardLine><lrRange>50</lrRange><lrLowerGuardLine>2</lrLowerGuardLine><slaTimeout>10</slaTimeout><frequencyNetRange>1-4</frequencyNetRange><snmpAgentIpAddress>172.20.11.2</snmpAgentIpAddress><snmpAgentPortNumber>5161</snmpAgentPortNumber><loopback>lo:1</loopback><channel id="1"><frequency>31000000</frequency></channel><channel id="2"><frequency>32000000</frequency></channel></radio><matrixSwitch><id>ms-10</id><typeId>ms</typeId><type>Matrix Switch</type><testing>false</testing><serialPort>172.20.11.3:4002</serialPort><currentMode>dummy</currentMode><radioId>rt1944-1</radioId><radioId>prc117-1</radioId></matrixSwitch><power><id>power-1</id><typeId>psu</typeId><type>Power Supply</type><testing>false</testing><voltage>28</voltage><serialPort>/dev/ttyS1</serialPort><reverseLogicAdapter>true</reverseLogicAdapter><circuitBreaker><id>rt1944Amp-1</id><devNumber>4</devNumber><devName>RT-1944 Amplifier</devName></circuitBreaker><circuitBreaker><id>rt1944-1</id><devNumber>1</devNumber><devName>RT-1944</devName></circuitBreaker><circuitBreaker><id>prc117-1</id><devNumber>2</devNumber><devName>PRC-117</devName></circuitBreaker><circuitBreaker><id>prc117Amp-1</id><devNumber>3</devNumber><devName>PRC-117 Amplifier</devName></circuitBreaker></power><snmpAgentTest><testing>false</testing></snmpAgentTest></vehicle></mission>
+\ No newline at end of file
++		radios on-board are the RT-1944 and the Iridium SCU.
++	</description>
++	<dateCreated>2013-08-15T17:06:26-05:00</dateCreated>
++	<ship>
++		<id>1111</id>
++		<typeId>lcs1</typeId>
++		<type>LCS1</type>
++		<ipAddress>172.20.10.2</ipAddress>
++		<rmsDliIpAddress>10.30.28.219</rmsDliIpAddress>
++		<snmpAgentPort>1460</snmpAgentPort>
++		<snmpTrapPort>1462</snmpTrapPort>
++		<networkTimeout>300</networkTimeout>
++		<radio>
++			<id>rt1944-00</id>
++			<typeId>rt1944</typeId>
++			<linkType>RT-1944</linkType>
++			<networkId>1</networkId>
++			<lnrFrequency>2367</lnrFrequency>
++			<missionFrequency>2212</missionFrequency>
++			<relayFrequency>3000</relayFrequency>
++		</radio>
++		<radio>
++			<id>prc117-0</id>
++			<typeId>prc117</typeId>
++			<linkType>PRC-117</linkType>
++			<networkId>1</networkId>
++		</radio>
++		<radio>
++			<id>rt1988-0</id>
++			<typeId>iridium</typeId>
++			<linkType>RT-1988</linkType>
++			<networkId>1</networkId>
++		</radio>
++		<snmp>
++			<timeout>10000</timeout>
++			<numberOfRetries>1</numberOfRetries>
++			<version>3</version>
++		</snmp>
++	</ship>
++	<vehicle>
++		<id>RMMV1</id>
++		<vehicleNum>1</vehicleNum>
++		<typeId>rmv</typeId>
++		<type>RMV</type>
++		<ipAddress>172.20.11.2</ipAddress>
++		<snmpAgentPort>1560</snmpAgentPort>
++		<mpsName>RMMV1</mpsName>
++		<networkTimeout>300</networkTimeout>
++		<depthLimit>-30.5</depthLimit>
++		<router>
++			<id>router-45</id>
++			<typeId>router</typeId>
++			<type>Router</type>
++			<testing>false</testing>
++			<ipAddress>172.20.11.1</ipAddress>
++			<connectionType>SSH</connectionType>
++			<connectionPort>22</connectionPort>
++			<serialPort>/dev/ttyM0</serialPort>
++			<sysLogPort>13514</sysLogPort>
++			<lanBypassEthernetPortName>Vlan28</lanBypassEthernetPortName>
++		</router>
++		<lanBypass>
++			<id>lanbypass-1</id>
++			<typeId>lanbypass</typeId>
++			<linkType>LAN Bypass</linkType>
++			<linkNumber>1</linkNumber>
++			<priority>1</priority>
++			<networkId>1</networkId>
++		</lanBypass>
++		<radio>
++			<id>rt1944-1</id>
++			<typeId>rt1944</typeId>
++			<linkType>RT-1944</linkType>
++			<linkNumber>2</linkNumber>
++			<priority>2</priority>
++			<networkId>1</networkId>
++			<encrypterTypeId>ips250</encrypterTypeId>
++			<ampId>rt1944Amp-1</ampId>
++			<secondaryAmpId>rt1944Amp-1</secondaryAmpId>
++			<sleepRadio>false</sleepRadio>
++			<heartbeatFrequency>1</heartbeatFrequency>
++			<heartbeatWindowSize>10</heartbeatWindowSize>
++			<goodPercentage>80</goodPercentage>
++			<warningPercentage>60</warningPercentage>
++			<losRange>20</losRange>
++			<losLowerGuardLine>2</losLowerGuardLine>
++			<lrRange>50</lrRange>
++			<lrLowerGuardLine>2</lrLowerGuardLine>
++			<slaTimeout>10</slaTimeout>
++			<snmpAgentIpAddress>172.20.11.3</snmpAgentIpAddress>
++			<snmpAgentPortNumber>5001</snmpAgentPortNumber>
++		</radio>
++		<radio>
++			<id>prc117-1</id>
++			<typeId>prc117</typeId>
++			<linkType>PRC-117</linkType>
++			<linkNumber>4</linkNumber>
++			<priority>4</priority>
++			<networkId>1</networkId>
++			<encrypterTypeId />
++			<ampId>prc117Amp-1</ampId>
++			<sleepRadio>true</sleepRadio>
++			<heartbeatFrequency>10</heartbeatFrequency>
++			<heartbeatWindowSize>300</heartbeatWindowSize>
++			<goodPercentage>80</goodPercentage>
++			<warningPercentage>60</warningPercentage>
++			<losRange>2000</losRange>
++			<losLowerGuardLine>2</losLowerGuardLine>
++			<lrRange>50</lrRange>
++			<lrLowerGuardLine>2</lrLowerGuardLine>
++			<slaTimeout>10</slaTimeout>
++			<frequencyNetRange>1-4</frequencyNetRange>
++			<snmpAgentIpAddress>172.20.11.2</snmpAgentIpAddress>
++			<snmpAgentPortNumber>5161</snmpAgentPortNumber>
++			<loopback>lo:1</loopback>
++			<channel id="1">
++				<frequency>31000000</frequency>
++			</channel>
++			<channel id="2">
++				<frequency>32000000</frequency>
++			</channel>
++		</radio>
++		<matrixSwitch>
++			<id>ms-10</id>
++			<typeId>ms</typeId>
++			<type>Matrix Switch</type>
++			<testing>false</testing>
++			<serialPort>172.20.11.3:4002</serialPort>
++			<currentMode>dummy</currentMode>
++			<radioId>rt1944-1</radioId>
++			<radioId>prc117-1</radioId>
++		</matrixSwitch>
++		<power>
++			<id>power-1</id>
++			<typeId>psu</typeId>
++			<type>Power Supply</type>
++			<testing>false</testing>
++			<voltage>28</voltage>
++			<serialPort>/dev/ttyS1</serialPort>
++			<reverseLogicAdapter>true</reverseLogicAdapter>
++			<circuitBreaker>
++				<id>rt1944Amp-1</id>
++				<devNumber>4</devNumber>
++				<devName>RT-1944 Amplifier</devName>
++			</circuitBreaker>
++			<circuitBreaker>
++				<id>rt1944-1</id>
++				<devNumber>1</devNumber>
++				<devName>RT-1944</devName>
++			</circuitBreaker>
++			<circuitBreaker>
++				<id>prc117-1</id>
++				<devNumber>2</devNumber>
++				<devName>PRC-117</devName>
++			</circuitBreaker>
++			<circuitBreaker>
++				<id>prc117Amp-1</id>
++				<devNumber>3</devNumber>
++				<devName>PRC-117 Amplifier</devName>
++			</circuitBreaker>
++		</power>
++		<snmpAgentTest>
++			<testing>false</testing>
++		</snmpAgentTest>
++	</vehicle>
++</mission>
+\ No newline at end of file
+diff --git a/mvcs-sca/missions/generated-mission-USV.xml b/mvcs-sca/missions/generated-mission-USV.xml
+index 4d74f1b..42e9b9e 100644
+--- a/mvcs-sca/missions/generated-mission-USV.xml
++++ b/mvcs-sca/missions/generated-mission-USV.xml
+@@ -1,3 +1,132 @@
+-<?xml version="1.0" encoding="UTF-8"?><mission><title>Factory Mission Configuration</title><name>default-mission.xml</name><author>MVCS Administrator</author><description> This mission is responsible for managing the LCS1 and two
++<?xml version="1.0" encoding="UTF-8"?>
++<mission>
++	<title>Factory Mission Configuration</title>
++	<name>default-mission.xml</name>
++	<author>MVCS Administrator</author>
++	<description> This mission is responsible for managing the LCS1 and two
+ 		Vehicles: USV and MTV. Both vehicles have similar configurations. The
+-		radios on-board are the RT-1944 and the Iridium SCU. </description><dateCreated>2013-08-15T17:06:26-05:00</dateCreated><ship><id>1111</id><typeId>lcs1</typeId><type>LCS1</type><ipAddress>172.20.10.2</ipAddress><rmsDliIpAddress>10.30.28.219</rmsDliIpAddress><snmpAgentPort>1460</snmpAgentPort><snmpTrapPort>1462</snmpTrapPort><networkTimeout>300</networkTimeout><radio><id>rt1944-00</id><typeId>rt1944</typeId><linkType>RT-1944</linkType><networkId>1</networkId><lnrFrequency>2367</lnrFrequency><missionFrequency>2212</missionFrequency><relayFrequency>3000</relayFrequency></radio><radio><id>prc117-0</id><typeId>prc117</typeId><linkType>PRC-117</linkType><networkId>1</networkId></radio><radio><id>rt1988-0</id><typeId>iridium</typeId><linkType>RT-1988</linkType><networkId>1</networkId></radio><snmp><timeout>10000</timeout><numberOfRetries>1</numberOfRetries><version>3</version></snmp></ship><vehicle><id>USV1</id><vehicleNum>3</vehicleNum><typeId>usv</typeId><type>USV</type><ipAddress>172.20.13.2</ipAddress><snmpAgentPort>1560</snmpAgentPort><mpsName>USV1</mpsName><networkTimeout>300</networkTimeout><depthLimit>-30.5</depthLimit><router><id>router-65</id><typeId>router</typeId><type>Router</type><testing>false</testing><ipAddress>172.20.13.1</ipAddress><connectionType>SSH</connectionType><connectionPort>22</connectionPort><serialPort>/dev/ttyM0</serialPort><sysLogPort>13514</sysLogPort><lanBypassEthernetPortName>Vlan28</lanBypassEthernetPortName></router><lanBypass><id>lanbypass-3</id><typeId>lanbypass</typeId><linkType>LAN Bypass</linkType><linkNumber>1</linkNumber><priority>1</priority><networkId>1</networkId></lanBypass><radio><id>rt1944-3</id><typeId>rt1944</typeId><linkType>RT-1944</linkType><linkNumber>2</linkNumber><priority>2</priority><networkId>1</networkId><encrypterTypeId>ips250</encrypterTypeId><ampId>rt1944Amp-3-0</ampId><secondaryAmpId>rt1944Amp-3-0</secondaryAmpId><sleepRadio>false</sleepRadio><heartbeatFrequency>1</heartbeatFrequency><heartbeatWindowSize>10</heartbeatWindowSize><goodPercentage>80</goodPercentage><warningPercentage>60</warningPercentage><losRange>20</losRange><losLowerGuardLine>2</losLowerGuardLine><lrRange>50</lrRange><lrLowerGuardLine>2</lrLowerGuardLine><slaTimeout>10</slaTimeout><snmpAgentIpAddress>172.20.13.3</snmpAgentIpAddress><snmpAgentPortNumber>5001</snmpAgentPortNumber></radio><matrixSwitch><id>ms-30</id><typeId>ms</typeId><type>Matrix Switch</type><testing>false</testing><serialPort>172.20.13.3:4002</serialPort><currentMode>dummy</currentMode><radioId>rt1944-3</radioId></matrixSwitch><power><id>power-3</id><typeId>psu</typeId><type>Power Supply</type><testing>false</testing><voltage>28</voltage><serialPort>/dev/ttyS1</serialPort><reverseLogicAdapter>true</reverseLogicAdapter><circuitBreaker><id>rt1944Amp-3-0</id><devNumber>1</devNumber><devName>RT-1944 Amplifier</devName></circuitBreaker><circuitBreaker><id>rt1944-3</id><devNumber>2</devNumber><devName>RT-1944</devName></circuitBreaker></power><snmpAgentTest><testing>false</testing></snmpAgentTest></vehicle></mission>
+\ No newline at end of file
++		radios on-board are the RT-1944 and the Iridium SCU.
++	</description>
++	<dateCreated>2013-08-15T17:06:26-05:00</dateCreated>
++	<ship>
++		<id>1111</id>
++		<typeId>lcs1</typeId>
++		<type>LCS1</type>
++		<ipAddress>172.20.10.2</ipAddress>
++		<rmsDliIpAddress>10.30.28.219</rmsDliIpAddress>
++		<snmpAgentPort>1460</snmpAgentPort>
++		<snmpTrapPort>1462</snmpTrapPort>
++		<networkTimeout>300</networkTimeout>
++		<radio>
++			<id>rt1944-00</id>
++			<typeId>rt1944</typeId>
++			<linkType>RT-1944</linkType>
++			<networkId>1</networkId>
++			<lnrFrequency>2367</lnrFrequency>
++			<missionFrequency>2212</missionFrequency>
++			<relayFrequency>3000</relayFrequency>
++		</radio>
++		<radio>
++			<id>prc117-0</id>
++			<typeId>prc117</typeId>
++			<linkType>PRC-117</linkType>
++			<networkId>1</networkId>
++		</radio>
++		<radio>
++			<id>rt1988-0</id>
++			<typeId>iridium</typeId>
++			<linkType>RT-1988</linkType>
++			<networkId>1</networkId>
++		</radio>
++		<snmp>
++			<timeout>10000</timeout>
++			<numberOfRetries>1</numberOfRetries>
++			<version>3</version>
++		</snmp>
++	</ship>
++	<vehicle>
++		<id>USV3</id>
++		<vehicleNum>3</vehicleNum>
++		<typeId>usv</typeId>
++		<type>USV</type>
++		<ipAddress>172.20.13.2</ipAddress>
++		<snmpAgentPort>1560</snmpAgentPort>
++		<mpsName>USV3</mpsName>
++		<networkTimeout>300</networkTimeout>
++		<depthLimit>-30.5</depthLimit>
++		<router>
++			<id>router-65</id>
++			<typeId>router</typeId>
++			<type>Router</type>
++			<testing>false</testing>
++			<ipAddress>172.20.13.1</ipAddress>
++			<connectionType>SSH</connectionType>
++			<connectionPort>22</connectionPort>
++			<serialPort>/dev/ttyM0</serialPort>
++			<sysLogPort>13514</sysLogPort>
++			<lanBypassEthernetPortName>Vlan28</lanBypassEthernetPortName>
++		</router>
++		<lanBypass>
++			<id>lanbypass-3</id>
++			<typeId>lanbypass</typeId>
++			<linkType>LAN Bypass</linkType>
++			<linkNumber>1</linkNumber>
++			<priority>1</priority>
++			<networkId>1</networkId>
++		</lanBypass>
++		<radio>
++			<id>rt1944-3</id>
++			<typeId>rt1944</typeId>
++			<linkType>RT-1944</linkType>
++			<linkNumber>2</linkNumber>
++			<priority>2</priority>
++			<networkId>1</networkId>
++			<encrypterTypeId>ips250</encrypterTypeId>
++			<ampId>rt1944Amp-3-0</ampId>
++			<secondaryAmpId>rt1944Amp-3-0</secondaryAmpId>
++			<sleepRadio>false</sleepRadio>
++			<heartbeatFrequency>1</heartbeatFrequency>
++			<heartbeatWindowSize>10</heartbeatWindowSize>
++			<goodPercentage>80</goodPercentage>
++			<warningPercentage>60</warningPercentage>
++			<losRange>20</losRange>
++			<losLowerGuardLine>2</losLowerGuardLine>
++			<lrRange>50</lrRange>
++			<lrLowerGuardLine>2</lrLowerGuardLine>
++			<slaTimeout>10</slaTimeout>
++			<snmpAgentIpAddress>172.20.13.3</snmpAgentIpAddress>
++			<snmpAgentPortNumber>5001</snmpAgentPortNumber>
++		</radio>
++		<matrixSwitch>
++			<id>ms-30</id>
++			<typeId>ms</typeId>
++			<type>Matrix Switch</type>
++			<testing>false</testing>
++			<serialPort>172.20.13.3:4002</serialPort>
++			<currentMode>dummy</currentMode>
++			<radioId>rt1944-3</radioId>
++		</matrixSwitch>
++		<power>
++			<id>power-3</id>
++			<typeId>psu</typeId>
++			<type>Power Supply</type>
++			<testing>false</testing>
++			<voltage>28</voltage>
++			<serialPort>/dev/ttyS1</serialPort>
++			<reverseLogicAdapter>true</reverseLogicAdapter>
++			<circuitBreaker>
++				<id>rt1944Amp-3-0</id>
++				<devNumber>1</devNumber>
++				<devName>RT-1944 Amplifier</devName>
++			</circuitBreaker>
++			<circuitBreaker>
++				<id>rt1944-3</id>
++				<devNumber>2</devNumber>
++				<devName>RT-1944</devName>
++			</circuitBreaker>
++		</power>
++		<snmpAgentTest>
++			<testing>false</testing>
++		</snmpAgentTest>
++	</vehicle>
++</mission>
+\ No newline at end of file
+diff --git a/mvcs-sca/missions/output-mission.xml b/mvcs-sca/missions/output-mission.xml
+index ec41d20..cc3f755 100644
+--- a/mvcs-sca/missions/output-mission.xml
++++ b/mvcs-sca/missions/output-mission.xml
+@@ -475,7 +475,7 @@
+ 		</snmpAgentTest>
+ 	</vehicle>
+ 	<vehicle>
+-		<id>USV1</id>
++		<id>USV3</id>
+ 		<vehicleNum>3</vehicleNum>
+ 		<typeId>usv</typeId>
+ 		<type>USV</type>
+@@ -484,7 +484,7 @@
+ 		<ipAddress>172.20.13.2</ipAddress>
+ 		<rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+ 		<snmpAgentPort>1560</snmpAgentPort>
+-		<mpsName>USV1</mpsName>
++		<mpsName>USV3</mpsName>
+ 		<networkTimeout>300</networkTimeout>
+ 		<!-- Units in seconds -->
+ 		<switchoverModeDefault>MANUAL</switchoverModeDefault>
+@@ -570,7 +570,7 @@
+ 		</snmpAgentTest>
+ 	</vehicle>
+ 	<vehicle>
+-		<id>USV2</id>
++		<id>USV4</id>
+ 		<vehicleNum>4</vehicleNum>
+ 		<typeId>usv</typeId>
+ 		<type>USV</type>
+@@ -579,7 +579,7 @@
+ 		<ipAddress>172.20.14.2</ipAddress>
+ 		<rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+ 		<snmpAgentPort>1560</snmpAgentPort>
+-		<mpsName>USV2</mpsName>
++		<mpsName>USV4</mpsName>
+ 		<networkTimeout>300</networkTimeout>
+ 		<!-- Units in seconds -->
+ 		<switchoverModeDefault>MANUAL</switchoverModeDefault>
+diff --git a/mvcs-snmp-browser/configs/vehicles.xml b/mvcs-snmp-browser/configs/vehicles.xml
+index 457f967..6419e3a 100644
+--- a/mvcs-snmp-browser/configs/vehicles.xml
++++ b/mvcs-snmp-browser/configs/vehicles.xml
+@@ -14,7 +14,7 @@
+     <timeout>5000</timeout>
+     <oid>.1</oid>
+     <mibFile>configs/MVCSMIB.txt</mibFile>
+-    <vehicleName>UUV</vehicleName>
++    <vehicleName>UUV5</vehicleName>
+     <useTcp>false</useTcp>
+ </vehicle>
+ <vehicle>
+@@ -32,7 +32,7 @@
+     <timeout>5000</timeout>
+     <oid>.1</oid>
+     <mibFile>configs/MVCSMIB.txt</mibFile>
+-    <vehicleName>USV2</vehicleName>
++    <vehicleName>USV4</vehicleName>
+     <useTcp>false</useTcp>
+ </vehicle>
+ <vehicle>
+@@ -50,7 +50,7 @@
+     <timeout>5000</timeout>
+     <oid>.1</oid>
+     <mibFile>configs/MVCSMIB.txt</mibFile>
+-    <vehicleName>USV1</vehicleName>
++    <vehicleName>USV3</vehicleName>
+     <useTcp>false</useTcp>
+ </vehicle>
+ <vehicle>
+diff --git a/mvcs-vca/missions/default-mission-uuv.xml b/mvcs-vca/missions/default-mission-uuv.xml
+index 30ee986..100fa17 100644
+--- a/mvcs-vca/missions/default-mission-uuv.xml
++++ b/mvcs-vca/missions/default-mission-uuv.xml
+@@ -51,7 +51,7 @@
+    </ship>
+    <vehicle>
+       <id>5</id>
+-      <vehicleName>UUV1</vehicleName>
++      <vehicleName>UUV5</vehicleName>
+       <typeId>uuv</typeId>
+       <type>UUV</type>
+       <ipAddress>172.20.15.2</ipAddress>
