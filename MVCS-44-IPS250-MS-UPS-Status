@@ -1,0 +1,1823 @@
+diff --git a/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/IPS250KeyInfo.java b/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/IPS250KeyInfo.java
+index 90fae80..9199697 100644
+--- a/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/IPS250KeyInfo.java
++++ b/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/IPS250KeyInfo.java
+@@ -11,81 +11,106 @@
+    /** The default version ID */
+    private static final long serialVersionUID = 1L;
+ 
+-   protected String checkShortTitle = ""; // Check the short title of IPS 250
+-   protected String checkEdition = ""; // Check the edition of IPS 250
+-   protected int checkSegment = 0; // Check the segment of IPS 250
+-   protected int checkUsageType = 0; // Check the usage type of IPS 250
++   /* the short title is NOT short enough to display so truncate it. */
++   protected String truncatedShortTitle = "";
++   protected String shortTitle = ""; // the short title of IPS 250
++   protected String edition = ""; // the edition of IPS 250
++   protected int segment = 0; // the segment of IPS 250
++   protected int usageType = 0; // the usage type of IPS 250
+ 
+ 
+    /**
+-    * @return the checkShortTitle
++    * @return the shortTitle
+     */
+-   public String getCheckShortTitle()
++   public String getShortTitle()
+    {
+-      return checkShortTitle;
++      return shortTitle;
+    }
+ 
+ 
+    /**
+-    * @param checkShortTitle the checkShortTitle to set
++    * @param shortTitle the shortTitle to set
+     */
+-   public void setCheckShortTitle(String checkShortTitle)
++   public void setShortTitle(String shortTitle)
+    {
+-      this.checkShortTitle = checkShortTitle;
++      String oldValue = this.shortTitle;
++      this.shortTitle = shortTitle;
++      // the ShortTitle has changed.
++      if (shortTitle != null && !shortTitle.equals(oldValue))
++      {
++         // update the truncated ShortTitle using the first 6 hex numbers.
++         String[] shortTitleInArr = shortTitle.split(" ");
++         if (shortTitleInArr.length >= 6)
++         {
++            for (int i = 0; i < 6; i++)
++            {
++               truncatedShortTitle += shortTitleInArr[i] + " ";
++            }
++         }
++      }
+    }
+ 
+ 
+    /**
+-    * @return the checkEdition
++    * @return the edition
+     */
+-   public String getCheckEdition()
++   public String getEdition()
+    {
+-      return checkEdition;
++      return edition;
+    }
+ 
+ 
+    /**
+-    * @param checkEdition the checkEdition to set
++    * @param edition the edition to set
+     */
+-   public void setCheckEdition(String checkEdition)
++   public void setEdition(String edition)
+    {
+-      this.checkEdition = checkEdition;
++      this.edition = edition;
+    }
+ 
+ 
+    /**
+-    * @return the checkSegment
++    * @return the segment
+     */
+-   public int getCheckSegment()
++   public int getSegment()
+    {
+-      return checkSegment;
++      return segment;
+    }
+ 
+ 
+    /**
+-    * @param checkSegment the checkSegment to set
++    * @param segment the segment to set
+     */
+-   public void setCheckSegment(int checkSegment)
++   public void setSegment(int segment)
+    {
+-      this.checkSegment = checkSegment;
++      this.segment = segment;
+    }
+ 
+ 
+    /**
+-    * @return the checkUsageType
++    * @return the usageType
+     */
+-   public int getCheckUsageType()
++   public int getUsageType()
+    {
+-      return checkUsageType;
++      return usageType;
+    }
+ 
+ 
+    /**
+-    * @param checkUsageType the checkUsageType to set
++    * @param usageType the usageType to set
+     */
+-   public void setCheckUsageType(int checkUsageType)
++   public void setCheckUsageType(int usageType)
+    {
+-      this.checkUsageType = checkUsageType;
++      this.usageType = usageType;
++   }
++
++
++   /**
++    * @return the truncatedShortTitle
++    */
++   public String getTruncatedShortTitle()
++   {
++      return this.truncatedShortTitle;
+    }
+ 
+ }
+diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/bit/UpsComponentData.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/bit/UpsComponentData.java
+index fb98486..68a5970 100644
+--- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/bit/UpsComponentData.java
++++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/bit/UpsComponentData.java
+@@ -48,10 +48,10 @@
+     * to since it is trigger by a single event response.
+     *
+     */
+-   public boolean upsPowerStatus()
++   public boolean upsUtilityPowerStatus()
+    {
+       boolean status;
+-      status = UpsManager.getInstance().getUpsHardwareData().isPowered();
++      status = UpsManager.getInstance().getUpsHardwareData().isUtilityPowerOk();
+ 
+       if (status)
+       {
+diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
+index a774937..f4366d0 100644
+--- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
++++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
+@@ -374,11 +374,11 @@
+                IPS250KeyInfo keyInfo = new IPS250KeyInfo();
+ 
+                // Set the short title to BitStatus node
+-               keyInfo.setCheckShortTitle(keymodel.getShortTitle());
++               keyInfo.setShortTitle(keymodel.getShortTitle());
+                // Set the edition to BitStatus node
+-               keyInfo.setCheckEdition(keymodel.getEdition());
++               keyInfo.setEdition(keymodel.getEdition());
+                // Set the segment to BitStatus node
+-               keyInfo.setCheckSegment(keymodel.getSegment());
++               keyInfo.setSegment(keymodel.getSegment());
+                // Set the usage type to BitStatus node
+                keyInfo.setCheckUsageType(keymodel.getUsageType());
+ 
+diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+index 653f0d0..88039d5 100644
+--- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
++++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+@@ -772,6 +772,9 @@
+    // This is test dummy data. REMOVE THIS WHEN DONE TESTING.
+    public static void populateDummyIPS(MvcsNode node)
+    {
++      // IPS250 BIT BEGINS - start with fresh List
++      ArrayList<IPS250BITInfo> ipsBits = new ArrayList<IPS250BITInfo>();
++      
+       int loop = 2;
+       for (int i = 0; i < loop; i++)
+       {
+@@ -779,7 +782,7 @@
+          IPS250BITInfo ipsBitInfo = new IPS250BITInfo();
+ 
+          // add commsType
+-         if (loop == 0)
++         if (i == 0)
+          {
+             ipsBitInfo.setCommsType(CommsType.LOS);
+          }
+@@ -796,11 +799,11 @@
+             // create bit model for IPS250 key info
+ 
+             // Set the short title to BitStatus node
+-            keyInfo.setCheckShortTitle("0x55 0x00 0x0" + j);
++            keyInfo.setShortTitle("0x55 0x31 0x5A 0x12 0x02 0x31 0xC3 0x0C 0x39 0x83 0x8E 0x30 0xC3 0x9C 0x40 0x00 0x00 0x0" + j);
+             // Set the edition to BitStatus node
+-            keyInfo.setCheckEdition("0x55 0x00 0x0" + j);
++            keyInfo.setEdition("0x55 0x00 0x0" + j);
+             // Set the segment to BitStatus node
+-            keyInfo.setCheckSegment(j);
++            keyInfo.setSegment(j);
+             // Set the usage type to BitStatus node
+             keyInfo.setCheckUsageType(j + 1);
+ 
+@@ -809,10 +812,13 @@
+          } // end of for
+ 
+          // add the IPS bit info to the parent BIT status
+-         node.getBitStatus().getIps250BitInfo().add(ipsBitInfo);
++         ipsBits.add(ipsBitInfo);
+ 
+       } // end of for
+ 
++      // store the IPS bit info to the BIT status
++      node.getBitStatus().setIps250BitInfo(ipsBits);
++
+    }
+ 
+ 
+@@ -876,11 +882,11 @@
+                   logger.debug("Segment : {}", keymodel.getSegment());
+ 
+                   // Set the short title to BitStatus node
+-                  keyInfo.setCheckShortTitle(keymodel.getShortTitle());
++                  keyInfo.setShortTitle(keymodel.getShortTitle());
+                   // Set the edition to BitStatus node
+-                  keyInfo.setCheckEdition(keymodel.getEdition());
++                  keyInfo.setEdition(keymodel.getEdition());
+                   // Set the segment to BitStatus node
+-                  keyInfo.setCheckSegment(keymodel.getSegment());
++                  keyInfo.setSegment(keymodel.getSegment());
+                   // Set the usage type to BitStatus node
+                   keyInfo.setCheckUsageType(keymodel.getUsageType());
+ 
+@@ -915,7 +921,7 @@
+       node.getBitStatus().setHaf100Status(haf100Data.pollHaf100OverallStatus(), haf100Data.haf100OverallGIF());
+ 
+       // Sets the UPS to node model
+-      node.getBitStatus().setUpsPowered(upsData.upsPowerStatus());
++      node.getBitStatus().setUpsPowered(upsData.upsUtilityPowerStatus());
+       node.getBitStatus().setUpsInverterStatus(upsData.upsBatteryStatus());
+       node.getBitStatus().setUpsBatteryStatus(upsData.upsBatteryStatus());
+       node.getBitStatus().setUpsStatus(upsData.upsOverallStatus(), upsData.upsGIF());
+@@ -963,6 +969,8 @@
+       node.setBitDateStampHour(date.getHour());
+       node.setBitDateStampMinute(date.getMinute());
+ 
++      logger.debug("BIT start has completed for node:{}", node.getNodeId());
++
+    } // END requestBitStart
+ 
+ 
+diff --git a/mvcs-webgui/WebContent/bit.html b/mvcs-webgui/WebContent/bit.html
+index 245f75e..d108a4e 100644
+--- a/mvcs-webgui/WebContent/bit.html
++++ b/mvcs-webgui/WebContent/bit.html
+@@ -24,8 +24,7 @@
+ 
+ <title>MVCS : BIT Tool</title>
+ 
+-<link id="colorCSS" rel=StyleSheet href="css/colors.css" type="text/css"
+-	media="all">
++<link id="colorCSS" rel=StyleSheet href="css/colors.css" type="text/css" media="all">
+ 
+ <!-- <link rel="stylesheet"
+ 	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"> -->
+@@ -45,826 +44,794 @@
+ 
+ </head>
+ <body>
+-	<!-- Include Header Content -->
+-	<div id="IncludeHeaderContent"></div>
+-	<!-- END Include Header Content -->
++  <!-- Include Header Content -->
++  <div id="IncludeHeaderContent"></div>
++  <!-- END Include Header Content -->
+ 
+-	<div class="container-fluid">
+-		<div class="row">
++  <div class="container-fluid">
++    <div class="row">
+ 
+-			<!-- Include Navigation Bar -->
+-			<!--<div id="IncludeNavBarContent"></div>-->
+-			<!-- Have to put into page because it isn't reading the nodes by using includes -->
+-			<div id="NavBarLinks" class="col-sm-3 col-md-2 sidebar">
+-				<ul class="nav nav-sidebar">
+-					<li><a style="background: #0f1515;"
+-						class="btn btn-primary active"
+-						onClick="window.location='nodeInfo.html?nodeId=' + nodeId;"><span
+-							class="glyphicon glyphicon-home"></span></a></li>
+-					<li><a href="dash.html">Dash</a></li>
+-					<li><a data-navId='SUMMARY'
+-						onClick="window.location = 'nodeInfo.html?nodeId=' + nodeId;">Summary</a></li>
+-					<li>&nbsp;&nbsp;</li>
+-					<li style="padding: 10px; background: #0f1515;"><strong>TOOLS</strong></li>
+-					<li><a href="tools.html">Frequency Tools</a></li>
+-					
+-					<li><a data-navId='BIT'
+-						onClick="window.open('http://localhost:8080/mvcs-webgui/bit.html?nodeId=' + nodeId , '_blank')">
+-							BIT Tool</a></li>	
+-							
+-					<!-- Navigational elements displayed for ship side -->
+-					<!--  ko if: isShipSide -->
+-					<li><a data-navId='ARCHIVETOOL' id="archiveButton"
+-		 				onClick="window.location = 'ArchiveTool.html?nodeId=' + nodeId;">Archiving Tool</a></li> 
+-					<!--  /ko -->
++      <!-- Include Navigation Bar -->
++      <!--<div id="IncludeNavBarContent"></div>-->
++      <!-- Have to put into page because it isn't reading the nodes by using includes -->
++      <div id="NavBarLinks" class="col-sm-3 col-md-2 sidebar">
++        <ul class="nav nav-sidebar">
++          <li><a style="background: #0f1515;" class="btn btn-primary active"
++            onClick="window.location='nodeInfo.html?nodeId=' + nodeId;"><span
++              class="glyphicon glyphicon-home"></span></a></li>
++          <li><a href="dash.html">Dash</a></li>
++          <li><a data-navId='SUMMARY'
++            onClick="window.location = 'nodeInfo.html?nodeId=' + nodeId;">Summary</a></li>
++          <li>&nbsp;&nbsp;</li>
++          <li style="padding: 10px; background: #0f1515;"><strong>TOOLS</strong></li>
++          <li><a href="tools.html">Frequency Tools</a></li>
+ 
+-					<li><a data-navId='SRAC'
+-						onClick="window.open('http://sca:8081/srac.html' , '_blank')">SRAC</a></li>
+-					<li style="padding: 5px; background: #0f1515;"></li>
++          <li><a data-navId='BIT'
++            onClick="window.open('http://localhost:8080/mvcs-webgui/bit.html?nodeId=' + nodeId , '_blank')">
++              BIT Tool</a></li>
+ 
+-				</ul>
+-			</div>
++          <!-- Navigational elements displayed for ship side -->
++          <!--  ko if: isShipSide -->
++          <li><a data-navId='ARCHIVETOOL' id="archiveButton"
++            onClick="window.location = 'ArchiveTool.html?nodeId=' + nodeId;">Archiving Tool</a></li>
++          <!--  /ko -->
+ 
++          <li><a data-navId='SRAC'
++            onClick="window.open('http://sca:8081/srac.html' , '_blank')">SRAC</a></li>
++          <li style="padding: 5px; background: #0f1515;"></li>
+ 
+-			<!-- END Navigation Bar -->
++        </ul>
++      </div>
+ 
+-			<!-- Main Content -->
+-			<div data-bind="with: selectedBitNode()">
+ 
+-				<div data-bind="visible: isShipSide()"
+-					class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+-					<div id="BitTool">
+-						<div class="row">
+-							<div class="col-sm-16">
+-								<br />
+-								<h1>
+-									BIT&nbsp;&nbsp;<span style="font-size: 23px;">(<span
+-										data-bind="text: nodeName"></span>)
+-									</span>&nbsp;&nbsp;<small>Built In Test Report</small>
+-								</h1>
+-								<hr />
+-							</div>
+-							<div class="col-sm-6">
+-								<br />
++      <!-- END Navigation Bar -->
+ 
+-								<table>
+-									<tr>
+-										<td>
+-											<button type="button" id="bitDataButton"
+-												class="btn btn-primary"
+-												data-bind="click: getBitStatus.bind($data, 'true')"
+-												data-loading-text="<i class='fa fa-spinner fa-spin'></i> Getting Statuses">Run
+-												Status Report</button>
+-										</td>
+-										<td>&nbsp;&nbsp;</td>
+-										<td>
+-											<div id="cancelStatusReport"></div>
+-										</td>
+-									</tr>
+-								</table>
+-							</div>
+-							<div class="col-sm-6">
+-								<!-- Display user input message while running bit -->
+-								<div id="UserInputMessage"></div>
+-							</div>
+-						</div>
+-						<br />
+-						<!-- Time Stamp -->
+-						<div class="row">
+-							<h4>Last Status Report Updated</h4>
+-							<br />
+-							<div class="col-sm-4">
+-								<table id="TimeStamp">
+-									<tr>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampMonth">0</span>
+-											</h4> <small>Month</small></td>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampDay">0</span>
+-											</h4> <small>Day</small></td>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampYear">0</span>
+-											</h4> <small>Year</small></td>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampHour">0</span>:<span
+-													data-bind="text: bitDateStampMinute">0</span>
+-											</h4> <small>Time</small></td>
+-									</tr>
+-								</table>
+-							</div>
+-						</div>
+-						<br />
+-						<div data-bind="visible: dataFetched()">
+-							<!-- Row 1 of Data Fetched -->
+-							<div class="row equal">
+-								<!-- HAF 100 -->
+-								<div class="col-sm-4">
+-									<div data-bind='css: bitStatus.isHaf100GoodShipSide()'>
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td>HAF-100</td>
++      <!-- Main Content -->
++      <div data-bind="with: selectedBitNode()">
+ 
+-													<td><strong
+-														data-bind='text: bitStatus.haf100GIFTextShipSide()'></strong></td>
+-												</tr>
+-											</table>
+-										</div>
+-										<div class="panel-body">
+-											<table>
+-												<tr>
+-													<td>Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isHaf100UpShipSide() ? 'On' : 'Off', css: bitStatus.isHaf100UpShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
+-											</table>
+-										</div>
+-									</div>
++        <div data-bind="visible: isShipSide()"
++          class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
++          <div id="BitTool">
++            <div class="row">
++              <div class="col-sm-16">
++                <br />
++                <h1>
++                  BIT&nbsp;&nbsp;<span style="font-size: 23px;">(<span
++                    data-bind="text: nodeName"></span>)
++                  </span>&nbsp;&nbsp;<small>Built In Test Report</small>
++                </h1>
++                <hr />
++              </div>
++              <div class="col-sm-6">
++                <br />
+ 
+-								</div>
+-								<!-- HAF 100 -->
+-								<!-- UPS Power Supply -->
+-								<div class="col-sm-4">
+-									<div data-bind='css: bitStatus.isUpsGoodShipSide()'>
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td>UPS</td>
+-													<td><strong
+-														data-bind='text: bitStatus.upsGIFTextShipSide()'></strong></td>
+-												</tr>
+-											</table>
+-										</div>
+-										<div class="panel-body">
+-											<table>
+-												<tr>
+-													<td>Power Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isUpsPoweredShipSide() ? 'On' : 'Off', css: bitStatus.isUpsPoweredShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
+-												<tr>
+-													<td>Inverter Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isUpsInverterOkShipSide() ? 'On' : 'Off', css: bitStatus.isUpsInverterOkShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
+-												<tr>
+-													<td>Battery Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isUpsBatteryOkShipSide() ? 'On' : 'Off', css: bitStatus.isUpsBatteryOkShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
++                <table>
++                  <tr>
++                    <td>
++                      <button type="button" id="bitDataButton" class="btn btn-primary"
++                        data-bind="click: getBitStatus.bind($data, 'true')"
++                        data-loading-text="<i class='fa fa-spinner fa-spin'></i> Getting Statuses">Run
++                        Status Report</button>
++                    </td>
++                    <td>&nbsp;&nbsp;</td>
++                    <td>
++                      <div id="cancelStatusReport"></div>
++                    </td>
++                  </tr>
++                </table>
++              </div>
++              <div class="col-sm-6">
++                <!-- Display user input message while running bit -->
++                <div id="UserInputMessage"></div>
++              </div>
++            </div>
++            <br />
++            <!-- Time Stamp -->
++            <div class="row">
++              <h4>Last Status Report Updated</h4>
++              <br />
++              <div class="col-sm-4">
++                <table id="TimeStamp">
++                  <tr>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampMonth">0</span>
++                      </h4> <small>Month</small></td>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampDay">0</span>
++                      </h4> <small>Day</small></td>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampYear">0</span>
++                      </h4> <small>Year</small></td>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampHour">0</span>:<span
++                          data-bind="text: bitDateStampMinute">0</span>
++                      </h4> <small>Time</small></td>
++                  </tr>
++                </table>
++              </div>
++            </div>
++            <br />
++            <div data-bind="visible: dataFetched()">
++              <!-- Row 1 of Data Fetched -->
++              <div class="row equal">
++                <!-- HAF 100 -->
++                <div class="col-sm-4">
++                  <div data-bind='css: bitStatus.isHaf100GoodShipSide()'>
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>HAF-100</td>
+ 
+-											</table>
+-										</div>
+-									</div>
+-								</div>
+-								<!-- UPS Power Supply -->
+-								<!-- Matrix Switch -->
+-								<div class="col-sm-4">
+-									<div
+-										data-bind="css: bitStatus.isMatrixSwitchGoodShipSide() ? 'panel text-success' : 'panel text-danger'">
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td>Matrix Switch</td>
+-													<td><strong
+-														data-bind='text: bitStatus.matrixSwitchGIFTextShipSide()'></strong></td>
+-												</tr>
+-											</table>
+-										</div>
+-										<div class="panel-body">
+-											<table>
+-												<tr>
+-													<td>Power Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isMatrixSwitchGoodShipSide() ? 'On' : 'Off', css: bitStatus.isMatrixSwitchGoodShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
+-											</table>
+-										</div>
+-									</div>
+-								</div>
+-								<!-- Matrix Switch -->
+-								<!-- END of Row 1 -->
+-							</div>
+-							<!-- END of Row 1 -->
+-							<!-- Row 2 -->
+-							<div class="row equal">
+-								<!-- 28 VDC -->
+-								<div class="col-sm-4">
+-									<div data-bind='css: bitStatus.is28VdcGoodShipSide()'>
++                          <td><strong data-bind='text: bitStatus.haf100GIFTextShipSide()'></strong></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isHaf100UpShipSide() ? 'On' : 'Off', css: bitStatus.isHaf100UpShipSide() ? 'text-success' : 'text-info'"></td>
++                        </tr>
++                      </table>
++                    </div>
++                  </div>
+ 
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td>28 VDC</td>
+-													<td><strong
+-														data-bind='text: bitStatus.vdc28GIFTextShipSide()'></strong></td>
+-												</tr>
+-											</table>
+-										</div>
+-										<div class="panel-body">
+-											<table>
+-												<tr>
+-													<td>28 VDC Power:</td>
+-													<td
+-														data-bind="text: bitStatus.is28VdcPoweredShipSide() ? 'On' : 'Off', css: bitStatus.is28VdcPoweredShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
+-												<tr>
+-													<td>PS1 Breaker:</td>
+-													<td
+-														data-bind="text: bitStatus.isCircuitBreaker1UpShipSide(), css: bitStatus.colorForBreaker1ShipSide()"></td>
++                </div>
++                <!-- HAF 100 -->
++                <!-- UPS Power Supply -->
++                <div class="col-sm-4">
++                  <div data-bind='css: bitStatus.isUpsGoodShipSide()'>
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>UPS</td>
++                          <td><strong data-bind='text: bitStatus.upsGIFTextShipSide()'></strong></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>Power Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isUpsPoweredShipSide() ? 'On' : 'Off', css: bitStatus.isUpsPoweredShipSide() ? 'text-success' : 'text-info'"></td>
++                        </tr>
++                        <tr>
++                          <td>Inverter Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isUpsInverterOkShipSide() ? 'On' : 'Off', css: bitStatus.isUpsInverterOkShipSide() ? 'text-success' : 'text-info'"></td>
++                        </tr>
++                        <tr>
++                          <td>Battery Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isUpsBatteryOkShipSide() ? 'On' : 'Off', css: bitStatus.isUpsBatteryOkShipSide() ? 'text-success' : 'text-info'"></td>
++                        </tr>
+ 
+-												</tr>
+-												<tr>
+-													<td>PS2 Breaker:</td>
+-													<td
+-														data-bind="text: bitStatus.isCircuitBreaker2UpShipSide(), css: bitStatus.colorForBreaker2ShipSide()"></td>
+-												</tr>
+-												<tr>
+-													<td>PS3 Breaker:</td>
+-													<td
+-														data-bind="text: bitStatus.isCircuitBreaker3UpShipSide(), css: bitStatus.colorForBreaker3ShipSide()"></td>
+-												</tr>
+-												<tr>
+-													<td>PS4 Breaker:</td>
+-													<td
+-														data-bind="text: bitStatus.isCircuitBreaker4UpShipSide(), css: bitStatus.colorForBreaker4ShipSide()"></td>
+-												</tr>
+-												<tr>
+-													<td>PS5 Breaker:</td>
+-													<td
+-														data-bind="text: bitStatus.isCircuitBreaker5UpShipSide(), css: bitStatus.colorForBreaker5ShipSide()"></td>
+-												</tr>
+-												<tr>
+-													<td>PS7 Breaker:</td>
+-													<td
+-														data-bind="text: bitStatus.isCircuitBreaker7UpShipSide(), css: bitStatus.colorForBreaker7ShipSide()"></td>
+-												</tr>
+-											</table>
+-										</div>
+-									</div>
+-								</div>
+-								<!-- 28 VDC -->
+-								<!-- RT 1944 -->
+-								<div class="col-sm-4">
+-									<div data-bind='css: bitStatus.isRt1944GoodShipSide()'>
++                      </table>
++                    </div>
++                  </div>
++                </div>
++                <!-- UPS Power Supply -->
++                <!-- Matrix Switch -->
++                <div class="col-sm-4">
++                  <div>
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>&nbsp;</td>
++                          <td>&nbsp;</td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>&nbsp;</td>
++                          <td>&nbsp;</td>
++                        </tr>
++                      </table>
++                    </div>
++                  </div>
++                </div>
++                <!-- Matrix Switch -->
++                <!-- END of Row 1 -->
++              </div>
++              <!-- END of Row 1 -->
+ 
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td>LOS</td>
+-													<td><strong
+-														data-bind='text: bitStatus.rt1944GIFTextShipSide()'></strong></td>
+-												</tr>
+-											</table>
+-										</div>
+-										<div class="panel-body">
+-											<table>
+-												<tr>
+-													<td>Power Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isRt1944PoweredShipSide(), css: bitStatus.rt1944PoweredTextColorShipSide()"></td>
++              <!-- Row 2 -->
++              <div class="row equal">
++                <!-- 28 VDC -->
++                <div class="col-sm-4">
++                  <div data-bind='css: bitStatus.is28VdcGoodShipSide()'>
+ 
+-												</tr>
+-												<tr>
+-													<td>Link Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isRt1944LinkUpShipSide() ? 'Up' : 'Down', css: bitStatus.isRt1944LinkUpShipSide() ? 'text-success' : 'text-danger'"></td>
+-												</tr>
+-												<tr>
+-													<td>Amp 1 Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isRt1944AmpUpShipSide(), css: bitStatus.rt1944Amp1TextColorShipSide()"></td>
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>28 VDC</td>
++                          <td><strong data-bind='text: bitStatus.vdc28GIFTextShipSide()'></strong></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>28 VDC Power:</td>
++                          <td
++                            data-bind="text: bitStatus.is28VdcPoweredShipSide() ? 'On' : 'Off', css: bitStatus.is28VdcPoweredShipSide() ? 'text-success' : 'text-info'"></td>
++                        </tr>
++                        <tr>
++                          <td>PS1 Breaker:</td>
++                          <td
++                            data-bind="text: bitStatus.isCircuitBreaker1UpShipSide(), css: bitStatus.colorForBreaker1ShipSide()"></td>
+ 
+-												</tr>
+-												<tr>
+-													<td>Amp 2 Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isRt1944Amp2UpShipSide(), css: bitStatus.rt1944Amp2TextColorShipSide()"></td>
+-											</table>
+-										</div>
+-									</div>
+-								</div>
+-								<!-- RT 1944 -->
+-								<!-- MCG 101 -->
+-								<div class="col-sm-4">
+-									<div data-bind="css: bitStatus.isMcg101GoodShipSide()">
++                        </tr>
++                        <tr>
++                          <td>PS2 Breaker:</td>
++                          <td
++                            data-bind="text: bitStatus.isCircuitBreaker2UpShipSide(), css: bitStatus.colorForBreaker2ShipSide()"></td>
++                        </tr>
++                        <tr>
++                          <td>PS3 Breaker:</td>
++                          <td
++                            data-bind="text: bitStatus.isCircuitBreaker3UpShipSide(), css: bitStatus.colorForBreaker3ShipSide()"></td>
++                        </tr>
++                        <tr>
++                          <td>PS4 Breaker:</td>
++                          <td
++                            data-bind="text: bitStatus.isCircuitBreaker4UpShipSide(), css: bitStatus.colorForBreaker4ShipSide()"></td>
++                        </tr>
++                        <tr>
++                          <td>PS5 Breaker:</td>
++                          <td
++                            data-bind="text: bitStatus.isCircuitBreaker5UpShipSide(), css: bitStatus.colorForBreaker5ShipSide()"></td>
++                        </tr>
++                        <tr>
++                          <td>PS7 Breaker:</td>
++                          <td
++                            data-bind="text: bitStatus.isCircuitBreaker7UpShipSide(), css: bitStatus.colorForBreaker7ShipSide()"></td>
++                        </tr>
++                      </table>
++                    </div>
++                  </div>
++                </div>
++                <!-- 28 VDC -->
++                <!-- RT 1944 -->
++                <div class="col-sm-4">
++                  <div data-bind='css: bitStatus.isRt1944GoodShipSide()'>
+ 
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td>SATCOM</td>
+-													<td><strong
+-														data-bind='text: bitStatus.mcg101GIFTextShipSide()'></strong></td>
+-												</tr>
+-											</table>
+-										</div>
+-										<div class="panel-body">
+-											<table>
+-												<tr>
+-													<td>Power Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isMcg101PoweredShipSide() ? 'Powered' : 'Off', css: bitStatus.isMcg101PoweredShipSide() ? 'text-success' : 'text-info'"></td>
+-												</tr>
+-												<tr>
+-													<td>Link Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isMcg101LinkUpShipSide() ? 'Up' : 'Down', css: bitStatus.isMcg101LinkUpShipSide() ? 'text-success' : 'text-danger'"></td>
+-												</tr>
+-											</table>
+-										</div>
+-									</div>
+-								</div>
+-								<!-- MCG 101 -->
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>LOS</td>
++                          <td><strong data-bind='text: bitStatus.rt1944GIFTextShipSide()'></strong></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>Power Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isRt1944PoweredShipSide(), css: bitStatus.rt1944PoweredTextColorShipSide()"></td>
+ 
+-								<!-- END of Row 2 -->
+-							</div>
+-							<!-- END of Row 2 -->
+-							<!--  Row 3 -->
+-							<div class="row equal">
+-								<div class="col-sm-8">
+-									<div>
++                        </tr>
++                        <tr>
++                          <td>Link Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isRt1944LinkUpShipSide() ? 'Up' : 'Down', css: bitStatus.isRt1944LinkUpShipSide() ? 'text-success' : 'text-danger'"></td>
++                        </tr>
++                        <tr>
++                          <td>Amp 1 Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isRt1944AmpUpShipSide(), css: bitStatus.rt1944Amp1TextColorShipSide()"></td>
+ 
+-										<div class="panel-heading">
++                        </tr>
++                        <tr>
++                          <td>Amp 2 Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isRt1944Amp2UpShipSide(), css: bitStatus.rt1944Amp2TextColorShipSide()"></td>
++                      </table>
++                    </div>
++                  </div>
++                </div>
++                <!-- RT 1944 -->
++                <!-- MCG 101 -->
++                <div class="col-sm-4">
++                  <div data-bind="css: bitStatus.isMcg101GoodShipSide()">
+ 
+-											<table>
+-												<tr>
+-													<td
+-														data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
+-													<!-- Format and Display IPS 250 overall -->
+-													<td><strong
+-														data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>SATCOM</td>
++                          <td><strong data-bind='text: bitStatus.mcg101GIFTextShipSide()'></strong></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>Power Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isMcg101PoweredShipSide() ? 'Powered' : 'Off', css: bitStatus.isMcg101PoweredShipSide() ? 'text-success' : 'text-info'"></td>
++                        </tr>
++                        <tr>
++                          <td>Link Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isMcg101LinkUpShipSide() ? 'Up' : 'Down', css: bitStatus.isMcg101LinkUpShipSide() ? 'text-success' : 'text-danger'"></td>
++                        </tr>
++                      </table>
++                    </div>
++                  </div>
++                </div>
++                <!-- MCG 101 -->
+ 
+-												</tr>
+-											</table>
++                <!-- END of Row 2 -->
++              </div>
++              <!-- END of Row 2 -->
+ 
+-										</div>
+-										<div class="panel-body">
++              <!--  Row 3 -->
++              <div class="row equal">
++              
++                <div class="col-sm-8">
++                  <!-- 20180418, MVCS-44: Separate the "Keyed" IPS for each radio COMMS  -->
++                  <!-- ko foreach: bitStatus.ips250BitInfo -->
++                  <div>
++                    <div class="panel-heading">
++                      <table>
++                        <tr data-bind="css: keyed() ? 'text-success' : 'text-danger'">
++                          <td data-bind="text: 'IPS-250 ' + commsType()"></td>
++                          <td data-bind="text: keyed() ? 'Loaded' : 'Not Loaded'"></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tbody>
++                          <tr style="background: #333; color: #FFF;">
++                            <td>Short Title</td>
++                            <td>Edition</td>
++                            <td>Segment</td>
++                            <td>Usage Type</td>
++                          </tr>
++                          <!-- ko foreach: keys -->
++                          <tr>
++                            <!-- Short Title -->
++                            <td data-bind="text: truncatedShortTitle"></td>
++                            <!-- Check Edition -->
++                            <td data-bind="text: edition"></td>
++                            <!-- Segment -->
++                            <td data-bind="text: segment"></td>
++                            <!-- Usage Type -->
++                            <td data-bind="text: usageType"></td>
++                          </tr>
++                          <!-- /ko -->
++                        </tbody>
++                      </table>
++                    </div>
++                  </div>
++                  <!-- /ko -->
++                </div>
+ 
+-											<table>
+-												<!-- ko with: bitStatus -->
+-												<!-- ko foreach: ips250BitInfo -->
+-												<tbody>
+-													<tr>
+-														<th data-bind="text: commsType"></th>
+-														<th
+-															data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
+-													</tr>
+-													<tr style="background: #333; color: #FFF;">
+-														<td>Short Title</td>
+-														<td>Edition</td>
+-														<td>Segment</td>
+-														<td>Usage Type</td>
+-
+-													</tr>
+-
+-													<!-- ko foreach: keys -->
+-
+-													<tr>
+-														<!-- Short Title -->
+-														<td data-bind="text: checkShortTitle"></td>
+-
+-														<!-- Check Edition -->
+-														<td data-bind="text: checkEdition"></td>
+-
+-														<!-- Segment -->
+-														<td data-bind="text: checkSegment"></td>
+-
+-														<!-- Usage Type -->
+-														<td data-bind="text: checkUsageType"></td>
+-
+-													</tr>
+-
+-													<!-- /ko -->
+-
+-												</tbody>
+-												<!-- /ko -->
+-												<!-- /ko -->
+-											</table>
+-
+-										</div>
+-									</div>
+-								</div>
+-
+-								<!-- SRAC and Corba Section grouping -->
+-								<div class="col-sm-4">
+-									<!-- SRAC -->
+-									<div class="col-sm-12">
+-										<div
+-											data-bind="css: RacStatus() === 'Pass' ? 'panel text-success' : 'panel text-danger'">
+-											<div class="panel-heading">
+-												<table>
+-													<tr>
+-														<td>SRAC</td>
+-														<td
+-															data-bind="text: RacStatus(), css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
+-													</tr>
+-												</table>
+-											</div>
+-											<div class="panel-body">
+-												<table>
+-													<tr>
+-														<td>Status:</td>
+-														<td
+-															data-bind="text: RacStatus, css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
+-													</tr>
+-												</table>
+-											</div>
+-										</div>
+-									</div>
+-									<!-- SRAC -->
+-									<!-- BAC -->
+-									<div class="col-sm-12">
+-										<div
+-											data-bind="css: BacStatus() === 'Ok' ? 'panel text-success' : 'panel text-danger'">
+-											<div class="panel-heading">
+-												<table>
+-													<tr>
+-														<td>BAC</td>
+-														<td
+-															data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
+-													</tr>
+-												</table>
+-											</div>
+-											<div class="panel-body">
+-												<table>
+-													<tr>
+-														<td>Status:</td>
+-														<td
+-															data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
+-													</tr>
+-												</table>
+-											</div>
+-										</div>
+-									</div>
+-									<!-- BAC -->
+-								</div>
+-								<!-- END of SRAC and BAC Status grouping -->
++                <!-- SRAC and Corba Section grouping -->
++                <div class="col-sm-4">
++                  <!-- SRAC -->
++                  <div class="col-sm-12">
++                    <div
++                      data-bind="css: RacStatus() === 'Pass' ? 'panel text-success' : 'panel text-danger'">
++                      <div class="panel-heading">
++                        <table>
++                          <tr>
++                            <td>SRAC</td>
++                            <td
++                              data-bind="text: RacStatus(), css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                      <div class="panel-body">
++                        <table>
++                          <tr>
++                            <td>Status:</td>
++                            <td
++                              data-bind="text: RacStatus, css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                    </div>
++                  </div>
++                  <!-- SRAC -->
++                  <!-- BAC -->
++                  <div class="col-sm-12">
++                    <div
++                      data-bind="css: BacStatus() === 'Ok' ? 'panel text-success' : 'panel text-danger'">
++                      <div class="panel-heading">
++                        <table>
++                          <tr>
++                            <td>BAC</td>
++                            <td
++                              data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                      <div class="panel-body">
++                        <table>
++                          <tr>
++                            <td>Status:</td>
++                            <td
++                              data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                    </div>
++                  </div>
++                  <!-- BAC -->
++                </div>
++                <!-- END of SRAC and BAC Status grouping -->
+ 
+-							</div>
+-						</div>
++              </div>
++            </div>
+ 
+ 
+-						<!--  Data NOT Fetched - Ship Side -->
+-						<div data-bind="visible: !dataFetched()">
++            <!--  Data NOT Fetched - Ship Side -->
++            <div data-bind="visible: !dataFetched()">
+ 
+-							<!-- Include SHIP default panels -->
+-							<div id="ShipBitDefaultPanels"></div>
++              <!-- Include SHIP default panels -->
++              <div id="ShipBitDefaultPanels"></div>
+ 
+-						</div>
+-						<!--  END Data NOT Fetched - Ship Side -->
++            </div>
++            <!--  END Data NOT Fetched - Ship Side -->
+ 
+-					</div>
+-					<!-- END isShipBit -->
+-				</div>
+-				<!-- END isShipBit -->
+-				<!-- END selectedBitNode -->
+-			</div>
+-			<!-- END selectedBitNode -->
+-			<!-- Selected Vehicle Bit Node - This may not work but worth a shot  -->
+-			<div data-bind="with: selectedVehicleBitNode()">
++          </div>
++          <!-- END isShipBit -->
++        </div>
++        <!-- END isShipBit -->
++        <!-- END selectedBitNode -->
++      </div>
++      <!-- END selectedBitNode -->
++      <!-- Selected Vehicle Bit Node - This may not work but worth a shot  -->
++      <div data-bind="with: selectedVehicleBitNode()">
+ 
+-				<!-- USV 1 -->
+-				<div data-bind="visible: isUsv1()"
+-					class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+-					<br />
+-					<div id="BitTool">
+-						<!-- Vehicle Button Section -->
+-						<div class="row">
+-							<div class="col-sm-16">
+-								<br />
+-								<h1>
+-									BIT&nbsp;&nbsp;<span style="font-size: 23px;">(<span
+-										data-bind="text: nodeName"></span>)
+-									</span>&nbsp;&nbsp;<small>Built In Test Report</small>
+-								</h1>
+-								<hr />
+-							</div>
+-							<div class="col-sm-6">
+-								<br />
++        <!-- USV 1 -->
++        <div data-bind="visible: isUsv1()"
++          class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
++          <br />
++          <div id="BitTool">
++            <!-- Vehicle Button Section -->
++            <div class="row">
++              <div class="col-sm-16">
++                <br />
++                <h1>
++                  BIT&nbsp;&nbsp;<span style="font-size: 23px;">(<span
++                    data-bind="text: nodeName"></span>)
++                  </span>&nbsp;&nbsp;<small>Built In Test Report</small>
++                </h1>
++                <hr />
++              </div>
++              <div class="col-sm-6">
++                <br />
+ 
+-								<table>
+-									<tr>
+-										<td>
+-											<button type="button" id="bitVehicleDataButton"
+-												class="btn btn-primary"
+-												data-bind="click: getVehicleBitStatus.bind($data, 'true')"
+-												data-loading-text="<i class='fa fa-spinner fa-spin'></i> Getting Statuses">Run
+-												Status Report</button>
+-										</td>
+-										<td>&nbsp;&nbsp;</td>
+-										<td>
+-											<div id="cancelVehicleBitStatusReport"></div>
+-										</td>
+-									</tr>
+-								</table>
+-							</div>
+-							<div class="col-sm-6">
+-								<!-- Display user input message while running bit -->
+-								<div id="UserInputMessage"></div>
+-							</div>
+-						</div>
+-						<!-- END Vehicle Bit Section -->
+-						<br />
+-						<!-- Vehicle Bit Component Section -->
+-						<!-- Data Fetched -->
+-						<!-- Time Stamp Section -->
+-						<div class="row">
+-							<h4>Last Status Report Updated</h4>
+-							<br />
+-							<div class="col-sm-4">
+-								<table id="TimeStamp">
+-									<tr>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampMonth">0</span>
+-											</h4> <small>Month</small></td>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampDay">0</span>
+-											</h4> <small>Day</small></td>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampYear">0</span>
+-											</h4> <small>Year</small></td>
+-										<td id="NoStripe"><h4>
+-												<span data-bind="text: bitDateStampHour">0</span>:<span
+-													data-bind="text: bitDateStampMinute">0</span>
+-											</h4> <small>Time</small></td>
+-									</tr>
+-								</table>
+-							</div>
+-						</div>
+-						<div data-bind="visible: dataFetched()">
+-							<!-- Begin Row for DataFetched Section -->
+-							<br />
+-							<!-- Row 1 of Data Fetched -->
+-							<div class="row">
+-								<!-- Grab IPS 250 Status -->
+-								<div class="col-sm-7">
+-									<!-- Format Panel Heading -->
+-									<div class="panel">
++                <table>
++                  <tr>
++                    <td>
++                      <button type="button" id="bitVehicleDataButton" class="btn btn-primary"
++                        data-bind="click: getVehicleBitStatus.bind($data, 'true')"
++                        data-loading-text="<i class='fa fa-spinner fa-spin'></i> Getting Statuses">Run
++                        Status Report</button>
++                    </td>
++                    <td>&nbsp;&nbsp;</td>
++                    <td>
++                      <div id="cancelVehicleBitStatusReport"></div>
++                    </td>
++                  </tr>
++                </table>
++              </div>
++              <div class="col-sm-6">
++                <!-- Display user input message while running bit -->
++                <div id="UserInputMessage"></div>
++              </div>
++            </div>
++            <!-- END Vehicle Bit Section -->
++            <br />
++            <!-- Vehicle Bit Component Section -->
++            <!-- Data Fetched -->
++            <!-- Time Stamp Section -->
++            <div class="row">
++              <h4>Last Status Report Updated</h4>
++              <br />
++              <div class="col-sm-4">
++                <table id="TimeStamp">
++                  <tr>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampMonth">0</span>
++                      </h4> <small>Month</small></td>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampDay">0</span>
++                      </h4> <small>Day</small></td>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampYear">0</span>
++                      </h4> <small>Year</small></td>
++                    <td id="NoStripe"><h4>
++                        <span data-bind="text: bitDateStampHour">0</span>:<span
++                          data-bind="text: bitDateStampMinute">0</span>
++                      </h4> <small>Time</small></td>
++                  </tr>
++                </table>
++              </div>
++            </div>
++            <div data-bind="visible: dataFetched()">
++              <!-- Begin Row for DataFetched Section -->
++              <br />
++              <!-- Row 1 of Data Fetched -->
++              <div class="row">
++                <!-- Grab IPS 250 Status -->
++                <div class="col-sm-7">
++                  <!-- Format Panel Heading -->
++                  <div class="panel">
+ 
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td
+-														data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
+-													<!-- Format and Display IPS 250 overall -->
+-													<td><strong
+-														data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
+-												</tr>
+-											</table>
+-										</div>
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
++                          <!-- Format and Display IPS 250 overall -->
++                          <td><strong
++                            data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
++                        </tr>
++                      </table>
++                    </div>
+ 
+-										<div class="panel-body">
++                    <div class="panel-body">
+ 
+-											<table>
+-												<!-- ko with: bitStatus -->
+-												<!-- ko foreach: ips250BitInfo -->
+-												<tbody>
+-													<tr>
+-														<th data-bind="text: commsType"></th>
+-														<th
+-															data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
+-													</tr>
+-													<tr style="background: #333; color: #FFF;">
+-														<td>Short Title</td>
+-														<td>Edition</td>
+-														<td>Segment</td>
+-														<td>Usage Type</td>
++                      <table>
++                        <!-- ko with: bitStatus -->
++                        <!-- ko foreach: ips250BitInfo -->
++                        <tbody>
++                          <tr>
++                            <th data-bind="text: commsType"></th>
++                            <th
++                              data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
++                          </tr>
++                          <tr style="background: #333; color: #FFF;">
++                            <td>Short Title</td>
++                            <td>Edition</td>
++                            <td>Segment</td>
++                            <td>Usage Type</td>
+ 
+-													</tr>
++                          </tr>
+ 
+-													<!-- ko foreach: keys -->
++                          <!-- ko foreach: keys -->
+ 
+-													<tr>
+-														<!-- Short Title -->
+-														<td data-bind="text: checkShortTitle"></td>
++                          <tr>
++                            <!-- Short Title -->
++                            <td data-bind="text: truncatedShortTitle"></td>
+ 
+-														<!-- Check Edition -->
+-														<td data-bind="text: checkEdition"></td>
++                            <!-- Check Edition -->
++                            <td data-bind="text: edition"></td>
+ 
+-														<!-- Segment -->
+-														<td data-bind="text: checkSegment"></td>
++                            <!-- Segment -->
++                            <td data-bind="text: segment"></td>
+ 
+-														<!-- Usage Type -->
+-														<td data-bind="text: checkUsageType"></td>
++                            <!-- Usage Type -->
++                            <td data-bind="text: usageType"></td>
+ 
+-													</tr>
++                          </tr>
+ 
+-													<!-- /ko -->
++                          <!-- /ko -->
+ 
+-												</tbody>
+-												<!-- /ko -->
+-												<!-- /ko -->
++                        </tbody>
++                        <!-- /ko -->
++                        <!-- /ko -->
+ 
+-											</table>
++                      </table>
+ 
+-										</div>
+-									</div>
+-								</div>
+-								<!-- END Grab IPS 250 Status -->
++                    </div>
++                  </div>
++                </div>
++                <!-- END Grab IPS 250 Status -->
+ 
+-								<!--  Section 2 -->
+-								<div class="col-sm-5">
++                <!--  Section 2 -->
++                <div class="col-sm-5">
+ 
+-									<!-- HAF 100 -->
+-									<div class="row">
+-										<div class="col-sm-12">
+-											<div class="panel">
+-												<div class="panel-heading">
+-													<table>
+-														<tr>
+-															<td
+-																data-bind="css: bitStatus.haf100StatusPanelColor() ? 'text-success' : 'text-danger'">HAF
+-																100</td>
+-															<!-- Format and Display IPS 250 overall -->
+-															<td><strong
+-																data-bind="text: bitStatus.haf100StatusPanelColor() ? 'Up' : 'Down', css: bitStatus.haf100StatusPanelColor() ? 'text-success' : 'text-danger'"></strong></td>
+-														</tr>
+-													</table>
+-												</div>
+-												<div class="panel-body">
+-													<table>
+-														<tr>
+-															<td>Status:</td>
+-															<td
+-																data-bind="text: bitStatus.haf100Status(), css: bitStatus.haf100StatusPanelColor() ? 'text-success' : 'text-danger'"></td>
+-														</tr>
+-													</table>
+-												</div>
+-											</div>
++                  <!-- HAF 100 -->
++                  <div class="row">
++                    <div class="col-sm-12">
++                      <div class="panel">
++                        <div class="panel-heading">
++                          <table>
++                            <tr>
++                              <td
++                                data-bind="css: bitStatus.haf100StatusPanelColor() ? 'text-success' : 'text-danger'">HAF
++                                100</td>
++                              <!-- Format and Display IPS 250 overall -->
++                              <td><strong
++                                data-bind="text: bitStatus.haf100StatusPanelColor() ? 'Up' : 'Down', css: bitStatus.haf100StatusPanelColor() ? 'text-success' : 'text-danger'"></strong></td>
++                            </tr>
++                          </table>
++                        </div>
++                        <div class="panel-body">
++                          <table>
++                            <tr>
++                              <td>Status:</td>
++                              <td
++                                data-bind="text: bitStatus.haf100Status(), css: bitStatus.haf100StatusPanelColor() ? 'text-success' : 'text-danger'"></td>
++                            </tr>
++                          </table>
++                        </div>
++                      </div>
+ 
+-										</div>
+-									</div>
+-									<!-- END HAF 100 -->
++                    </div>
++                  </div>
++                  <!-- END HAF 100 -->
+ 
+-									<!--  Status of RF Switch -->
+-									<div class="row">
+-										<div class="col-sm-12">
+-											<!-- Panel Formatting -->
+-											<div>
+-												<div class="panel-heading">
+-													<table>
+-														<tr>
+-															<td
+-																data-bind="css: bitStatus.rfSwitchStatusPanelColor() ? 'text-success' : 'text-danger'">RF
+-																Switch</td>
+-															<!-- Format and Display IPS 250 overall -->
+-															<td><strong
+-																data-bind="text: bitStatus.rfSwitchStatusPanelColor() ? 'UP' : 'DOWN', css: bitStatus.rfSwitchStatusPanelColor() ? 'text-success' : 'text-danger'"></strong></td>
+-														</tr>
+-													</table>
+-												</div>
+-												<div class="panel-body">
+-													<table>
+-														<tr>
+-															<td>Status:</td>
+-															<td
+-																data-bind="text: bitStatus.rfSwitchStatus() ? 'Up' : 'Down', css: bitStatus.rfSwitchStatus() ? 'text-success' : 'text-danger'"></td>
+-														</tr>
+-													</table>
+-												</div>
+-											</div>
+-										</div>
+-									</div>
+-									<!--  Grab Status of RF Switch -->
+-									<br />
+-									<!-- Power Module Status -->
+-									<div class="row">
+-										<div class="col-sm-12">
+-											<!-- Format Panel Heading -->
+-											<div>
+-												<div class="panel-heading">
+-													<table>
+-														<tr>
+-															<td
+-																data-bind="css: bitStatus.powerModuleStatusPanelColor() ? 'text-success' : 'text-danger'">Power
+-																Module</td>
+-															<!-- Format and Display IPS 250 overall -->
+-															<td><strong
+-																data-bind="text: bitStatus.powerModuleStatusPanelColor() ? 'ON' : 'OFF', css: bitStatus.powerModuleStatusPanelColor() ? 'text-success' : 'text-info'"></strong></td>
+-														</tr>
+-													</table>
+-												</div>
+-												<div class="panel-body">
+-													<table>
+-														<tr>
+-															<td>Status:</td>
+-															<td
+-																data-bind="text: bitStatus.powerModuleStatus() ? 'Up' : 'Down', css: bitStatus.powerModuleStatus() ? 'text-success' : 'text-danger'"></td>
+-														</tr>
++                  <!--  Status of RF Switch -->
++                  <div class="row">
++                    <div class="col-sm-12">
++                      <!-- Panel Formatting -->
++                      <div>
++                        <div class="panel-heading">
++                          <table>
++                            <tr>
++                              <td
++                                data-bind="css: bitStatus.rfSwitchStatusPanelColor() ? 'text-success' : 'text-danger'">RF
++                                Switch</td>
++                              <!-- Format and Display IPS 250 overall -->
++                              <td><strong
++                                data-bind="text: bitStatus.rfSwitchStatusPanelColor() ? 'UP' : 'DOWN', css: bitStatus.rfSwitchStatusPanelColor() ? 'text-success' : 'text-danger'"></strong></td>
++                            </tr>
++                          </table>
++                        </div>
++                        <div class="panel-body">
++                          <table>
++                            <tr>
++                              <td>Status:</td>
++                              <td
++                                data-bind="text: bitStatus.rfSwitchStatus() ? 'Up' : 'Down', css: bitStatus.rfSwitchStatus() ? 'text-success' : 'text-danger'"></td>
++                            </tr>
++                          </table>
++                        </div>
++                      </div>
++                    </div>
++                  </div>
++                  <!--  Grab Status of RF Switch -->
++                  <br />
++                  <!-- Power Module Status -->
++                  <div class="row">
++                    <div class="col-sm-12">
++                      <!-- Format Panel Heading -->
++                      <div>
++                        <div class="panel-heading">
++                          <table>
++                            <tr>
++                              <td
++                                data-bind="css: bitStatus.powerModuleStatusPanelColor() ? 'text-success' : 'text-danger'">Power
++                                Module</td>
++                              <!-- Format and Display IPS 250 overall -->
++                              <td><strong
++                                data-bind="text: bitStatus.powerModuleStatusPanelColor() ? 'ON' : 'OFF', css: bitStatus.powerModuleStatusPanelColor() ? 'text-success' : 'text-info'"></strong></td>
++                            </tr>
++                          </table>
++                        </div>
++                        <div class="panel-body">
++                          <table>
++                            <tr>
++                              <td>Status:</td>
++                              <td
++                                data-bind="text: bitStatus.powerModuleStatus() ? 'Up' : 'Down', css: bitStatus.powerModuleStatus() ? 'text-success' : 'text-danger'"></td>
++                            </tr>
+ 
+-													</table>
+-												</div>
+-											</div>
+-										</div>
+-									</div>
+-									<!-- END Power Module Status -->
+-									<br />
+-									<!-- LOS Radio Frequency -->
+-									<div class="row">
+-										<div class="col-sm-12">
+-											<!-- This is where panel is formatted -->
+-											<div>
+-												<div class="panel-heading">
+-													<table>
+-														<tr>
+-															<td
+-																data-bind="css: bitStatus.losRadioStatusPanelColor() ? 'text-success' : 'text-danger'">LOS
+-																Freq Status</td>
+-															<!-- Format and Display IPS 250 overall -->
+-															<td><strong
+-																data-bind="text: bitStatus.losRadioStatusPanelColor() ? 'UP' : 'DOWN', css: bitStatus.losRadioStatusPanelColor() ? 'text-success' : 'text-danger'"></strong></td>
+-														</tr>
+-													</table>
+-												</div>
+-												<div class="panel-body">
+-													<table>
+-														<tr>
+-															<td>Status:</td>
+-															<td data-bind="text: bitStatus.losRadioFrequencyStatus()"></td>
++                          </table>
++                        </div>
++                      </div>
++                    </div>
++                  </div>
++                  <!-- END Power Module Status -->
++                  <br />
++                  <!-- LOS Radio Frequency -->
++                  <div class="row">
++                    <div class="col-sm-12">
++                      <!-- This is where panel is formatted -->
++                      <div>
++                        <div class="panel-heading">
++                          <table>
++                            <tr>
++                              <td
++                                data-bind="css: bitStatus.losRadioStatusPanelColor() ? 'text-success' : 'text-danger'">LOS
++                                Freq Status</td>
++                              <!-- Format and Display IPS 250 overall -->
++                              <td><strong
++                                data-bind="text: bitStatus.losRadioStatusPanelColor() ? 'UP' : 'DOWN', css: bitStatus.losRadioStatusPanelColor() ? 'text-success' : 'text-danger'"></strong></td>
++                            </tr>
++                          </table>
++                        </div>
++                        <div class="panel-body">
++                          <table>
++                            <tr>
++                              <td>Status:</td>
++                              <td data-bind="text: bitStatus.losRadioFrequencyStatus()"></td>
+ 
+-														</tr>
+-														<tr>
+-															<td>Ship Match:</td>
+-															<td
+-																data-bind="text: bitStatus.losRadioFrequencyMatchStatus() ? 'Match' : 'No Match', css: bitStatus.losRadioFrequencyMatchStatus() ? 'text-success' : 'text-danger'"></td>
++                            </tr>
++                            <tr>
++                              <td>Ship Match:</td>
++                              <td
++                                data-bind="text: bitStatus.losRadioFrequencyMatchStatus() ? 'Match' : 'No Match', css: bitStatus.losRadioFrequencyMatchStatus() ? 'text-success' : 'text-danger'"></td>
+ 
+-														</tr>
++                            </tr>
+ 
+-													</table>
+-												</div>
+-											</div>
+-										</div>
+-									</div>
+-									<!-- END LOS Radio Frequency -->
+-									<!-- END Second Section -->
+-								</div>
+-								<!-- END Second Section -->
++                          </table>
++                        </div>
++                      </div>
++                    </div>
++                  </div>
++                  <!-- END LOS Radio Frequency -->
++                  <!-- END Second Section -->
++                </div>
++                <!-- END Second Section -->
+ 
+-								<!-- END Row 1 of data fetched -->
+-							</div>
+-							<!-- END Row 1 of data fetched -->
++                <!-- END Row 1 of data fetched -->
++              </div>
++              <!-- END Row 1 of data fetched -->
+ 
+-							<!-- END Data Fetched -->
+-						</div>
+-						<!-- END Data Fetched -->
++              <!-- END Data Fetched -->
++            </div>
++            <!-- END Data Fetched -->
+ 
+-						<!-- Data Not Fetched - Vehicle Side -->
+-						<div data-bind="visible: !dataFetched()">
++            <!-- Data Not Fetched - Vehicle Side -->
++            <div data-bind="visible: !dataFetched()">
+ 
+-							<!-- Include USV Vehicle default panels -->
+-							<div id="UsvVehicleBitDefaultPanels"></div>
++              <!-- Include USV Vehicle default panels -->
++              <div id="UsvVehicleBitDefaultPanels"></div>
+ 
+-							<!-- END Not Data Fetched - Vehicle Side-->
+-						</div>
+-						<!-- END Not Data Fetched - Vehicle Side -->
++              <!-- END Not Data Fetched - Vehicle Side-->
++            </div>
++            <!-- END Not Data Fetched - Vehicle Side -->
+ 
+-						<!-- END Vehicle Bit Component Section -->
+-						<!-- END BitTool -->
+-					</div>
+-					<!-- END BitTool -->
++            <!-- END Vehicle Bit Component Section -->
++            <!-- END BitTool -->
++          </div>
++          <!-- END BitTool -->
+ 
+-					<!-- END is NOT Ship -->
+-				</div>
+-				<!-- END is NOT Ship -->
++          <!-- END is NOT Ship -->
++        </div>
++        <!-- END is NOT Ship -->
+ 
+-				<!-- END Main Content -->
+-				<!-- END SelectedNodeVehicleSide -->
+-			</div>
+-			<!-- END SelectedNodeVehicleSide -->
++        <!-- END Main Content -->
++        <!-- END SelectedNodeVehicleSide -->
++      </div>
++      <!-- END SelectedNodeVehicleSide -->
+ 
+-		</div>
+-	</div>
++    </div>
++  </div>
+ 
+-	<!-- Script Libraries -->
+-	<!-- Bootstrap core JavaScript
++  <!-- Script Libraries -->
++  <!-- Bootstrap core JavaScript
+ 	    ================================================== -->
+-	<!-- Placed at the end of the document so the pages load faster -->
+-	<script src="js/jquery.min.js"></script>
+-	<script>
+-		window.jQuery
+-				|| document.write('<script src="js/jquery.min.js"><\/script>')
+-	</script>
+-	<script src="js/bootstrap.min.js"></script>
++  <!-- Placed at the end of the document so the pages load faster -->
++  <script src="js/jquery.min.js"></script>
++  <script>
++			window.jQuery
++					|| document
++							.write('<script src="js/jquery.min.js"><\/script>')
++		</script>
++  <script src="js/bootstrap.min.js"></script>
+ 
+-	<!-- Just to make our placeholder images work. Don't actually copy the next line! -->
+-	<script src="js/vendor/holder.min.js"></script>
+-	<script type="text/javascript" src="js/lib/jquery.cookie.js"></script>
+-	<script type="text/javascript" src="js/lib/jquery.getParams.js"></script>
+-	<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+-	<script src="js/ie10-viewport-bug-workaround.js"></script>
++  <!-- Just to make our placeholder images work. Don't actually copy the next line! -->
++  <script src="js/vendor/holder.min.js"></script>
++  <script type="text/javascript" src="js/lib/jquery.cookie.js"></script>
++  <script type="text/javascript" src="js/lib/jquery.getParams.js"></script>
++  <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
++  <script src="js/ie10-viewport-bug-workaround.js"></script>
+ 
+-	<script type="text/javascript" src="js/userinfo.js"></script>
+-	<script type="text/javascript" src="js/Strings.js"></script>
+-	<script type="text/javascript" src="js/GuiUtils.js"></script>
+-	<script type="text/javascript" src="js/lib/knockout-2.2.0.js"></script>
+-	<script type="text/javascript" src="js/lib/knockout-mapping-2.0.js"></script>
+-	<script type="text/javascript" src="js/lib/js-cookie.js"></script>
+-	<!-- Universal JS File -->
+-	<script type="text/javascript" src="js/NodeTemplate/NodeTemplate.js"></script>
+-	<script type="text/javascript" src="js/MvcsTools/Navigation.js"></script>
+-	<!--  bit JS File -->
+-	<script type="text/javascript" src="js/MvcsTools/bit.js"></script>
+-	<!-- END Script Libraries -->
++  <script type="text/javascript" src="js/userinfo.js"></script>
++  <script type="text/javascript" src="js/Strings.js"></script>
++  <script type="text/javascript" src="js/GuiUtils.js"></script>
++  <script type="text/javascript" src="js/lib/knockout-2.2.0.js"></script>
++  <script type="text/javascript" src="js/lib/knockout-mapping-2.0.js"></script>
++  <script type="text/javascript" src="js/lib/js-cookie.js"></script>
++  <!-- Universal JS File -->
++  <script type="text/javascript" src="js/NodeTemplate/NodeTemplate.js"></script>
++  <script type="text/javascript" src="js/MvcsTools/Navigation.js"></script>
++  <!--  bit JS File -->
++  <script type="text/javascript" src="js/MvcsTools/bit.js"></script>
++  <!-- END Script Libraries -->
+ 
+ </body>
+ </html>
