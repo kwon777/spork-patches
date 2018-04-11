@@ -1,22 +1,5 @@
-diff --git a/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/BitStatus.java b/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/BitStatus.java
-index 5e134b8..dfc2b43 100644
---- a/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/BitStatus.java
-+++ b/mvcs-interface/src/main/java/mil/navy/lcs/mvcs/iface/model/node/BitStatus.java
-@@ -126,10 +126,11 @@
- 
-    //////////////////////////////////////////////////////////////
-    /// IPS 250 Check requirement for Ship and Vehicle sides
--   /// @note
-    //////////////////////////////////////////////////////////////
- 
-    public ArrayList<IPS250BITInfo> ips250BitInfo = new ArrayList<IPS250BITInfo>();
-+   /** Overall status of the list of IPS250s. */
-+   public boolean ips250Status = false;
- 
- 
-    // Constructor
 diff --git a/mvcs-webgui/WebContent/bit.html b/mvcs-webgui/WebContent/bit.html
-index 245f75e..dea9243 100644
+index 245f75e..7f50a24 100644
 --- a/mvcs-webgui/WebContent/bit.html
 +++ b/mvcs-webgui/WebContent/bit.html
 @@ -24,8 +24,7 @@
@@ -29,7 +12,7 @@ index 245f75e..dea9243 100644
  
  <!-- <link rel="stylesheet"
  	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"> -->
-@@ -45,826 +44,809 @@
+@@ -45,826 +44,796 @@
  
  </head>
  <body>
@@ -477,11 +460,6 @@ index 245f75e..dea9243 100644
 +                <!-- END of Row 1 -->
 +              </div>
 +              <!-- END of Row 1 -->
-+              <!-- Row 2 -->
-+              <div class="row equal">
-+                <!-- 28 VDC -->
-+                <div class="col-sm-4">
-+                  <div data-bind='css: bitStatus.is28VdcGoodShipSide()'>
  
 -										<div class="panel-heading">
 -											<table>
@@ -498,6 +476,22 @@ index 245f75e..dea9243 100644
 -													<td>Power Status:</td>
 -													<td
 -														data-bind="text: bitStatus.isRt1944PoweredShipSide(), css: bitStatus.rt1944PoweredTextColorShipSide()"></td>
++              <!-- Row 2 -->
++              <div class="row equal">
++                <!-- 28 VDC -->
++                <div class="col-sm-4">
++                  <div data-bind='css: bitStatus.is28VdcGoodShipSide()'>
+ 
+-												</tr>
+-												<tr>
+-													<td>Link Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isRt1944LinkUpShipSide() ? 'Up' : 'Down', css: bitStatus.isRt1944LinkUpShipSide() ? 'text-success' : 'text-danger'"></td>
+-												</tr>
+-												<tr>
+-													<td>Amp 1 Status:</td>
+-													<td
+-														data-bind="text: bitStatus.isRt1944AmpUpShipSide(), css: bitStatus.rt1944Amp1TextColorShipSide()"></td>
 +                    <div class="panel-heading">
 +                      <table>
 +                        <tr>
@@ -520,14 +514,17 @@ index 245f75e..dea9243 100644
  
 -												</tr>
 -												<tr>
--													<td>Link Status:</td>
+-													<td>Amp 2 Status:</td>
 -													<td
--														data-bind="text: bitStatus.isRt1944LinkUpShipSide() ? 'Up' : 'Down', css: bitStatus.isRt1944LinkUpShipSide() ? 'text-success' : 'text-danger'"></td>
--												</tr>
--												<tr>
--													<td>Amp 1 Status:</td>
--													<td
--														data-bind="text: bitStatus.isRt1944AmpUpShipSide(), css: bitStatus.rt1944Amp1TextColorShipSide()"></td>
+-														data-bind="text: bitStatus.isRt1944Amp2UpShipSide(), css: bitStatus.rt1944Amp2TextColorShipSide()"></td>
+-											</table>
+-										</div>
+-									</div>
+-								</div>
+-								<!-- RT 1944 -->
+-								<!-- MCG 101 -->
+-								<div class="col-sm-4">
+-									<div data-bind="css: bitStatus.isMcg101GoodShipSide()">
 +                        </tr>
 +                        <tr>
 +                          <td>PS2 Breaker:</td>
@@ -563,34 +560,6 @@ index 245f75e..dea9243 100644
 +                <div class="col-sm-4">
 +                  <div data-bind='css: bitStatus.isRt1944GoodShipSide()'>
  
--												</tr>
--												<tr>
--													<td>Amp 2 Status:</td>
--													<td
--														data-bind="text: bitStatus.isRt1944Amp2UpShipSide(), css: bitStatus.rt1944Amp2TextColorShipSide()"></td>
--											</table>
--										</div>
--									</div>
--								</div>
--								<!-- RT 1944 -->
--								<!-- MCG 101 -->
--								<div class="col-sm-4">
--									<div data-bind="css: bitStatus.isMcg101GoodShipSide()">
-+                    <div class="panel-heading">
-+                      <table>
-+                        <tr>
-+                          <td>LOS</td>
-+                          <td><strong data-bind='text: bitStatus.rt1944GIFTextShipSide()'></strong></td>
-+                        </tr>
-+                      </table>
-+                    </div>
-+                    <div class="panel-body">
-+                      <table>
-+                        <tr>
-+                          <td>Power Status:</td>
-+                          <td
-+                            data-bind="text: bitStatus.isRt1944PoweredShipSide(), css: bitStatus.rt1944PoweredTextColorShipSide()"></td>
- 
 -										<div class="panel-heading">
 -											<table>
 -												<tr>
@@ -617,6 +586,28 @@ index 245f75e..dea9243 100644
 -									</div>
 -								</div>
 -								<!-- MCG 101 -->
++                    <div class="panel-heading">
++                      <table>
++                        <tr>
++                          <td>LOS</td>
++                          <td><strong data-bind='text: bitStatus.rt1944GIFTextShipSide()'></strong></td>
++                        </tr>
++                      </table>
++                    </div>
++                    <div class="panel-body">
++                      <table>
++                        <tr>
++                          <td>Power Status:</td>
++                          <td
++                            data-bind="text: bitStatus.isRt1944PoweredShipSide(), css: bitStatus.rt1944PoweredTextColorShipSide()"></td>
+ 
+-								<!-- END of Row 2 -->
+-							</div>
+-							<!-- END of Row 2 -->
+-							<!--  Row 3 -->
+-							<div class="row equal">
+-								<div class="col-sm-8">
+-									<div>
 +                        </tr>
 +                        <tr>
 +                          <td>Link Status:</td>
@@ -628,13 +619,7 @@ index 245f75e..dea9243 100644
 +                          <td
 +                            data-bind="text: bitStatus.isRt1944AmpUpShipSide(), css: bitStatus.rt1944Amp1TextColorShipSide()"></td>
  
--								<!-- END of Row 2 -->
--							</div>
--							<!-- END of Row 2 -->
--							<!--  Row 3 -->
--							<div class="row equal">
--								<div class="col-sm-8">
--									<div>
+-										<div class="panel-heading">
 +                        </tr>
 +                        <tr>
 +                          <td>Amp 2 Status:</td>
@@ -649,7 +634,13 @@ index 245f75e..dea9243 100644
 +                <div class="col-sm-4">
 +                  <div data-bind="css: bitStatus.isMcg101GoodShipSide()">
  
--										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td
+-														data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
+-													<!-- Format and Display IPS 250 overall -->
+-													<td><strong
+-														data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
 +                    <div class="panel-heading">
 +                      <table>
 +                        <tr>
@@ -676,50 +667,56 @@ index 245f75e..dea9243 100644
 +                </div>
 +                <!-- MCG 101 -->
  
--											<table>
--												<tr>
--													<td
--														data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
--													<!-- Format and Display IPS 250 overall -->
--													<td><strong
--														data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
+-												</tr>
+-											</table>
 +                <!-- END of Row 2 -->
 +              </div>
 +              <!-- END of Row 2 -->
+ 
+-										</div>
+-										<div class="panel-body">
 +              <!--  Row 3 -->
 +              <div class="row equal">
++              
 +                <div class="col-sm-8">
++                  <!-- 20180418, MVCS-44: Separate the "Keyed" IPS for each radio COMMS  -->
++                  <!-- ko foreach: bitStatus.ips250BitInfo -->
 +                  <div>
 +                    <div class="panel-heading">
 +                      <table>
-+                        <tr>
-+                          <td>IPS-250</td>
-+                          <!-- Format and Display IPS 250 overall -->
-+                          <!-- 20180418, MVCS-44: Remove "Keyed" from the header. Each IPS should have its own  -->
++                        <tr data-bind="css: keyed() ? 'text-success' : 'text-danger'">
++                          <td data-bind="text: 'IPS-250 ' + commsType()"></td>
++                          <td data-bind="text: keyed() ? 'Loaded' : 'Not Loaded'"></td>
++                        </tr>
 +                      </table>
- 
--												</tr>
--											</table>
 +                    </div>
 +                    <div class="panel-body">
 +                      <table>
-+                        <!-- ko with: bitStatus -->
-+                        <!-- ko foreach: ips250BitInfo -->
 +                        <tbody>
-+                          <tr>
-+                            <th data-bind="text: commsType"></th>
-+                            <th
-+                              data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
-+                          </tr>
 +                          <tr style="background: #333; color: #FFF;">
 +                            <td>Short Title</td>
 +                            <td>Edition</td>
 +                            <td>Segment</td>
 +                            <td>Usage Type</td>
- 
--										</div>
--										<div class="panel-body">
 +                          </tr>
++                          <!-- ko foreach: keys -->
++                          <tr>
++                            <!-- Short Title -->
++                            <td data-bind="text: checkShortTitle"></td>
++                            <!-- Check Edition -->
++                            <td data-bind="text: checkEdition"></td>
++                            <!-- Segment -->
++                            <td data-bind="text: checkSegment"></td>
++                            <!-- Usage Type -->
++                            <td data-bind="text: checkUsageType"></td>
++                          </tr>
++                          <!-- /ko -->
++                        </tbody>
++                      </table>
++                    </div>
++                  </div>
++                  <!-- /ko -->
++                </div>
  
 -											<table>
 -												<!-- ko with: bitStatus -->
@@ -735,45 +732,26 @@ index 245f75e..dea9243 100644
 -														<td>Edition</td>
 -														<td>Segment</td>
 -														<td>Usage Type</td>
-+                          <!-- ko foreach: keys -->
- 
+-
 -													</tr>
-+                          <tr>
-+                            <!-- Short Title -->
-+                            <td data-bind="text: checkShortTitle"></td>
- 
+-
 -													<!-- ko foreach: keys -->
-+                            <!-- Check Edition -->
-+                            <td data-bind="text: checkEdition"></td>
- 
+-
 -													<tr>
 -														<!-- Short Title -->
 -														<td data-bind="text: checkShortTitle"></td>
-+                            <!-- Segment -->
-+                            <td data-bind="text: checkSegment"></td>
- 
+-
 -														<!-- Check Edition -->
 -														<td data-bind="text: checkEdition"></td>
-+                            <!-- Usage Type -->
-+                            <td data-bind="text: checkUsageType"></td>
- 
+-
 -														<!-- Segment -->
 -														<td data-bind="text: checkSegment"></td>
-+                          </tr>
- 
+-
 -														<!-- Usage Type -->
 -														<td data-bind="text: checkUsageType"></td>
-+                          <!-- /ko -->
- 
+-
 -													</tr>
-+                        </tbody>
-+                        <!-- /ko -->
-+                        <!-- /ko -->
-+                      </table>
-+                    </div>
-+                  </div>
-+                </div>
- 
+-
 -													<!-- /ko -->
 -
 -												</tbody>
