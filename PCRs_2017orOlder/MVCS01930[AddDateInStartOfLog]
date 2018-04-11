@@ -1,0 +1,244 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/log/LoggingManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/log/LoggingManager.java	(revision 9830)
++++ src/main/java/mil/navy/lcs/mvcs/common/log/LoggingManager.java	(working copy)
+@@ -6,7 +6,9 @@
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
++import mil.navy.lcs.mvcs.common.utils.DateUtils;
+ 
++
+ /**
+  * Class Description This class is responsible for for initialization of the loggers. The loggers
+  * are initialized by properties found in the log4j properties file.
+@@ -27,15 +29,16 @@
+     */
+    private static LoggingManager instance = null;
+ 
+-   /** Path to the Logging directory */
+-   String logDirectoryPath = null;
++   /** Starting log statement with date stamp. */
++   protected static String STARTING_STATEMENT = "MVCS logging is starting on the date: " + DateUtils.getCurrentDateAsMMM_DD_YYYY().toUpperCase();
+ 
+ 
+    /** private Constructor prevents any other class from instantiating */
+    private LoggingManager()
+    {
++      primaryLogger.info(STARTING_STATEMENT);
++      systemErrorLogger.info(STARTING_STATEMENT);
+       primaryLogger.info("Initializing new instanceof: {} ", this.getClass().getName());
+-      initialize();
+    }
+ 
+ 
+@@ -58,12 +61,6 @@
+    }
+ 
+ 
+-   public boolean initialize()
+-   {
+-      return true;
+-   }
+-
+-
+    /**
+     * This method returns the user action logger
+     * 
+Index: src/main/java/mil/navy/lcs/mvcs/common/utils/DateUtils.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/utils/DateUtils.java	(revision 0)
++++ src/main/java/mil/navy/lcs/mvcs/common/utils/DateUtils.java	(working copy)
+@@ -0,0 +1,166 @@
++
++
++package mil.navy.lcs.mvcs.common.utils;
++
++
++import java.text.DecimalFormat;
++import java.util.Calendar;
++
++/**
++ * This is a utility class for getting dates.
++ */
++
++public class DateUtils
++{
++
++   /**
++    * Returns the current date in MMM_DD_YYYY string format.
++    * 
++    * @return The current date in MMM_DD_YYYY format. E.g., Feb_14_2005.
++    */
++   public static String getCurrentDateAsMMM_DD_YYYY()
++   {
++      try
++      {
++         Calendar calendar = Calendar.getInstance();
++
++         int day = calendar.get(Calendar.DAY_OF_MONTH);
++         int month = calendar.get(Calendar.MONTH);
++         int year = calendar.get(Calendar.YEAR);
++
++         calendar = null;
++
++         return getMMM(month) + "_" + day + "_" + year;
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++         return "Error";
++      }
++   }
++
++
++   /**
++    * Returns the current time in HH:MM string format.
++    * 
++    * @return The current time in HH:MM format. E.g., 13:43.
++    */
++   public static String getCurrentTimeAsHH_MM()
++   {
++      try
++      {
++         DecimalFormat twoDigits = new DecimalFormat("00");
++
++         Calendar calendar = Calendar.getInstance();
++         int hour = calendar.get(Calendar.HOUR_OF_DAY);
++         int minutes = calendar.get(Calendar.MINUTE);
++
++
++         calendar = null;
++
++         return twoDigits.format(hour) + ":" + twoDigits.format(minutes);
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++         return "Error";
++      }
++   }
++
++
++   public static String getCurrentTimeAsHHMMSS()
++   {
++      try
++      {
++         DecimalFormat twoDigits = new DecimalFormat("00");
++
++         Calendar calendar = Calendar.getInstance();
++         int hour = calendar.get(Calendar.HOUR_OF_DAY);
++         int minutes = calendar.get(Calendar.MINUTE);
++         int seconds = calendar.get(Calendar.SECOND);
++
++         calendar = null;
++
++         return twoDigits.format(hour) + ":" + twoDigits.format(minutes) + ":" + twoDigits.format(seconds);
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++         return "Error";
++      }
++   }
++
++
++   public static String getCurrentTimeAsHHMMSSMS()
++   {
++      try
++      {
++         DecimalFormat twoDigits = new DecimalFormat("00");
++         DecimalFormat threeDigits = new DecimalFormat("000");
++
++         Calendar calendar = Calendar.getInstance();
++         int hour = calendar.get(Calendar.HOUR_OF_DAY);
++         int minutes = calendar.get(Calendar.MINUTE);
++         int seconds = calendar.get(Calendar.SECOND);
++         int milliseconds = calendar.get(Calendar.MILLISECOND);
++
++         calendar = null;
++
++         return twoDigits.format(hour) + ":" + twoDigits.format(minutes) + ":" + twoDigits.format(seconds) + ":" + threeDigits.format(milliseconds);
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++         return "Error";
++      }
++   }
++
++
++   /**
++    * Returns the three characters month for a given month. The month argument is zero-indexed, so
++    * the first month is 0 (January).
++    * 
++    * @param month The month of the year, between 0 and 11.
++    * @return The three-character representation of the month.
++    */
++   public static String getMMM(int month)
++   {
++      try
++      {
++         switch (month)
++         {
++            case 0:
++               return "Jan";
++            case 1:
++               return "Feb";
++            case 2:
++               return "Mar";
++            case 3:
++               return "Apr";
++            case 4:
++               return "May";
++            case 5:
++               return "Jun";
++            case 6:
++               return "Jul";
++            case 7:
++               return "Aug";
++            case 8:
++               return "Sep";
++            case 9:
++               return "Oct";
++            case 10:
++               return "Nov";
++            case 11:
++               return "Dec";
++            default:
++               return "Error";
++         }
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++         return "Error";
++      }
++   }
++}
+\ No newline at end of file
+Index: src/main/test/mil/navy/lcs/mvcs/common/log/LoggingManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/log/LoggingManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/common/log/LoggingManagerTest.java	(working copy)
+@@ -0,0 +1,20 @@
++
++
++package mil.navy.lcs.mvcs.common.log;
++
++
++import org.junit.Assert;
++import org.junit.Test;
++
++public class LoggingManagerTest
++{
++
++
++   @Test
++   public void test()
++   {
++      LoggingManager loggingManager = LoggingManager.getInstance();
++      Assert.assertNotNull(loggingManager);
++   }
++
++}

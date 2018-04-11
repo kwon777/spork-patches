@@ -1,0 +1,1085 @@
+Index: build/build-global.xml
+===================================================================
+--- build/build-global.xml	(revision 9894)
++++ build/build-global.xml	(working copy)
+@@ -36,11 +36,11 @@
+ 	<property name="index.path" value="${build.dir}/app/index.html" />
+ 	<property name="install.script.name" value="MVCSinstall" />
+ 	<property name="update.script.name" value="MVCSupdate.sh" />
+-	<property name="checksums.path" value="${dist.dir}/mvcs-checksums.txt" />
++	<property name="checksums.file.path" value="${dist.dir}/mvcs-checksums.txt" />
+ 
+-	<property name="source.build" value="${common.name}/src/main/test/mil/navy/lcs/mvcs/common/build" />
++	<property name="source.build.dir" value="${common.name}/src/main/java/mil/navy/lcs/mvcs/common/build" />
+ 	<property name="transform.class" value="mil.navy.lcs.mvcs.common.build.TransformMission" />
+-	<property name="checksum.class" value="mil.navy.lcs.mvcs.common.build.ChecksumFileContents" />
++	<property name="checksum.class" value="mil.navy.lcs.mvcs.common.build.ChecksumUtility" />
+ 	<property name="sca.mission" value="${basedir}/${sca.name}/missions/default-mission.xml" />
+ 
+ 	<property name="main.class.sca" value="mil.navy.lcs.mvcs.sca.main.ShipMain" />
+Index: build/build.xml
+===================================================================
+--- build/build.xml	(revision 9894)
++++ build/build.xml	(working copy)
+@@ -38,13 +38,13 @@
+ 
+ 	<property name="install.package.name" value="InstallPackage" />
+ 	<property name="webapp.dir" value="/var/lib/tomcat6/webapps/" />
+-    
+-    <property name="scripts.dir" value="${basedir}/${common.name}/build" />
+ 
++	<property name="scripts.dir" value="${basedir}/${common.name}/build" />
++
+ 	<import file="${scripts.dir}/build-global.xml" />
+ 
+-    <property name="webcontent.dir" value="${build.dir}/app/${gui.name}/WebContent" />
+-    
++	<property name="webcontent.dir" value="${build.dir}/app/${gui.name}/WebContent" />
++
+ 	<property name="mvcs.classpath.addition" value="../plugins/${plugin.mcg101.dir.name}/bin/${plugin.mcg101.dir.name}.jar ../plugins/${plugin.scu.dir.name}/bin/${plugin.scu.dir.name}.jar ../plugins/${plugin.rt1944.dir.name}/bin/${plugin.rt1944.dir.name}.jar ../plugins/${plugin.ips250.dir.name}/bin/${plugin.ips250.dir.name}.jar ../plugins/${plugin.prc117.dir.name}/bin/${plugin.prc117.dir.name}.jar ../plugins/${plugin.kg175.dir.name}/bin/${plugin.kg175.dir.name}.jar ../rims/${rim.scu.dir.name}/bin/${rim.scu.dir.name}.jar ../rims/${rim.prc117.dir.name}/bin/${rim.prc117.dir.name}.jar" />
+ 	<!-- ../tools/${mission.builder.dir.name}/bin/${mission.builder.dir.name}.jar" />-->
+ 
+@@ -76,7 +76,7 @@
+ 		<!--<echo message="Using the classpathref: ${manifest.classpath}" />-->
+ 		<javac srcdir="${java.dir}" destdir="${compile.dest.dir}" classpathref="${libraries}" failonerror="${failOnError}" nowarn="${nowarn}" debug="true" includeantruntime="false">
+ 			<compilerarg value="-Xlint:unchecked" />
+-			</javac>
++		</javac>
+ 	</target>
+ 
+ 	<target name="compile.rim">
+@@ -83,9 +83,9 @@
+ 		<property name="compile.dest.dir" value="${build.dir}/app/classes" />
+ 		<echo message="Compiling source to: ${compile.dest.dir}" />
+ 		<!--<echo message="Using the classpathref: ${manifest.classpath}" />-->
+-		<javac srcdir="${java.dir}" destdir="${compile.dest.dir}" classpathref="libraries.and.classes" failonerror="${failOnError}" nowarn="${nowarn}" debug="true"  includeantruntime="false">
++		<javac srcdir="${java.dir}" destdir="${compile.dest.dir}" classpathref="libraries.and.classes" failonerror="${failOnError}" nowarn="${nowarn}" debug="true" includeantruntime="false">
+ 			<compilerarg value="-Xlint:unchecked" />
+-						</javac>
++		</javac>
+ 	</target>
+ 
+ 	<target name="compile.tests" depends="compile">
+@@ -217,7 +217,7 @@
+ 	<target name="build.vehicle.missions">
+ 		<mkdir dir="${scripts.dir}/classes" />
+ 		<!--<delete dir="${build.dir}/app/missions" includes="default-mission.xml" />-->
+-		<javac srcdir="${source.build}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" includeantruntime="false" />
++		<javac srcdir="${source.build.dir}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" includeantruntime="false" />
+ 
+ 		<java classname="${transform.class}" classpathref="build.classpath" fork="true">
+ 			<arg value="${sca.mission}" />
+@@ -366,7 +366,7 @@
+ 		</antcall>
+ 
+ 		<antcall target="compile.and.build.mcg101.plugin" />
+-		
++
+ 		<antcall target="compile.and.build.rt1944.plugin" />
+ 
+ 		<antcall target="compile.and.build.prc117.plugin" />
+@@ -373,7 +373,7 @@
+ 		<antcall target="compile.and.build.prc117.rim">
+ 			<param name="vessel" value="${vca.vessel}" />
+ 		</antcall>
+-		
++
+ 		<!-- Set Version in index.html -->
+ 		<antcall target="replace.index.properties" />
+ 
+@@ -389,7 +389,7 @@
+ 
+ 	<target name="compile.and.build.haf100-loader.tool" description="Builds the HAF-100 Loader Tool">
+ 		<mkdir dir="haf100-loader-build" />
+-		<ant dir="haf100-loader-build" antfile="../haf100-loader/build.xml" target="build.haf100-loader"/>
++		<ant dir="haf100-loader-build" antfile="../haf100-loader/build.xml" target="build.haf100-loader" />
+ 	</target>
+ 
+ 	<target name="copy.installation.scripts" description="Copy installation scripts to distribution directory and move the update script and archive inside directory">
+@@ -435,10 +435,10 @@
+ 				<exclude name=".svn" />
+ 			</fileset>
+ 		</copy>
+-        
+-        <!-- Set Version in html files (PMFL/Bit & Freq. Tool) -->
++
++		<!-- Set Version in html files (PMFL/Bit & Freq. Tool) -->
+ 		<antcall target="replace.webcontent.properties" />
+-        
++
+ 	</target>
+ 
+ 	<target name="archive.project.source" description="Copy all projects for turnover to Configurmation Management">
+@@ -471,13 +471,10 @@
+ 	<target name="archive.mvcs">
+ 		<property name="dist" value="${app.path}" />
+ 
+-		<property name="tar.name" 
+-                          value="${app.name}-${project.name}-${TODAY}.tar"/>
++		<property name="tar.name" value="${app.name}-${project.name}-${TODAY}.tar" />
+ 
+ 		<tar destfile="${dist.dir}/${tar.name}">
+-			<tarfileset dir="${build.dir}/app" 
+-                                    prefix="${app.path}/" 
+-                                    mode="700">
++			<tarfileset dir="${build.dir}/app" prefix="${app.path}/" mode="700">
+ 				<include name="*.sh" />
+ 				<exclude name="comparedb.sh" />
+ 				<exclude name="startDatabaseGUI.sh" />
+@@ -603,20 +600,20 @@
+ 
+ 			<tarfileset dir="${build.dir}/app/so" prefix="/usr/java/latest/lib/i386">
+ 				<include name="**" />
+-            </tarfileset>
+-            
+-		<tarfileset dir="${build.dir}/app/so" prefix="/usr/lib">
+-			<include name="libLinuxSerialParallel.so" />
+-	    	</tarfileset>
++			</tarfileset>
+ 
+-			
+-		<tarfileset dir="${build.dir}/tools/${haf100-loader.tool.dir.name}" prefix="/opt/mvcs/tools/${haf100-loader.tool.dir.name}" mode="755" group="mvcsuser">
+-			<include name="**" />
+-		</tarfileset>
++			<tarfileset dir="${build.dir}/app/so" prefix="/usr/lib">
++				<include name="libLinuxSerialParallel.so" />
++			</tarfileset>
+ 
+-		<tarfileset dir="${build.dir}/tools/${troubleshooting.tool.dir.name}/bin" prefix="/opt/mvcs/tools/${troubleshooting.tool.dir.name}/bin">
+-			<include name="**" />
+-		</tarfileset>
++
++			<tarfileset dir="${build.dir}/tools/${haf100-loader.tool.dir.name}" prefix="/opt/mvcs/tools/${haf100-loader.tool.dir.name}" mode="755" group="mvcsuser">
++				<include name="**" />
++			</tarfileset>
++
++			<tarfileset dir="${build.dir}/tools/${troubleshooting.tool.dir.name}/bin" prefix="/opt/mvcs/tools/${troubleshooting.tool.dir.name}/bin">
++				<include name="**" />
++			</tarfileset>
+ 			<tarfileset dir="${troubleshooting.tool.name}/lib" prefix="/opt/mvcs/tools/${troubleshooting.tool.dir.name}/lib">
+ 				<include name="*.jar" />
+ 			</tarfileset>
+@@ -879,8 +876,8 @@
+ 			<fileset dir="${plugin.mcg101.name}/configs" includes="**" />
+ 		</copy>
+ 	</target>
+-	
+ 
++
+ 	<target name="compile.and.build.rt1944.plugin">
+ 		<property name="rt1944.build.path" value="${build.dir}/plugins/${plugin.rt1944.dir.name}" />
+ 		<!-- Create necessary directories for the RT-1944 Plugin project -->
+@@ -1167,13 +1164,23 @@
+ 
+ 		<mkdir dir="${scripts.dir}/classes" />
+ 		<property name="checksum.path" value="${temp.dir}/dist/InstallPackage/" />
+-		<javac srcdir="${source.build}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" failonerror="false" includeantruntime="false" />
++		<javac srcdir="${source.build.dir}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" failonerror="false" includeantruntime="false" />
+ 		<java classname="${checksum.class}" classpathref="build.classpath" fork="true">
++			<arg value="false" />
++			<arg value="generate" />
++			<arg value="${checksums.file.path}" />
+ 			<arg value="${checksum.path}" />
+-			<arg value="${checksums.path}" />
+-			<arg value="false" />
+ 		</java>
+ 
++		<!-- Build CHECKSUM JAR -->
++		<antcall target="jar">
++			<param name="jar.app.name" value="mvcs-checksum" />
++			<param name="jar.main.class" value="${checksum.class}" />
++			<param name="jar.build.dir" value="${scripts.dir}/classes" />
++			<param name="jar.manifest.classpath" value="${build.classpath}" />
++			<param name="jar.path" value="${dist.dir}/mvcs-checksum.jar" />
++		</antcall>
++
+ 		<delete dir="${scripts.dir}/classes" />
+ 	</target>
+ 
+@@ -1312,21 +1319,21 @@
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+ 	</target>
+-    
+-    
+-    <target name="replace.webcontent.properties">
++
++
++	<target name="replace.webcontent.properties">
+ 		<replace file="${webcontent.dir}/nodeInfo.html">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+-        <replace file="${webcontent.dir}/tools.html">
++		<replace file="${webcontent.dir}/tools.html">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+-        <replace file="${webcontent.dir}/Content/Header.html">
++		<replace file="${webcontent.dir}/Content/Header.html">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+ 	</target>
+-    
+ 
++
+ 	<target name="replace.constants.properties">
+ 		<replace file="${application.constants.path}">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+Index: src/main/java/mil/navy/lcs/mvcs/common/build/ChecksumUtility.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/build/ChecksumUtility.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/build/ChecksumUtility.java	(working copy)
+@@ -0,0 +1,408 @@
++
++
++package mil.navy.lcs.mvcs.common.build;
++
++
++import java.io.BufferedReader;
++import java.io.BufferedWriter;
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileNotFoundException;
++import java.io.FileWriter;
++import java.io.IOException;
++import java.io.InputStream;
++import java.io.InputStreamReader;
++import java.io.StringReader;
++import java.security.MessageDigest;
++import java.util.HashMap;
++
++/**
++ * 
++ * This is an utility class to generate checksums and compare checksums.
++ *
++ */
++public class ChecksumUtility
++{
++
++   /** Denotes the directory name of install package. */
++   public static final String INSTALLPACKAGE_DIR = "InstallPackage";
++
++   private static final String DELIMITER = "- ";
++
++   private static boolean debug = false;
++
++   private static boolean generate = false;
++
++   private static String checksum_file = "mvcs-checksums.txt";
++
++   private static String target_dir = INSTALLPACKAGE_DIR;
++
++
++   /**
++    * The main method to generate checksums or verify checksums. If no argument is given, will
++    * attempt to verify using the default parameter values. <br>
++    * Defaults: debug == false, action == verify, checksum file == mvcs-checksums.txt, target
++    * directory path == InstallPackage.
++    * 
++    * @param args Expected arguments are debug, action[generate|verify], checksum file, and target
++    *           directory path.
++    */
++   public static void main(String[] args)
++   {
++      // Set target directory
++      if (args.length > 3)
++      {
++         target_dir = args[3];
++      }
++
++      // set checksum file
++      if (args.length > 2)
++      {
++         checksum_file = args[2];
++      }
++
++      // Generate or Verify
++      if (args.length > 1)
++      {
++         generate = args[1].equalsIgnoreCase("generate");
++      }
++
++      // Set debug
++      if (args.length > 0)
++      {
++         debug = Boolean.parseBoolean(args[0]);
++      }
++
++      System.out.println("\nDebug: " + debug);
++      System.out.println("Action: " + (generate ? "generate" : "verify"));
++      System.out.println("Checksum file: " + checksum_file);
++      System.out.println("Target directory: " + target_dir);
++
++
++      // target directory path
++      File targetDir = new File(target_dir);
++      if (!targetDir.exists() || !targetDir.isDirectory())
++      {
++         throw new RuntimeException("Path specified does NOT exist or is NOT a directory.");
++      }
++
++      // Verify checksums
++      if (!generate)
++      {
++         // read checksums from the text file
++         BufferedReader storedChksums;
++         try
++         {
++            System.out.println("\nReading the checksum file[" + checksum_file + "]...");
++            if (debug)
++            {
++               // read the file for display
++               storedChksums = readTextFile(checksum_file);
++               String li = null;
++               try
++               {
++                  while ((li = storedChksums.readLine()) != null)
++                  {
++                     System.out.println(li.toString());
++                  }
++               }
++               catch (IOException ignore)
++               {
++               }
++               System.out.println();
++            }
++
++            // read once more for a fresh buffer
++            storedChksums = readTextFile(checksum_file);
++         }
++         catch (FileNotFoundException e)
++         {
++            System.out.println("Error: " + e.getMessage());
++            throw new RuntimeException("File specified does NOT exist.");
++         }
++         
++         // generate checksums
++         StringBuffer generatedChksumsBuffer = new StringBuffer();
++         System.out.println("\nGenerating checksums from the directory[" + targetDir.getAbsolutePath() + "]...");
++         generateChecksums(targetDir.listFiles(), generatedChksumsBuffer);
++         if (debug)
++         {
++            System.out.println(generatedChksumsBuffer);
++            System.out.println();
++         }
++
++         // compare the two checksums
++         BufferedReader generatedChksums = new BufferedReader(new StringReader(generatedChksumsBuffer.toString()));
++         System.out.println("\nComparing newly generated checksums against the checksum file...");
++         boolean good = compareChksumsOfInstallPackage(storedChksums, generatedChksums);
++         System.out.println("\nChecksums found " + (good ? "GOOD" : "BAD!"));
++         // display the error message if checksums is not the same.
++         if (!good)
++         {
++            System.out.println("Corrupted data found, please re-build or re-copy the " + INSTALLPACKAGE_DIR);
++         }
++      }
++
++      // Generate checksums and store them in a file
++      else
++      {
++         if (new File(checksum_file).isFile())
++         {
++            new File(checksum_file).delete();
++         }
++         StringBuffer chksumBuffer = new StringBuffer();
++         System.out.println("Generating checksums from the directory[" + targetDir.getAbsolutePath() + "]...");
++         generateChecksums(targetDir.listFiles(), chksumBuffer);
++         System.out.println("Writing checksums in the file[" + checksum_file + "]...");
++         writeTextFile(checksum_file, chksumBuffer.toString());
++      }
++   }
++
++
++   /**
++    * To compare stored checksums against the generated checksums in every line. Ignore the path
++    * above InstallPackage directory.
++    * 
++    * @param stored the stored checksums
++    * @param generated the generated checksums
++    * @return true if the generated checksums satisfy every checksum entries in the stored
++    *         checksums.
++    */
++   public static boolean compareChksumsOfInstallPackage(BufferedReader stored, BufferedReader generated)
++   {
++      try
++      {
++         // The order of checksums may not be the same for the two buffers
++         // read the generated checksums into a hash
++         HashMap<String, String> generateChecksums = new HashMap<>();
++         String line = null;
++         while ((line = generated.readLine()) != null)
++         {
++            // index at the directory before the InstallPackage
++            int indexOfInstallPkg = line.indexOf(INSTALLPACKAGE_DIR);
++
++            // line without the directory called "InstallPackage"
++            if (indexOfInstallPkg == -1)
++               continue;
++
++            // ignore parent directories above the "InstallPackage"
++            line = line.substring(indexOfInstallPkg, line.length());
++
++            // split the line into path and checksum value
++            String[] pathAndChecksum = line.split(DELIMITER);
++            if (pathAndChecksum == null || pathAndChecksum.length != 2)
++               continue;
++
++            // store the checksum into a hash
++            generateChecksums.put(pathAndChecksum[0], pathAndChecksum[1].trim());
++
++         } // end of while
++
++         int lineNumber = 0;
++
++         // read line of the stored
++         while ((line = stored.readLine()) != null)
++         {
++            // increment line number
++            lineNumber++;
++
++            // index at the directory before the InstallPackage
++            int installPkgOne = line.indexOf(INSTALLPACKAGE_DIR);
++
++            // line without the directory called "InstallPackage"
++            if (installPkgOne == -1)
++               continue;
++
++            // ignore parent directories above the "InstallPackage"
++            line = line.substring(installPkgOne, line.length());
++
++            // split the line into path and checksum value
++            String[] pathAndChecksum = line.split(DELIMITER);
++            if (pathAndChecksum == null || pathAndChecksum.length != 2)
++               continue;
++
++            // retrieve generated checksum
++            String generatedChksum = generateChecksums.get(pathAndChecksum[0]);
++
++            // compare checksums
++            boolean match = pathAndChecksum[1].equals(generatedChksum);
++            if (!match)
++            {
++               System.out.println("Mismatch occurred! line #" + lineNumber);
++               System.out.println("File Name: " + pathAndChecksum[0]);
++               System.out.println("Stored   : " + pathAndChecksum[1]);
++               System.out.println("Generated: " + generatedChksum);
++               return false;
++            }
++         }
++         return true;
++      }
++      catch (IOException e)
++      {
++         System.out.println("Error reading: " + e.getMessage());
++         return false;
++      }
++   }
++
++
++   /**
++    * To generate checksums of the given files and files under all the sub-directories.
++    * 
++    * @param files the list of files and directories.
++    * @param sums the list of file paths plus generated checksums separated by "- "
++    */
++   public static void generateChecksums(File[] files, StringBuffer sums)
++   {
++      for (File f : files)
++      {
++         // directory
++         if (f.isDirectory())
++         {
++            // call self method again
++            generateChecksums(f.listFiles(), sums);
++         }
++
++         // file
++         else
++         {
++            try
++            {
++               // generate checksum and append it to the buffer
++               String sum = getMD5Checksum(f);
++               appendChecksum(f.getPath(), sum, sums);
++            }
++            catch (Exception e)
++            {
++               System.err.println("Error occurred while generating MD5 checksum for file [" + f.getPath() + "] " + e.getMessage());
++            }
++         }
++      }
++
++   }// end of the method
++
++
++   /**
++    * To append file path and checksum in string buffer. Extra characters "- " are added in between
++    * the file path and the checksum.
++    * 
++    * @param filePath the path to append
++    * @param checksum the checksum to append
++    * @param buffer the sting buffer
++    */
++   private static void appendChecksum(String filePath, String checksum, StringBuffer buffer)
++   {
++      buffer.append(filePath);
++      buffer.append(DELIMITER);
++      buffer.append(checksum);
++      buffer.append('\n');
++   }
++
++
++   /**
++    * To create MD5 checksum of given file
++    * 
++    * @param file the file to create a checksum with
++    * @return checksum the MD5 checksum
++    * @throws Exception
++    */
++   private static byte[] createMD5Checksum(File file) throws Exception
++   {
++      if (file != null && !file.exists())
++      {
++         System.err.println("File does not exist");
++      }
++
++      MessageDigest complete = null;
++      byte[] buffer = new byte[1024];
++      InputStream fileInput = new FileInputStream(file);
++
++      complete = MessageDigest.getInstance("MD5");
++      int numRead;
++      do
++      {
++         numRead = fileInput.read(buffer);
++         if (numRead > 0)
++         {
++            complete.update(buffer, 0, numRead);
++         }
++      }
++      while (numRead != -1);
++      fileInput.close();
++      return complete.digest();
++   }
++
++
++   /**
++    * To generate MD5 checksum of the given file
++    * 
++    * @param file the file
++    * @return the checksum value
++    * @throws Exception
++    */
++   public static String getMD5Checksum(File file) throws Exception
++   {
++      byte[] b = createMD5Checksum(file);
++      String result = "";
++      for (int i = 0; i < b.length; i++)
++      {
++         result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
++      }
++      return result;
++   }
++
++
++   /**
++    * This method is responsible for writing a String object to a File.
++    * 
++    * @param path File path to the destination File
++    * @param fileContent String to write to the File
++    */
++   public static final void writeTextFile(String path, String fileContent)
++   {
++      BufferedWriter bw = null;
++      if (debug)
++         System.out.println("\n\nContents of file:\n" + fileContent);
++      try
++      {
++         bw = new BufferedWriter(new FileWriter(path));
++         bw.write(fileContent);
++      }
++      catch (Exception ex)
++      {
++         System.err.println(ex);
++      }
++      finally
++      {
++         try
++         {
++            bw.flush();
++         }
++         catch (Exception ignore)
++         {
++         }
++         try
++         {
++            bw.close();
++         }
++         catch (Exception ignore)
++         {
++         }
++      }
++   }
++
++
++   /**
++    * To read the text file in to BufferedReader
++    * 
++    * @param path the path of a file
++    * @return BufferedReader object
++    * @throws FileNotFoundException
++    */
++   public static BufferedReader readTextFile(String path) throws FileNotFoundException
++   {
++      InputStream fileInput = new FileInputStream(path);
++      BufferedReader br = new BufferedReader(new InputStreamReader(fileInput));
++      return br;
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/common/build/TransformMission.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/build/TransformMission.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/build/TransformMission.java	(working copy)
+@@ -0,0 +1,117 @@
++
++
++package mil.navy.lcs.mvcs.common.build;
++
++
++import java.io.File;
++import java.io.InputStream;
++import java.util.HashMap;
++import java.util.Map;
++
++import mil.navy.lcs.mvcs.common.constants.AppConstants;
++import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
++import mil.navy.lcs.mvcs.common.utils.FileUtils;
++import mil.navy.lcs.mvcs.common.utils.XmlUtils;
++
++import org.w3c.dom.Node;
++import org.w3c.dom.NodeList;
++
++/**
++ * @author Kristopher Grove
++ * 
++ */
++public class TransformMission
++{
++   private static final String xpath = "mission/vehicle/id";
++   private static final String filePrefix = "default-mission-";
++
++
++   /**
++    * @param args
++    */
++   public static void main(String[] args)
++   {
++      if (args.length != 2)
++         throw new RuntimeException("The TransformMisison class requires two arguments: the destination directory and the ship mission path");
++
++      String shipMission = args[0];// Ship mission (must be absolute path)
++      String destDir = args[1];// destination directory for transformed missions
++      System.out.println("ARG[0] Ship Mission: " + shipMission);
++      System.out.println("ARG[1] Vehicle Missions Dir: " + destDir);
++      convertShipVehicles(shipMission, destDir);
++   }
++
++
++   /**
++    * This method is responsible for converting the Ship Mission configuration file to Vehicle
++    * Mission configuration files based on the Vehicles contained in the Mission.
++    * 
++    * @param shipMission Ship mission configuration file
++    * @param destDir Destination directory for the transformed Vehicle missions
++    */
++   private static void convertShipVehicles(final String shipMission, final String destDir)
++   {
++      System.out.println("Get content of Ship mission...");
++      String vehicleXslt = AppConstants.getConstant(AppConstantsEnum.MISSION_XSLT_PATH);
++      System.out.println("Vehicle Mission Transformation: " + vehicleXslt);
++      String xml = FileUtils.getFileContent(shipMission);
++      // System.out.println("Contents of Vehicle Mission XSLT: \n" + xml);
++
++      System.out.println("Get list of Vehicle IDs...");
++      NodeList nodeList = XmlUtils.evaluateXPathStatement(xpath, xml);
++      System.out.println("Number of Vehicle IDs found: " + nodeList.getLength());
++      String rootPath = destDir + "/" + filePrefix;
++      String fileExtension = ".xml";
++
++      int len = nodeList.getLength();
++      for (int i = 0; i < len; i++)
++      {
++         Node node = nodeList.item(i);
++         String vehicleId = node.getTextContent();
++         System.out.println("Vehicle ID: " + vehicleId);
++         String fileName = rootPath + (i + 1) + fileExtension;
++         System.out.println("Getting Vehicle Mission XML...");
++         String vehicleXml = getVehicleMissionFromShipConfig(shipMission, vehicleId, vehicleXslt);
++         // vehicleXml = vehicleXml.replaceFirst("default-mission.xml", fileName);
++         System.out.println("Writing Vehicle Mission XML to file (" + fileName + ")...");
++         FileUtils.writeTextFile(fileName, vehicleXml);
++         System.out.println("Vehicle Mission file created successfully.");
++      }
++      System.out.println("Finished generating Vehicle Mission files.");
++   }
++
++
++   /**
++    * This method is responsible for creating a Vehicle Mission config from a subset of the Ship
++    * Mission config. Using XPATH, the Ship and specific Vehicle are extracted from the current Ship
++    * Mission. These two are then used to create a new file that will serve as the new Vehicle
++    * Mission config.
++    * 
++    * @param configFilePath - Absolute (file) path to the Mission configuration file
++    * @param vehicleId - Unique identifier for a Vehicle
++    * @param vehicleXslt
++    * @return
++    */
++   public static String getVehicleMissionFromShipConfig(String configFilePath, String vehicleId, String vehicleXslt)
++   {
++      // System.out.println("configFilePath: " + configFilePath);
++      // System.out.println("vehicleId: " + vehicleId);
++      // System.out.println("vehicleXslt: " + vehicleXslt);
++      String xml = FileUtils.getFileContent(new File(configFilePath));
++      Map<String, String> paramMap = new HashMap<String, String>();
++      paramMap.put("vehicleId", vehicleId);
++      paramMap.put("date", XmlUtils.getISO8601DateTime());
++      String vehicleMission = null;
++      try
++      {
++         InputStream input = FileUtils.getStreamFromPath(vehicleXslt);
++         vehicleMission = XmlUtils.transformXMLWithParams(xml, input, paramMap);
++      }
++      catch (RuntimeException e)
++      {
++         System.err.println("Unable to build the Vehicle Mission config.  " + e);
++      }
++      return vehicleMission;
++   }
++
++}
+Index: src/main/test/mil/navy/lcs/mvcs/common/build/ChecksumFileContents.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/build/ChecksumFileContents.java	(revision 9894)
++++ src/main/test/mil/navy/lcs/mvcs/common/build/ChecksumFileContents.java	(nonexistent)
+@@ -1,197 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.common.build;
+-
+-
+-import java.io.BufferedWriter;
+-import java.io.File;
+-import java.io.FileInputStream;
+-import java.io.FileNotFoundException;
+-import java.io.FileWriter;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.security.MessageDigest;
+-
+-/**
+- * @author Kristopher Grove
+- * 
+- */
+-public class ChecksumFileContents
+-{
+-   private static boolean debug = false;
+-   private static StringBuffer sums;
+-
+-
+-   /**
+-    * @param args
+-    */
+-   public static void main(String[] args)
+-   {
+-      // TODO Auto-generated method stub
+-      if (args.length < 2 && args.length > 3)
+-      {
+-         throw new RuntimeException("Invalid arguments supplied");
+-      }
+-      File dir = new File(args[0]);
+-      if (!dir.exists() || !dir.isDirectory())
+-      {
+-         throw new RuntimeException("Path specified does NOT exist or is NOT a directory.");
+-      }
+-      String filePath = args[1];
+-      if (new File(filePath).isFile())
+-      {
+-         new File(filePath).delete();
+-      }
+-      if (args.length == 3)
+-      {
+-         debug = Boolean.parseBoolean(args[2]);
+-      }
+-      File[] files = dir.listFiles();
+-
+-      sums = new StringBuffer();
+-      handleFiles(files);
+-      writeTextFile(filePath, sums.toString());
+-   }
+-
+-
+-   /**
+-    * @param files
+-    */
+-   private static void handleFiles(File[] files)
+-   {
+-      for (File f : files)
+-      {
+-         if (f.isDirectory())
+-         {
+-            // System.out.println("Directory: " + f.getName());
+-            handleFiles(f.listFiles()); // Calls same method again.
+-         }
+-         else
+-         {
+-            if (debug)
+-               System.out.println("File: " + f.getName());
+-            String sum = null;
+-            try
+-            {
+-               sum = getMD5Checksum(f);
+-               appendChecksum(f.getAbsolutePath(), sum);
+-            }
+-            catch (Exception e)
+-            {
+-               System.err.println("Error occurred while doing an MD5 checksum for the file (" + f.getAbsolutePath() + ")\n");
+-               e.printStackTrace();
+-            }
+-         }
+-      }
+-   }
+-
+-
+-   /**
+-    * @param absolutePath
+-    * @param sum
+-    */
+-   private static void appendChecksum(String absolutePath, String sum)
+-   {
+-      sums.append(absolutePath);
+-      sums.append("- ");
+-      sums.append(sum);
+-      sums.append('\n');
+-   }
+-
+-
+-   /**
+-    * @param file
+-    * @return
+-    * @throws Exception
+-    */
+-   private static byte[] createChecksum(File file) throws Exception
+-   {
+-      if (file != null && !file.exists())
+-      {
+-         System.err.println("File does not exist");
+-      }
+-
+-      MessageDigest complete = null;
+-      byte[] buffer = new byte[1024];
+-      InputStream fileInput = new FileInputStream(file);
+-
+-      complete = MessageDigest.getInstance("MD5");
+-      int numRead;
+-      do
+-      {
+-         numRead = fileInput.read(buffer);
+-         if (numRead > 0)
+-         {
+-            complete.update(buffer, 0, numRead);
+-         }
+-      }
+-      while (numRead != -1);
+-      fileInput.close();
+-      return complete.digest();
+-   }
+-
+-
+-   /**
+-    * @param file
+-    * @return
+-    * @throws Exception
+-    */
+-   public static String getMD5Checksum(File file) throws Exception
+-   {
+-      byte[] b = createChecksum(file);
+-      String result = "";
+-      for (int i = 0; i < b.length; i++)
+-      {
+-         result += Integer.toString((b[i] & 0xff) + 0x100, 16).substring(1);
+-      }
+-      return result;
+-   }
+-
+-
+-   /**
+-    * This method is responsible for writing a String object to a File.
+-    * 
+-    * @param path File path to the destination File
+-    * @param fileContent String to write to the File
+-    */
+-   public static final void writeTextFile(String path, String fileContent)
+-   {
+-      BufferedWriter bw = null;
+-      if (debug)
+-         System.out.println("\n\nContents of file:\n" + fileContent);
+-      try
+-      {
+-         bw = new BufferedWriter(new FileWriter(path));
+-         bw.write(fileContent);
+-      }
+-      catch (FileNotFoundException ex)
+-      {
+-         System.err.println(ex);
+-      }
+-      catch (IOException ex)
+-      {
+-         System.err.println(ex);
+-      }
+-      catch (Exception ex)
+-      {
+-         System.err.println(ex);
+-      }
+-      finally
+-      {
+-         try
+-         {
+-            bw.flush();
+-         }
+-         catch (Exception ignore)
+-         {
+-         }
+-         try
+-         {
+-            bw.close();
+-         }
+-         catch (Exception ignore)
+-         {
+-         }
+-      }
+-   }
+-}
+Index: src/main/test/mil/navy/lcs/mvcs/common/build/TransformMission.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/build/TransformMission.java	(revision 9894)
++++ src/main/test/mil/navy/lcs/mvcs/common/build/TransformMission.java	(nonexistent)
+@@ -1,117 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.common.build;
+-
+-
+-import java.io.File;
+-import java.io.InputStream;
+-import java.util.HashMap;
+-import java.util.Map;
+-
+-import mil.navy.lcs.mvcs.common.constants.AppConstants;
+-import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
+-import mil.navy.lcs.mvcs.common.utils.FileUtils;
+-import mil.navy.lcs.mvcs.common.utils.XmlUtils;
+-
+-import org.w3c.dom.Node;
+-import org.w3c.dom.NodeList;
+-
+-/**
+- * @author Kristopher Grove
+- * 
+- */
+-public class TransformMission
+-{
+-   private static final String xpath = "mission/vehicle/id";
+-   private static final String filePrefix = "default-mission-";
+-
+-
+-   /**
+-    * @param args
+-    */
+-   public static void main(String[] args)
+-   {
+-      if (args.length != 2)
+-         throw new RuntimeException("The TransformMisison class requires two arguments: the destination directory and the ship mission path");
+-
+-      String shipMission = args[0];// Ship mission (must be absolute path)
+-      String destDir = args[1];// destination directory for transformed missions
+-      System.out.println("ARG[0] Ship Mission: " + shipMission);
+-      System.out.println("ARG[1] Vehicle Missions Dir: " + destDir);
+-      convertShipVehicles(shipMission, destDir);
+-   }
+-
+-
+-   /**
+-    * This method is responsible for converting the Ship Mission configuration file to Vehicle
+-    * Mission configuration files based on the Vehicles contained in the Mission.
+-    * 
+-    * @param shipMission Ship mission configuration file
+-    * @param destDir Destination directory for the transformed Vehicle missions
+-    */
+-   private static void convertShipVehicles(final String shipMission, final String destDir)
+-   {
+-      System.out.println("Get content of Ship mission...");
+-      String vehicleXslt = AppConstants.getConstant(AppConstantsEnum.MISSION_XSLT_PATH);
+-      System.out.println("Vehicle Mission Transformation: " + vehicleXslt);
+-      String xml = FileUtils.getFileContent(shipMission);
+-      // System.out.println("Contents of Vehicle Mission XSLT: \n" + xml);
+-
+-      System.out.println("Get list of Vehicle IDs...");
+-      NodeList nodeList = XmlUtils.evaluateXPathStatement(xpath, xml);
+-      System.out.println("Number of Vehicle IDs found: " + nodeList.getLength());
+-      String rootPath = destDir + "/" + filePrefix;
+-      String fileExtension = ".xml";
+-
+-      int len = nodeList.getLength();
+-      for (int i = 0; i < len; i++)
+-      {
+-         Node node = nodeList.item(i);
+-         String vehicleId = node.getTextContent();
+-         System.out.println("Vehicle ID: " + vehicleId);
+-         String fileName = rootPath + (i + 1) + fileExtension;
+-         System.out.println("Getting Vehicle Mission XML...");
+-         String vehicleXml = getVehicleMissionFromShipConfig(shipMission, vehicleId, vehicleXslt);
+-         // vehicleXml = vehicleXml.replaceFirst("default-mission.xml", fileName);
+-         System.out.println("Writing Vehicle Mission XML to file (" + fileName + ")...");
+-         FileUtils.writeTextFile(fileName, vehicleXml);
+-         System.out.println("Vehicle Mission file created successfully.");
+-      }
+-      System.out.println("Finished generating Vehicle Mission files.");
+-   }
+-
+-
+-   /**
+-    * This method is responsible for creating a Vehicle Mission config from a subset of the Ship
+-    * Mission config. Using XPATH, the Ship and specific Vehicle are extracted from the current Ship
+-    * Mission. These two are then used to create a new file that will serve as the new Vehicle
+-    * Mission config.
+-    * 
+-    * @param configFilePath - Absolute (file) path to the Mission configuration file
+-    * @param vehicleId - Unique identifier for a Vehicle
+-    * @param vehicleXslt
+-    * @return
+-    */
+-   public static String getVehicleMissionFromShipConfig(String configFilePath, String vehicleId, String vehicleXslt)
+-   {
+-      // System.out.println("configFilePath: " + configFilePath);
+-      // System.out.println("vehicleId: " + vehicleId);
+-      // System.out.println("vehicleXslt: " + vehicleXslt);
+-      String xml = FileUtils.getFileContent(new File(configFilePath));
+-      Map<String, String> paramMap = new HashMap<String, String>();
+-      paramMap.put("vehicleId", vehicleId);
+-      paramMap.put("date", XmlUtils.getISO8601DateTime());
+-      String vehicleMission = null;
+-      try
+-      {
+-         InputStream input = FileUtils.getStreamFromPath(vehicleXslt);
+-         vehicleMission = XmlUtils.transformXMLWithParams(xml, input, paramMap);
+-      }
+-      catch (RuntimeException e)
+-      {
+-         System.err.println("Unable to build the Vehicle Mission config.  " + e);
+-      }
+-      return vehicleMission;
+-   }
+-
+-}

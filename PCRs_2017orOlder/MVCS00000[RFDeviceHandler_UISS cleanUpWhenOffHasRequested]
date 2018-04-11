@@ -1,0 +1,114 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/dio/JniDigitalIO.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/dio/JniDigitalIO.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/dio/JniDigitalIO.java	(working copy)
+@@ -114,15 +114,9 @@
+       if (!isOpen)
+       {
+          value = _open();
+-      }
+-      else
+-      {
+-         LoggingManager.getPrimaryLogger().debug("Some error occured while trying to access the DIO. Good Luck!");
+-      }
+ 
+-      if (value < 0)
+-      {
+-         LoggingManager.getPrimaryLogger().debug("(ToggleOn)Jni returned a value <0 is the card already open? May need to close and reopen or just send the command");
++         if (value < 0)
++            LoggingManager.getPrimaryLogger().debug("(ToggleOn)Jni returned a value < 0 is the card already open? May need to close and reopen or just send the command.");
+       }
+ 
+       LoggingManager.getPrimaryLogger().debug("Setting line on Ballard: " + dio);
+@@ -140,15 +134,9 @@
+       if (!isOpen)
+       {
+          value = _open();
+-      }
+-      else
+-      {
+-         LoggingManager.getPrimaryLogger().debug("Some error occured while trying to access the DIO. Good Luck!");
+-      }
+ 
+-      if (value < 0)
+-      {
+-         LoggingManager.getPrimaryLogger().debug("(ToggleOff)Jni returned a value <0 is the card already open? May need to close and reopen or just send the command");
++         if (value < 0)
++            LoggingManager.getPrimaryLogger().debug("(ToggleOff)Jni returned a value < 0 is the card already open? May need to close and reopen or just send the command.");
+       }
+ 
+       LoggingManager.getPrimaryLogger().debug("Setting line off Ballard: " + dio);
+Index: src/main/java/mil/navy/lcs/mvcs/vca/rf/RfDeviceHandler_Uiss.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/rf/RfDeviceHandler_Uiss.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/rf/RfDeviceHandler_Uiss.java	(working copy)
+@@ -44,10 +44,7 @@
+    /** Alternate(L&R) Port(J2) of the LOS Radio */
+    private final int rt1944LR = prop.getInteger(UissRfSwitch.losRadioSwitchAlt);
+ 
+-   /** This is a digital line that controls the load port. **/
+-   private final int load = prop.getInteger(UissRfSwitch.swline);
+ 
+-
+    public RfDeviceHandler_Uiss( IDigitalIO digitalIO, IRadioSwitchHandler radioSwitchHandler)
+    {
+       this.digitalIO = digitalIO;
+@@ -77,13 +74,14 @@
+ 
+    private void setLosOutput(RFDevice device, RFOutput output, boolean on) throws IOException, IllegalRfModeException
+    {
++      // If directed to turn off, do nothing
++      if (!on)
++      {
++         LoggingManager.getPrimaryLogger().info("No action is taken when RF output(" + output.getOutputType().displayText + ") is requested OFF.");
++         return;
++      }
+ 
+-      // Need to indicated to the internal model that we powering off all RF Devices.
+-      device.getRfOutput(RFOutputType.LNR).setOutputting(false);
+-      device.getRfOutput(RFOutputType.MAIN).setOutputting(false);
+-      device.getRfOutput(RFOutputType.TEST).setOutputting(false);
+-
+-      if (!on || output.getOutputType() == RFOutputType.LNR)
++      if (output.getOutputType() == RFOutputType.LNR)
+       {
+          /* ********Very Important ** */
+          /*
+@@ -99,8 +97,10 @@
+          digitalIO.toggleLineOn(losLnr);
+ 
+          device.getRfOutput(RFOutputType.LNR).setOutputting(true);
++         device.getRfOutput(RFOutputType.MAIN).setOutputting(false);
++         device.getRfOutput(RFOutputType.TEST).setOutputting(false);
+ 
+-         // Switch path internal to radio (J1 - Alternate(L&R) Output)
++         // Switch path to radio J1 (J1 - Alternate(L&R/Test) Output)
+          radioSwitchHandler.switchToPath(rt1944LR);
+       }
+       else if (output.getOutputType() == RFOutputType.MAIN)
+@@ -120,9 +120,10 @@
+          digitalIO.toggleLineOn(losMain);
+ 
+          device.getRfOutput(RFOutputType.MAIN).setOutputting(true);
++         device.getRfOutput(RFOutputType.LNR).setOutputting(false);
++         device.getRfOutput(RFOutputType.TEST).setOutputting(false);
+ 
+-         // Switch path internal to radio (J2 - Main Output)
+-         // Radio J2 goes to RF switch for Main/Test Port
++         // Switch path to radio J2 (J2 - Main Output)
+          radioSwitchHandler.switchToPath(rt1944Main);
+       }
+       else if (output.getOutputType() == RFOutputType.TEST)
+@@ -142,9 +143,10 @@
+          digitalIO.toggleLineOn(losTestport);
+ 
+          device.getRfOutput(RFOutputType.TEST).setOutputting(true);
++         device.getRfOutput(RFOutputType.LNR).setOutputting(false);
++         device.getRfOutput(RFOutputType.MAIN).setOutputting(false);
+ 
+-         // Switch path internal to radio (J1 - Main Output)
+-         // Radio J1 goes to RF switch for Main/Test Port
++         // Switch path to radio J1 (J1 - Alternate(L&R/Test) Output)
+          radioSwitchHandler.switchToPath(rt1944LR);
+       }
+    }

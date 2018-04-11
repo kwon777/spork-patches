@@ -1,0 +1,52 @@
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(revision 9927)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(working copy)
+@@ -9,6 +9,7 @@
+ import java.util.Comparator;
+ import java.util.HashMap;
+ import java.util.Hashtable;
++import java.util.LinkedList;
+ import java.util.List;
+ import java.util.SortedMap;
+ import java.util.TreeMap;
+@@ -22,6 +23,7 @@
+ import com.google.common.collect.FluentIterable;
+ import com.google.common.collect.ImmutableList;
+ 
++import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
+ import mil.navy.lcs.mvcs.common.handler.IMvcsNodeHandler;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+@@ -29,6 +31,7 @@
+ import mil.navy.lcs.mvcs.iface.app.ExitAction;
+ import mil.navy.lcs.mvcs.iface.app.MvcsThreads;
+ import mil.navy.lcs.mvcs.iface.filter.IFilterDeviceHandler;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
+@@ -770,6 +773,23 @@
+     */
+    public void requestBitStart()
+    {
++      // TODO added for testing purpose
++      try
++      {
++         IEncryptorPlugin plugin = ScaEncryptorPluginManager.getInstance().getEncryptorPlugin(node.getFirstLinkByCommsType(CommsType.LOS).getLinkId());
++         LinkedList<String> ppkeys = (LinkedList<String>) plugin.getPreplacedKeyInfo();
++         logger.info("Encryptor[{} key info: size={}]", plugin.getIPAddress(), ppkeys.size());
++         for (int i = 0; i < ppkeys.size(); i++)
++         {
++            logger.info(ppkeys.get(i));
++         }
++      }
++      catch (Exception ex)
++      {
++         logger.error("Error: ", ex);
++      }
++
++
+       RadioComponentData radioData = new RadioComponentData(node);
+       Haf100ComponentData haf100Data = new Haf100ComponentData(node);
+       UpsComponentData upsData = new UpsComponentData(node);

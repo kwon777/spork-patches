@@ -1,0 +1,160 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-webgui
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9623)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -74,14 +74,14 @@
+ 	</div>
+ 	
+ 	<!-- hidden inline form -->
+-	<div class="hiddenForm" id="oth_testSettings">
++	<div class="hiddenForm" id="single_testSettings">
+ 		<div id="oth_testSettings_config_label"></div>
+ 		<h2>RF Test Port</h2>
+ 		<form action="" name="testConfigure">		
+ 			<button type="submit" class="configureBtn"
+-				onclick="submitRfOthTest(event, true);">Start</button>
++				onclick="submitSingleRfTest(event, true);">Start</button>
+ 			<button type="submit" class="configureBtn"
+-				onclick="submitRfOthTest(event, false);">Stop</button>
++				onclick="submitSingleRfTest(event, false);">Stop</button>
+ 			<input type="button" value="Close" onclick="$.fancybox.close()" />
+ 		</form>
+ 	</div>
+@@ -366,15 +366,22 @@
+ 											<!--  MVCS1597 No use button when link disconnected. -->
+ 										<button class="linkButton"
+ 											data-bind="click: requestLinkAction.bind($data, $parent, 'use'), visible: (status() == 'CONNECTED')">Use</button>
+-										<b data-bind="visible: commsType() == 'LOS'"> 
++										<b data-bind="visible: commsType() == 'LOS' && $parent.className() != 'UissNode' "> 
+ 										<a  class="linkButton rfTestportTestButton modalbox"
+ 											href="#testSettings"
+ 											data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
+ 										</a>
+ 										</b> 
++                                        <!-- MVCS1898 RF test for USV only equipped one test port -->
++                                        <b data-bind="visible: commsType() == 'LOS' && $parent.className() == 'UissNode' "> 
++                                        <a  class="linkButton rfTestportTestButton modalbox"
++                                          href="#single_testSettings"
++                                          data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
++                                        </a>
++                                        </b> 
+ 										<b data-bind="visible: commsType() == 'OTH'">
+ 										<a 	class="linkButton rfTestportTestButton modalbox"
+-											href="#oth_testSettings"
++											href="#single_testSettings"
+ 											data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button> </a>
+ 										</b>
+ 										<button class="linkButton disableButton"
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9623)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -583,7 +583,6 @@
+ 		}
+ 	}
+ 
+-
+ 	$.ajax({
+ 		url : 'RfTestPortSetting',
+ 		type : 'post',
+@@ -599,7 +598,7 @@
+ 	event.preventDefault();
+ };
+ 
+-var submitRfOthTest = function(event, startTesting) {
++var submitSingleRfTest = function(event, startTesting) {
+ 	var testValue = "TEST";
+ 	$.fancybox.close();
+ 
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java	(revision 9633)
++++ src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java	(working copy)
+@@ -933,7 +933,7 @@
+ 
+    /**
+     * To start the link testing over the test port. The radio must be testable over the test port.
+-    * It will select RF test port, power on the radio, and start heartbeats.
++    * It will select RF test port and power on the radio. Radio heartbeat is deprecated.
+     * 
+     * @param vehicleId - The vehicle ID.
+     * @param vehicleRadioName - The vehicle radio name.
+@@ -1011,11 +1011,12 @@
+             return false;
+          }
+ 
++         // Radio heartbeat is deprecated: Heartbeat is no longer being used in anywhere
+          // enable heart-beat for all QOS without sending a command.
+-         for (Integer qosNumber : vehicleRadio.getHeartbeatDataByQos().keySet())
+-         {
+-            enableHeartbeatMonitoring(vehicleId, vehicleRadioName, qosNumber, false);
+-         }
++         // for (Integer qosNumber : vehicleRadio.getHeartbeatDataByQos().keySet())
++         // {
++         // enableHeartbeatMonitoring(vehicleId, vehicleRadioName, qosNumber, false);
++         // }
+ 
+          // update the testing field in node.
+          vehicleRadio.setLinkTestingOverTestPort(true);
+@@ -1061,9 +1062,11 @@
+          // send command to vehicle.
+          ShipState.getVehicleNodeHandler(vehicleId).getMessageQueue().add(new LinkTestDisableMessage(vehicleRadioName));
+ 
++         // Radio heartbeat is deprecated: Heartbeat is no longer being used in anywhere
+          // disable heartbeat on all QOS without sending a command.
+-         for (Integer qosNumber : vehicleRadio.getHeartbeatDataByQos().keySet())
+-            disableHeartbeatMonitoring(vehicleId, vehicleRadioName, Integer.valueOf(qosNumber), false);
++         // for (Integer qosNumber : vehicleRadio.getHeartbeatDataByQos().keySet())
++         // disableHeartbeatMonitoring(vehicleId, vehicleRadioName, Integer.valueOf(qosNumber),
++         // false);
+       }
+       catch (Exception e)
+       {
+#P mvcs-vca
+Index: src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java	(revision 9633)
++++ src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java	(working copy)
+@@ -14,7 +14,6 @@
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.model.Link;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+-import mil.navy.lcs.mvcs.common.config.model.RadioCharacteristics;
+ import mil.navy.lcs.mvcs.common.config.model.Ship;
+ import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+@@ -1290,12 +1289,13 @@
+             LoggingManager.getPrimaryLogger().error("Error from plug-in " + radioName + ":", e);
+          }
+ 
+-         Link link = ConfigManager.getInstance().getVehicle().getLinkFromList(radioName);
+-         RadioCharacteristics radioCharacteristics = ConfigManager.getInstance().getRadioCharacteristicsByType(link.getLinkType());
+-
++         // Radio heartbeat is deprecated: Heartbeat is no longer being used in anywhere
++         // Link link = ConfigManager.getInstance().getVehicle().getLinkFromList(radioName);
++         // RadioCharacteristics radioCharacteristics =
++         // ConfigManager.getInstance().getRadioCharacteristicsByType(link.getLinkType());
+          // enable heartbeat on all QOS.
+-         for (String qosNumber : radioCharacteristics.getMapOfPriorities().keySet())
+-            enableHeartbeatMonitoring(radioName, Integer.valueOf(qosNumber));
++         // for (String qosNumber : radioCharacteristics.getMapOfPriorities().keySet())
++         // enableHeartbeatMonitoring(radioName, Integer.valueOf(qosNumber));
+ 
+          // update the testing field in node.
+          vehicleRadio.setLinkTestingOverTestPort(true);
+@@ -1328,9 +1328,10 @@
+ 
+       try
+       {
++         // Radio heartbeat is deprecated: Heartbeat is no longer being used in anywhere
+          // disable heartbeat on all QOS without sending SNMP.
+-         for (Integer qosNumber : vehicleRadio.getHeartbeatDataByQos().keySet())
+-            disableHeartbeatMonitoring(radioName, qosNumber);
++         // for (Integer qosNumber : vehicleRadio.getHeartbeatDataByQos().keySet())
++         // disableHeartbeatMonitoring(radioName, qosNumber);
+       }
+       catch (Exception e)
+       {

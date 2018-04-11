@@ -1,0 +1,21 @@
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java	(revision 9786)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java	(working copy)
+@@ -321,6 +321,7 @@
+    private boolean executeLoopback(String vehicleId, boolean up)
+    {
+       // NOTE: command is "ifup eth1:1" and "ifdown eth1:1"
++      // (2017/06/12) "ifdown" script has a bug on Redhat 6.8. Starting to use "ifconfig [if] down"
+ 
+       FrequencyMap freqMap = retrieveFirstFrequencyMap(vehicleId);
+ 
+@@ -335,7 +336,7 @@
+       }
+       else
+       {
+-         cmd = "ifdown " + cmd;
++         cmd = "ifconfig " + cmd + " down";
+       }
+ 
+       try

@@ -1,0 +1,45 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(revision 9946)
++++ src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(working copy)
+@@ -5,7 +5,7 @@
+ app_version_debug=${app_version}-@revision_number@
+ app_build_date=@app_build_date@
+ 
+-vessel_type=@vessel_type@
++vessel_type=VEHICLE
+ 
+ parent_dir=..
+ 
+#P mvcs-vca
+Index: .classpath
+===================================================================
+--- .classpath	(revision 9946)
++++ .classpath	(working copy)
+@@ -1,11 +1,13 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<classpath>
+-	<classpathentry kind="src" path="src/main/java"/>
+-	<classpathentry kind="src" path="src/main/resources"/>
+-	<classpathentry kind="src" path="src/main/developmentTests"/>
+-	<classpathentry kind="src" path="src/main/test"/>
+-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+-	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+-	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
+-	<classpathentry kind="output" path="bin"/>
+-</classpath>
++<?xml version="1.0" encoding="UTF-8"?>
++<classpath>
++	<classpathentry kind="src" path="src/main/java"/>
++	<classpathentry kind="src" path="src/main/resources"/>
++	<classpathentry kind="src" path="src/main/developmentTests"/>
++	<classpathentry kind="src" path="src/main/test"/>
++	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-rt1944"/>
++	<classpathentry kind="output" path="bin"/>
++</classpath>

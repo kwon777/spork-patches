@@ -1,0 +1,279 @@
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/config/ConfigManagerTest.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/config/ConfigManagerTest.java	(revision 9842)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/config/ConfigManagerTest.java	(working copy)
+@@ -15,6 +15,11 @@
+ import javax.xml.parsers.DocumentBuilderFactory;
+ import javax.xml.transform.TransformerException;
+ 
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Test;
++import org.w3c.dom.Document;
++
+ import junit.framework.Assert;
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+@@ -26,25 +31,13 @@
+ import mil.navy.lcs.mvcs.common.config.model.ShipConfig;
+ import mil.navy.lcs.mvcs.common.constants.AppConstants;
+ import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
+ import mil.navy.lcs.mvcs.common.utils.FileUtils;
+ import mil.navy.lcs.mvcs.common.utils.XmlUtils;
+ import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+ 
+-import org.junit.After;
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.w3c.dom.Document;
+-
+ /**
+- * ConfigManagerTest
++ * Unit test for ConfigManager class.
+  * 
+- * TODO {Purpose of This Class}
+- * 
+- * Id: $Id$ $LastChangedBy: /C=US/O=U.S.
+- * Government/OU=DoD/OU=PKI/OU=USN/CN=PARHAMI.SEPAND.1393132910 $ $LastChangedDate: 2013-02-01
+- * 14:46:14 -0600 (Fri, 01 Feb 2013) $ $LastChangedRevision$
+- * 
+  */
+ public class ConfigManagerTest extends ScaTestCase
+ {
+@@ -64,23 +57,20 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+ 
+ 
+-   @SuppressWarnings("static-access")
+    @After
+    public void tearDown()
+    {
+       try
+       {
+-         ConfigManager.getInstance().staticShutdown();
++         ConfigManager.staticShutdown();
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -89,7 +79,7 @@
+    // @Test
+    public void getEncryptionPassword()
+    {
+-      System.out.println("Encryption Password: " + MvcsConstants.privacyKey);
++      System.out.println("Encryption Password: " + AppConstants.loadPrivacyKey());
+       System.out.println("Decrypted Password: " + "thiswillneverwork");
+       System.out.println("Encrypted Password: " + ConfigManager.encryptString("thiswillneverwork"));
+    }
+@@ -109,7 +99,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -132,7 +121,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -151,7 +139,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -270,7 +257,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -330,7 +316,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+          Assert.fail(e.getMessage());
+       }
+@@ -347,7 +332,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+       configObj.setDateUpdated(new Date());
+@@ -359,7 +343,6 @@
+       }
+       catch (InvalidConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/db/DatabaseReadTest.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/db/DatabaseReadTest.java	(revision 9842)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/db/DatabaseReadTest.java	(working copy)
+@@ -5,17 +5,28 @@
+ 
+ import java.util.List;
+ 
+-import junit.framework.TestCase;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.db.DatabaseManager;
+ import mil.navy.lcs.mvcs.common.db.model.Route;
+ import mil.navy.lcs.mvcs.common.db.model.ShipInfo;
+ import mil.navy.lcs.mvcs.common.db.model.VehicleInfo;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+ 
+-import org.junit.Test;
+-
+-public class DatabaseReadTest extends TestCase
++public class DatabaseReadTest extends ScaTestCase
+ {
+ 
++   @Before
++   public void setUp() throws Exception
++   {
++
++   }
++
++
+    @Test
+    public void testReadRoute()
+    {
+@@ -22,6 +33,7 @@
+       List<Route> routes = DatabaseManager.getInstance().getRouteDao().findAll();
+       for (Route route : routes)
+       {
++         Assert.assertNotNull("Route is null!", route);
+          System.out.println(route);
+       }
+    }
+@@ -30,9 +42,10 @@
+    @Test
+    public void testReadShipInfo() throws Exception
+    {
+-      ShipInfo shipInfo = DatabaseManager.getInstance().getShipInfoDao().find("1111");
+-      // System.out.println("Warm start: " + shipInfo.isWarmStart());
+-      System.out.println("ShipInfo" + shipInfo);
++      ConfigManager cm = ConfigManager.getInstance();
++      ShipInfo shipInfo = DatabaseManager.getInstance().getShipInfoDao().find(cm.getShip().getId());
++      Assert.assertNotNull(shipInfo);
++      System.out.println("ShipInfo: " + shipInfo);
+    }
+ 
+ 
+@@ -39,7 +52,12 @@
+    @Test
+    public void testReadVehicleInfo() throws Exception
+    {
+-      VehicleInfo vehicleInfo = DatabaseManager.getInstance().getVehicleInfoDao().find("1234");
+-      System.out.println("VehicleInfo: " + vehicleInfo);
++      ConfigManager cm = ConfigManager.getInstance();
++      for (Vehicle veh : cm.getListOfVehicles())
++      {
++         VehicleInfo vehicleInfo = DatabaseManager.getInstance().getVehicleInfoDao().find(veh.getId());
++         Assert.assertNotNull(vehicleInfo);
++         System.out.println("VehicleInfo: " + vehicleInfo);
++      }
+    }
+ }
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/link/quality/ScaHeartbeatMonitorTest.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/link/quality/ScaHeartbeatMonitorTest.java	(revision 9842)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/link/quality/ScaHeartbeatMonitorTest.java	(working copy)
+@@ -3,11 +3,12 @@
+ package mil.navy.lcs.mvcs.sca.link.quality;
+ 
+ 
+-import junit.framework.TestCase;
++import junit.framework.Assert;
+ import mil.navy.lcs.mvcs.common.link.quality.HeartbeatMonitor;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+ 
+ 
+-public class ScaHeartbeatMonitorTest extends TestCase
++public class ScaHeartbeatMonitorTest extends ScaTestCase
+ {
+ 
+    public ScaHeartbeatMonitorTest()
+@@ -20,23 +21,23 @@
+    {
+       HeartbeatMonitor monitor = new ScaHeartbeatMonitor(null, null);
+ 
+-      assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 1);
+ 
+-      assertEquals("Enabled list size", 2, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 2, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-0", 0);
+ 
+-      assertEquals("Enabled list size", 3, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 3, monitor.getMonitoringEnabledKeys().size());
+ 
+    }
+ 
+@@ -47,19 +48,19 @@
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.disableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.disableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-0", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+    }
+ }

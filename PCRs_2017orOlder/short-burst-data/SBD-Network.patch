@@ -1,0 +1,337 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/network/NetworkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/network/NetworkManager.java	(revision 9592)
++++ src/main/java/mil/navy/lcs/mvcs/common/network/NetworkManager.java	(working copy)
+@@ -575,7 +575,7 @@
+ 
+       if (matchingRoutes.isEmpty())
+       {
+-         LoggingManager.getPrimaryLogger().error("No route found with the following track number: " + trackNumber);
++         LoggingManager.getPrimaryLogger().info("No route found with the following track number: " + trackNumber);
+ 
+          throw new NoSuchRouteException("None of the routes in the router had the track number of " + trackNumber + ".");
+       }
+@@ -679,9 +679,8 @@
+     * @return the List of Routes retrieved from the database with static info populated from the
+     *         router
+     * @throws RouterException If there a problem communicating with the router
+-    * @throws NoSuchRouteException If none of the routes in the router match the given track number
+     */
+-   protected List<Route> getRoutesFromDatabase() throws RouterException, NoSuchRouteException
++   protected List<Route> getRoutesFromDatabase() throws RouterException
+    {
+       List<Route> databaseRoutesPopulatedWithStaticInfo = new ArrayList<Route>();
+ 
+@@ -689,17 +688,25 @@
+       List<Route> databaseRoutes = DatabaseManager.getInstance().getRouteDao().findAll();
+ 
+       LoggingManager.getPrimaryLogger().info("Populating database routes with static info from router.");
++      // obtain the normal (track) routes from the startup configuration of the router
+       List<Route> defaultRoutes = this.getRoutes(RouteConfig.DEFAULT, RouteType.NORMAL);
+       for (Route databaseRoute : databaseRoutes)
+       {
+          LoggingManager.getPrimaryLogger().debug("Populating database route: " + databaseRoute);
+ 
+-         List<Route> routerRoutes = this.getRouteListByTrackNumber(databaseRoute.getTrackNumber(), defaultRoutes);
+-         for (Route routerRoute : routerRoutes)
++         try
+          {
+-            routerRoute.setAdminDistance(databaseRoute.getAdminDistance());
+-            databaseRoutesPopulatedWithStaticInfo.add(routerRoute);
++            List<Route> routerRoutes = this.getRouteListByTrackNumber(databaseRoute.getTrackNumber(), defaultRoutes);
++            for (Route routerRoute : routerRoutes)
++            {
++               routerRoute.setAdminDistance(databaseRoute.getAdminDistance());
++               databaseRoutesPopulatedWithStaticInfo.add(routerRoute);
++            }
+          }
++         catch (NoSuchRouteException e)
++         {
++            LoggingManager.getPrimaryLogger().info("No route found for the track number: " + databaseRoute.getTrackNumber() + " from the router's startup config.");
++         }
+       }
+ 
+       LoggingManager.getPrimaryLogger().debug("Populated routes from database and router:");
+#P mvcs-vca
+Index: src/main/java/mil/navy/lcs/mvcs/vca/network/VcaNetworkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/network/VcaNetworkManager.java	(revision 9592)
++++ src/main/java/mil/navy/lcs/mvcs/vca/network/VcaNetworkManager.java	(working copy)
+@@ -9,6 +9,8 @@
+ import java.util.List;
+ import java.util.Set;
+ 
++import com.ireasoning.protocol.TimeoutException;
++
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.model.AclEntry;
+@@ -28,8 +30,6 @@
+ import mil.navy.lcs.mvcs.vca.main.VehicleState;
+ import mil.navy.lcs.mvcs.vca.snmp.VcaSnmpManager;
+ 
+-import com.ireasoning.protocol.TimeoutException;
+-
+ /**
+  * Class for monitoring and configuring the router in the VCA.
+  * <p>
+@@ -67,7 +67,7 @@
+     * @throws TimeoutException If SNMP times out
+     * @throws IOException If there is a problem with SNMP or the syslog daemon
+     */
+-   private VcaNetworkManager() throws ConfigException, RouterException, NoSuchRouteException, TimeoutException, IOException
++   private VcaNetworkManager() throws ConfigException, RouterException, TimeoutException, IOException
+    {
+       super();
+ 
+@@ -136,7 +136,7 @@
+                   }
+                }
+             }.start();
+-         }// end of for (routes)
++         } // end of for (routes)
+ 
+          LoggingManager.getPrimaryLogger().info("Creating access control lists in the router.");
+          List<AclEntry> aclEntryList = vehicle.getListOfAclEntries();
+@@ -253,10 +253,9 @@
+     * distance of each route in the router.
+     * 
+     * @throws RouterException If there a problem communicating with the router
+-    * @throws NoSuchRouteException If none of the routes in the router match the given track number
+     * @throws ConfigException If there is a problem reading a configuration file
+     */
+-   public void resetRoutePrioritiesToDefault() throws RouterException, NoSuchRouteException, ConfigException
++   public void resetRoutePrioritiesToDefault() throws RouterException, ConfigException
+    {
+       LoggingManager.getPrimaryLogger().info("Resetting route priorities to default.");
+ 
+@@ -282,13 +281,6 @@
+ 
+             throw exception;
+          }
+-         catch (NoSuchRouteException exception)
+-         {
+-            this.setConfiguredSuccessful(false);
+-            this.fireNoSuchRouteAlert();
+-
+-            throw exception;
+-         }
+       }
+    }
+ 
+@@ -505,7 +497,7 @@
+    }
+ 
+ 
+-   private List<Route> extractRoutesFromConfigManager() throws ConfigException, RouterException, NoSuchRouteException
++   private List<Route> extractRoutesFromConfigManager() throws ConfigException, RouterException
+    {
+       LoggingManager.getPrimaryLogger().info("Extracting routes from Config Manager.");
+       List<Route> extractedRoutes = new ArrayList<Route>();
+@@ -512,6 +504,7 @@
+ 
+       Vehicle vehicle = ConfigManager.getInstance().getVehicle();
+       List<Link> links = vehicle.getListOfLinks();
++      // obtain the normal (track) routes from the startup configuration of the router
+       List<Route> defaultRoutes = this.getRoutes(RouteConfig.DEFAULT, RouteType.NORMAL);
+ 
+       for (Link link : links)
+@@ -518,12 +511,19 @@
+       {
+          int trackNumber = Route.deriveTrackNumber(Integer.parseInt(vehicle.getId()), link.getLinkNumber());
+ 
+-         List<Route> routerRoutes = this.getRouteListByTrackNumber(trackNumber, defaultRoutes);
+-         for (Route routerRoute : routerRoutes)
++         try
+          {
+-            routerRoute.setAdminDistanceByLinkPriority(link.getPriority());
+-            extractedRoutes.add(routerRoute);
++            List<Route> routerRoutes = this.getRouteListByTrackNumber(trackNumber, defaultRoutes);
++            for (Route routerRoute : routerRoutes)
++            {
++               routerRoute.setAdminDistanceByLinkPriority(link.getPriority());
++               extractedRoutes.add(routerRoute);
++            }
+          }
++         catch (NoSuchRouteException e)
++         {
++            LoggingManager.getPrimaryLogger().info("No route found for the track number: " + trackNumber + " from the router's startup config.");
++         }
+       }
+ 
+ 
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/network/ScaNetworkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/network/ScaNetworkManager.java	(revision 9592)
++++ src/main/java/mil/navy/lcs/mvcs/sca/network/ScaNetworkManager.java	(working copy)
+@@ -14,6 +14,8 @@
+ import java.util.Set;
+ import java.util.Vector;
+ 
++import com.ireasoning.protocol.TimeoutException;
++
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.model.AclEntry;
+@@ -38,8 +40,6 @@
+ import mil.navy.lcs.mvcs.sca.radios.ScaRadioPluginsManager;
+ import mil.navy.lcs.mvcs.sca.snmp.ScaSnmpManager;
+ 
+-import com.ireasoning.protocol.TimeoutException;
+-
+ /**
+  * Class for monitoring and configuring the router in the SCA.
+  */
+@@ -103,7 +103,7 @@
+     * @throws TimeoutException If SNMP times out
+     * @throws IOException If there is a problem with SNMP or the syslog daemon
+     */
+-   private ScaNetworkManager() throws ConfigException, RouterException, NoSuchRouteException, TimeoutException, IOException
++   private ScaNetworkManager() throws ConfigException, RouterException, TimeoutException, IOException
+    {
+       super();
+ 
+@@ -361,10 +361,9 @@
+     * 
+     * @param vehicleId The ID of the vehicle that needs its routes reset
+     * @throws RouterException If there a problem communicating with the router
+-    * @throws NoSuchRouteException If none of the routes in the router match the given track number
+     * @throws ConfigException If there is a problem reading a configuration file
+     */
+-   public void resetRoutePrioritiesToDefault(String vehicleId) throws RouterException, NoSuchRouteException, ConfigException
++   public void resetRoutePrioritiesToDefault(String vehicleId) throws RouterException, ConfigException
+    {
+       LoggingManager.getPrimaryLogger().info("Resetting route priorities to default: " + vehicleId);
+ 
+@@ -393,13 +392,6 @@
+ 
+             throw exception;
+          }
+-         catch (NoSuchRouteException exception)
+-         {
+-            this.setConfiguredSuccessful(false);
+-            this.fireNoSuchRouteAlert();
+-
+-            throw exception;
+-         }
+       }
+    }
+ 
+@@ -669,7 +661,7 @@
+    }
+ 
+ 
+-   private List<Route> extractRoutesFromConfigManager() throws ConfigException, RouterException, NoSuchRouteException
++   private List<Route> extractRoutesFromConfigManager() throws ConfigException, RouterException
+    {
+       return this.extractRoutesFromConfigManager(null);
+    }
+@@ -678,12 +670,13 @@
+    /*
+     * Pass in a null vehicleId to extract routes from every vehicle in the config.
+     */
+-   private List<Route> extractRoutesFromConfigManager(String vehicleId) throws ConfigException, RouterException, NoSuchRouteException
++   private List<Route> extractRoutesFromConfigManager(String vehicleId) throws ConfigException, RouterException
+    {
+       LoggingManager.getPrimaryLogger().info("Extracting routes from Config Manager.");
+       List<Route> extractedRoutes = new ArrayList<Route>();
+ 
+       List<Vehicle> vehicles = ConfigManager.getInstance().getListOfVehicles();
++      // obtain the normal (track) routes from the startup configuration of the router
+       List<Route> defaultRoutes = this.getRoutes(RouteConfig.DEFAULT, RouteType.NORMAL);
+ 
+       for (Vehicle vehicle : vehicles)
+@@ -698,12 +691,19 @@
+                int linkNumber = link.getLinkNumber();
+                int trackNumber = Route.deriveTrackNumber(vehicleNumber, linkNumber);
+ 
+-               List<Route> routerRoutes = this.getRouteListByTrackNumber(trackNumber, defaultRoutes);
+-               for (Route routerRoute : routerRoutes)
++               try
+                {
+-                  routerRoute.setAdminDistanceByLinkPriority(link.getPriority());
+-                  extractedRoutes.add(routerRoute);
++                  List<Route> routerRoutes = this.getRouteListByTrackNumber(trackNumber, defaultRoutes);
++                  for (Route routerRoute : routerRoutes)
++                  {
++                     routerRoute.setAdminDistanceByLinkPriority(link.getPriority());
++                     extractedRoutes.add(routerRoute);
++                  }
+                }
++               catch (NoSuchRouteException e)
++               {
++                  LoggingManager.getPrimaryLogger().info("No route found for the track number: " + trackNumber + " from the router's startup config.");
++               }
+             }
+          }
+       }
+@@ -762,52 +762,12 @@
+       // creating Set from Route List because Node Manager does not contain multiple routes that map
+       // to the same radio
+       // Set<Route> currentRouteSet = new HashSet<Route>(currentRouteList);
+-
++      // 
+       this.setLinkConnected(routeList.get(0), status == RouteStatus.UP);
+       // this.setActiveLink(currentRouteSet, Route.deriveVesselNumber(trackNumber));
+    }
+ 
+ 
+-   // private void setActiveLink(Set<Route> routes, int vehicleNumber) throws ConfigException
+-   // {
+-   // VehicleNode vehicleNode = null;
+-   //
+-   // // Creating a sorted list because active link should be the highest priority link that is
+-   // // connected
+-   // List<Route> sortedRoutes = new ArrayList<Route>(routes);
+-   // Collections.sort(sortedRoutes, new AdminDistanceComparator());
+-   //
+-   // for (Route route : sortedRoutes)
+-   // {
+-   // if (route.deriveVesselNumber() == vehicleNumber)
+-   // {
+-   // try
+-   // {
+-   // LinkModel link = this.extractLinkFromNodeManager(route);
+-   // vehicleNode = ShipState.model.getVehicle(link.getNodeId());
+-   //
+-   // if (link.isConnected())
+-   // {
+-   // LoggingManager.getPrimaryLogger().info("Setting active link: " + vehicleNode.getNodeId() + " "
+-   // + link.getLinkId());
+-   // vehicleNode.setVehicleLink(link);
+-   //
+-   // return;
+-   // }
+-   // }
+-   // catch (IllegalArgumentException iae)
+-   // {
+-   // LoggingManager.getPrimaryLogger().warn("Warning,", iae);
+-   // }
+-   // }
+-   // }
+-   //
+-   // LoggingManager.getPrimaryLogger().info("Setting active link: " + vehicleNode.getNodeId() +
+-   // " no active link");
+-   // vehicleNode.setActiveLink("");
+-   // }
+-
+-
+    private void setLinkConnected(Route route, boolean connected) throws ConfigException
+    {
+       try
+@@ -817,12 +777,6 @@
+          LoggingManager.getPrimaryLogger().info("Setting connected state for link: " + link.getLinkId() + " " + connected);
+          link.setConnected(connected);
+ 
+-         // int vehicleNumber = Route.deriveVesselNumber(route.getTrackNumber());
+-         // int linkNumber = Route.deriveLinkNumber(route.getTrackNumber());
+-         //
+-         // VehicleNode vehicle = ShipState.model.getVehicleByNumber(vehicleNumber);
+-         // vehicle.getLinkByNumber(linkNumber).setConnected(connected);
+-         // vehicle.updateLinkStatus();
+       }
+       catch (IllegalArgumentException lae)
+       {

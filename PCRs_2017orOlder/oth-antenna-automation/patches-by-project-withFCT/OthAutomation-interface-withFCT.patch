@@ -1,0 +1,136 @@
+Index: src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java	(working copy)
+@@ -105,4 +105,15 @@
+     * @throws RemoteException
+     */
+    void requestAmpAntenna(String nodeId, String linkId, String outputId, String antennaId, boolean active) throws RemoteException;
++
++
++   /**
++    * 
++    * Request the OTH antenna override (manual) mode.
++    * 
++    * @param linkId - the OTH radio ID
++    * @param manual - manual if true
++    * @throws RemoteException
++    */
++   void requestOthAntennaOverride(String linkId, boolean manual) throws RemoteException;
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(working copy)
+@@ -49,6 +49,9 @@
+ 
+    private final RFDevice rfDevice;
+ 
++   /** Denotes manual antenna override mode. */
++   private boolean antennaOverride = false;
++
+    /** Denotes requested frequency */
+    private int requestedFrequency = -1;
+ 
+@@ -207,4 +210,25 @@
+       return this.frequencyList;
+    }
+ 
++
++   /**
++    * To get antenna override mode.
++    * 
++    * @return true for manual, false for automatic mode. Defaults to false (automatic mode).
++    */
++   public boolean isAntennaOverride()
++   {
++      return this.antennaOverride;
++   }
++
++
++   /**
++    * To set antenna override mode. TRUE = manual, FALSE = automatic
++    * 
++    * @param manualMode - manual override mode to set.
++    */
++   public void setAntennaOverride(boolean manualMode)
++   {
++      this.antennaOverride = manualMode;
++   }
+ }
+\ No newline at end of file
+Index: src/main/java/mil/navy/lcs/mvcs/iface/rf/Antenna.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/rf/Antenna.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/iface/rf/Antenna.java	(working copy)
+@@ -17,7 +17,7 @@
+    PORT("Port"), // left side
+    STBD("StarBoard"); // right side
+ 
+-   /** String representation of the OTH amplifier values.  */
++   /** String representation of the OTH amplifier values. */
+    public final String displayText;
+ 
+ 
+@@ -30,4 +30,22 @@
+    {
+       this.displayText = displayText;
+    }
++
++
++   /**
++    * To get antenna using the given string (Case Insensitive).
++    * 
++    * @param antenna the antenna starts with "POR" or "ST"
++    * @return PORT antenna if given string starts with "POR". STBD antenna if given string starts
++    *         with "ST". Otherwise NA antenna.
++    */
++   public static Antenna getAntenna(String antenna)
++   {
++      if (antenna != null && antenna.toUpperCase().contains("POR"))
++         return Antenna.PORT;
++      else if (antenna != null && antenna.toUpperCase().contains("ST"))
++         return Antenna.STBD;
++      else
++         return Antenna.NA;
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/iface/rf/IRfAmpDeviceHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/rf/IRfAmpDeviceHandler.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/iface/rf/IRfAmpDeviceHandler.java	(working copy)
+@@ -17,6 +17,9 @@
+ public interface IRfAmpDeviceHandler extends IHardwareStatus<RFDevice>
+ {
+    /**
++    * To get the currently used antenna from the controller (HARDWARE). This may block for few
++    * seconds.
++    * 
+     * @return The antenna of the RF device.
+     */
+    Antenna getCurrentAntenna();
+@@ -23,19 +26,13 @@
+ 
+ 
+    /**
+-    * Sets the amplifier to the requested antenna.
++    * Sets the amplifier to the requested antenna. This may block for few seconds. Update the device
++    * upon successful change.
+     * 
+-    * @param selectedAntenna
+-    * @param output
++    * @param selectedAntenna - The antenna selected
++    * @param device - The RF device to update upon change
+     * @return if the antenna was successfully selected.
+     */
+-   boolean setCurrentAntenna(Antenna selectedAntenna);
++   boolean setCurrentAntenna(RFDevice device, Antenna selectedAntenna);
+ 
+-
+-   /**
+-    * Used by calling class to update the RFOutput
+-    * 
+-    * @param device
+-    */
+-   void updateOutput(RFDevice device);
+ }

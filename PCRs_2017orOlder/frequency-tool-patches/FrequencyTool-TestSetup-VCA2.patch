@@ -1,0 +1,237 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml	(revision 9513)
++++ src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml	(working copy)
+@@ -153,7 +153,7 @@
+       <maxAllowableTimeForManualPathSwitchInSec>180
+       </maxAllowableTimeForManualPathSwitchInSec>
+       <plugin></plugin>
+-      <heartbeatPort></heartbeatPort>
++      <heartbeatPort>0</heartbeatPort>
+       <priority>
+          <number>0</number>
+          <properties>
+@@ -181,7 +181,7 @@
+       <maxAllowableTimeForManualPathSwitchInSec>180
+       </maxAllowableTimeForManualPathSwitchInSec>
+       <plugin></plugin>
+-      <heartbeatPort></heartbeatPort>
++      <heartbeatPort>0</heartbeatPort>
+       <priority>
+          <number>0</number>
+          <properties>
+Index: src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(revision 9513)
++++ src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(working copy)
+@@ -5,7 +5,7 @@
+ app_version_debug=${app_version}-@revision_number@
+ app_build_date=@app_build_date@
+ 
+-vessel_type=@vessel_type@
++vessel_type=VEHICLE
+ 
+ # database settings
+ datasource_driver=org.hsqldb.jdbcDriver
+#P mvcs-vca
+Index: .classpath
+===================================================================
+--- .classpath	(revision 9513)
++++ .classpath	(working copy)
+@@ -7,5 +7,8 @@
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-prc117"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-rt1944"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
+ 	<classpathentry kind="output" path="bin"/>
+ </classpath>
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9513)
++++ configs/mission.xsd	(working copy)
+@@ -30,8 +30,8 @@
+ 			<xs:element name="snmpAgentPort" type="Port" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="snmpTrapPort" type="Port" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="networkTimeout" type="inttype" minOccurs="1" maxOccurs="1" />
+-			<xs:element name="crossDomain" type="crossdomain_type" minOccurs="1" />
+-         	<xs:element name="othAmpController" type="othamp_type" minOccurs="1" />
++			<xs:element name="crossDomain" type="crossdomain_type" minOccurs="0" />
++         	<xs:element name="othAmpController" type="othamp_type" minOccurs="0" />
+ 			<xs:element name="radio" type="shipRadioType" maxOccurs="unbounded" />
+ 			<xs:element name="snmp" type="snmp_type" minOccurs="1" maxOccurs="1" />
+ 		</xs:sequence>
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9513)
++++ missions/default-mission.xml	(working copy)
+@@ -9,6 +9,7 @@
+ 	<dateCreated>2009-08-26T14:32:00-06:00</dateCreated>
+ 	<ship>
+ 		<id>100</id>
++      	<name>LCS1</name>
+ 		<typeId>lcs1</typeId>
+ 		<type>LCS</type>
+ 		<ipAddress>172.20.10.2</ipAddress>
+@@ -38,25 +39,25 @@
+ 		</snmp>
+ 	</ship>
+ 	<vehicle>
+-		<id>1</id>
++		<id>2</id>
+ 		<name>RMMV1</name>
+ 		<typeId>rmv</typeId>
+ 		<type>RMV</type>
+-		<ipAddress>172.20.11.2</ipAddress>
++		<ipAddress>172.20.12.2</ipAddress>
+ 		<snmpAgentPort>1560</snmpAgentPort>
+-		<mpsName>RMV1</mpsName>
++		<mpsName>RMV2</mpsName>
+ 		<networkTimeout>300</networkTimeout><!-- Units in seconds -->
+ 		<depthLimit>30.5</depthLimit>
+       <crossDomain>
+          <name>HAF100</name>
+-         <ipAddress>172.20.11.3</ipAddress>
++         <ipAddress>172.20.12.3</ipAddress>
+       </crossDomain>
+ 		<router>
+-			<id>router-45</id>
++			<id>router-55</id>
+ 			<typeId>router</typeId>
+ 			<type>Router</type>
+-			<testing>false</testing>
+-			<ipAddress>172.20.11.1</ipAddress>
++			<testing>true</testing>
++			<ipAddress>172.20.12.1</ipAddress>
+ 			<connectionType>SSH</connectionType>
+ 			<connectionPort>22</connectionPort>
+ 			<serialPort>/dev/ttyM0</serialPort>
+@@ -64,7 +65,7 @@
+ 			<lanBypassEthernetPortName>FastEthernet0/1</lanBypassEthernetPortName>
+ 		</router>
+ 		<lanBypass>
+-			<id>lanbypass-1</id>
++			<id>lanbypass-2</id>
+ 			<typeId>lanbypass</typeId>
+ 			<linkType>LAN Bypass</linkType>
+ 			<linkNumber>1</linkNumber>
+@@ -72,7 +73,7 @@
+ 			<networkId>1</networkId>
+ 		</lanBypass>
+ 		<radio>
+-			<id>rt1944-1</id>
++			<id>rt1944-2</id>
+ 			<typeId>rt1944</typeId>
+ 			<linkType>RT-1944</linkType>
+ 			<linkNumber>2</linkNumber>
+@@ -91,11 +92,11 @@
+ 			<lrRange>50</lrRange>
+ 			<lrLowerGuardLine>2</lrLowerGuardLine>
+ 			<slaTimeout>10</slaTimeout>
+-			<snmpAgentIpAddress>172.20.11.3</snmpAgentIpAddress>
++			<snmpAgentIpAddress>172.20.12.3</snmpAgentIpAddress>
+ 			<snmpAgentPortNumber>5001</snmpAgentPortNumber>
+ 		</radio>
+ 		<radio>
+-			<id>prc117-1</id>
++			<id>prc117-2</id>
+ 			<typeId>prc117</typeId>
+ 			<linkType>PRC-117</linkType>
+ 			<linkNumber>4</linkNumber>
+@@ -114,31 +115,31 @@
+ 			<lrLowerGuardLine>2</lrLowerGuardLine>
+ 			<slaTimeout>10</slaTimeout>
+ 			<frequencyNetRange>1-4</frequencyNetRange>
+-			<snmpAgentIpAddress>172.20.11.2</snmpAgentIpAddress>
++			<snmpAgentIpAddress>172.20.12.2</snmpAgentIpAddress>
+ 			<snmpAgentPortNumber>5161</snmpAgentPortNumber>
+ 			<loopback>lo:1</loopback>
+ 			<channel id="1">
+-				<frequency>31000000</frequency>
++				<frequency>33000000</frequency>
+ 			</channel>
+ 			<channel id="2">
+-				<frequency>32000000</frequency>
++				<frequency>34000000</frequency>
+ 			</channel>
+ 		</radio>
+ 		<matrixSwitch>
+-			<id>ms-10</id>
++			<id>ms-20</id>
+ 			<typeId>ms</typeId>
+ 			<type>Matrix Switch</type>
+-			<testing>false</testing>
+-			<serialPort>172.20.11.3</serialPort>
++			<testing>true</testing>
++			<serialPort>172.20.12.3</serialPort>
+ 			<currentMode>dummy</currentMode>
+-			<radioId>rt1944-1</radioId>
+-			<radioId>prc117-1</radioId>
++			<radioId>rt1944-2</radioId>
++			<radioId>prc117-2</radioId>
+ 		</matrixSwitch>
+ 		<power>
+-			<id>power-1</id>
++			<id>power-2</id>
+ 			<typeId>psu</typeId>
+ 			<type>Power Supply</type>
+-			<testing>false</testing>
++			<testing>true</testing>
+ 			<voltage>28</voltage>
+ 			<serialPort>/dev/ttyS1</serialPort>
+ 			<reverseLogicAdapter>true</reverseLogicAdapter>
+@@ -153,12 +154,12 @@
+ 				<devName>RT-1944 Amplifier</devName>
+ 			</circuitBreaker>
+ 			<circuitBreaker>
+-				<id>rt1944-1</id>
++				<id>rt1944-2</id>
+ 				<devNumber>1</devNumber>
+ 				<devName>RT-1944</devName>
+ 			</circuitBreaker>
+ 			<circuitBreaker>
+-				<id>prc117-1</id>
++				<id>prc117-2</id>
+ 				<devNumber>2</devNumber>
+ 				<devName>PRC-117</devName>
+ 			</circuitBreaker>
+#P mvcs-rim-prc117f
+Index: configs/prc117Rim.configuration.xml
+===================================================================
+--- configs/prc117Rim.configuration.xml	(nonexistent)
++++ configs/prc117Rim.configuration.xml	(working copy)
+@@ -0,0 +1,30 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<Prc117RimProperties>
++	<log-level>DEBUG</log-level>
++	<log-file-directory></log-file-directory>
++	<mvcsIpAddress>172.20.12.2</mvcsIpAddress>
++	<udpPort>0</udpPort>
++	<snmpPort>1460</snmpPort>
++	<trapPort>1462</trapPort>
++	<snmpV2CommunityWriteString>mvcs</snmpV2CommunityWriteString>
++	<snmpV2CommunityReadString>mvcs</snmpV2CommunityReadString>
++	<snmpVersion>3</snmpVersion>
++	<snmpV3AuthProtocol>MD5</snmpV3AuthProtocol>
++	<snmpV3PrivProtocol>AES</snmpV3PrivProtocol>
++	<snmpV3UserName>mvcssrv</snmpV3UserName>
++	<snmpV3AuthPassword>ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)
++	</snmpV3AuthPassword>
++	<snmpv3PrivPassword>ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)
++	</snmpv3PrivPassword>
++	<snmpOidPrefix>
++		.1.3.6.1.4.1.15001.1
++	</snmpOidPrefix>
++	<dliIpAddress>172.20.10.2</dliIpAddress>
++	<dliIpPort>7000</dliIpPort>
++	<dlcIpAddress>127.0.0.1</dlcIpAddress>
++	<dlcIpPort>4099</dlcIpPort>
++	<frequencyMap frequency="34000000" vehicleId="RMMV2" loopbackIf="lo:2" />
++	<frequencyMap frequency="32000000" vehicleId="RMMV1" loopbackIf="lo:1" />
++	<frequencyMap frequency="33000000" vehicleId="RMMV2" loopbackIf="lo:2" />
++	<frequencyMap frequency="31000000" vehicleId="RMMV1" loopbackIf="lo:1" />
++</Prc117RimProperties>
+\ No newline at end of file

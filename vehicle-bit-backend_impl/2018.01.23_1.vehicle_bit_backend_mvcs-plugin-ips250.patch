@@ -1,0 +1,67 @@
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java	(revision 9934)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java	(working copy)
+@@ -6,16 +6,16 @@
+ import java.io.IOException;
+ import java.util.LinkedList;
+ 
++import com.ireasoning.protocol.TimeoutException;
++import com.ireasoning.protocol.snmp.SnmpDataType;
++import com.ireasoning.protocol.snmp.SnmpTableModel;
++import com.ireasoning.protocol.snmp.SnmpVarBind;
++
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
+ import mil.navy.lcs.mvcs.ips250plugin.constants.ConstantValues;
+ import mil.navy.lcs.mvcs.ips250plugin.snmp.SNMPOperations;
+ 
+-import com.ireasoning.protocol.TimeoutException;
+-import com.ireasoning.protocol.snmp.SnmpDataType;
+-import com.ireasoning.protocol.snmp.SnmpTableModel;
+-import com.ireasoning.protocol.snmp.SnmpVarBind;
+-
+ /**
+  * This class is responsible of handle commands to IPS-250 device.
+  */
+@@ -90,9 +90,10 @@
+     */
+    public LinkedList<String> getKeyStatus(String ipAddress) throws IOException
+    {
+-      String tableName = "hPreplacedKeyTable";
+-      SnmpTableModel table = SNMPOperations.getInstance().getTable(tableName, ipAddress);
+-      return processTable(table);
++      // String tableName = "hPreplacedKeyTable";
++      // SnmpTableModel table = SNMPOperations.getInstance().(tableName, ipAddress);
++      int port = ConfigManager.getInstance().getRadioSelected().getPort();
++      return getSubTree(ConstantValues.SNMP_OID_PREPLACED_KEY_TABLE, ipAddress, port);
+    }
+ 
+ 
+@@ -397,19 +398,20 @@
+     * @param ipAddress - the IPAddress
+     * @param port - the Port
+     */
+-   public String[] getSubTree(String oid, String ipAddress, int port)
++   public LinkedList<String> getSubTree(String oid, String ipAddress, int port)
+    {
+-      String[] results = null;
++      LinkedList<String> results = new LinkedList<String>();
+       try
+       {
+          // obtain the MIB OID and its type.
+-         results = SNMPOperations.getInstance().snmpGetSubTree(oid, ipAddress, port);
++         String[] tree = SNMPOperations.getInstance().snmpGetSubTree(oid, ipAddress, port);
+ 
+-         LoggingManager.getPrimaryLogger().info("Results size:" + results.length + " for OID: " + oid);
++         LoggingManager.getPrimaryLogger().info("Results size:" + tree.length + " for OID: " + oid);
+ 
+-         for (int i = 0; i < results.length; i++)
++         for (int i = 0; i < tree.length; i++)
+          {
+-            LoggingManager.getPrimaryLogger().info("Result [" + i + "]: " + results[i]);
++            LoggingManager.getPrimaryLogger().info("Result [" + i + "]: " + tree[i]);
++            results.add(tree[i]);
+          }
+       }
+       catch (Exception e)

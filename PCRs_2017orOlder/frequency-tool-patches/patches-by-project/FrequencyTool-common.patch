@@ -1,0 +1,235 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/handler/IMvcsNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/handler/IMvcsNodeHandler.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/common/handler/IMvcsNodeHandler.java	(working copy)
+@@ -43,6 +43,18 @@
+ 
+ 
+    /**
++    * To request to configure radio to communicate with the vehicle. If frequency is provided, it
++    * changes frequency of the given radio only. If frequency is not provided, this will change
++    * local radio frequency and remote radio frequency by sending command to the remote vehicle so
++    * it pushes the frequency to its own radio.
++    * 
++    * @param radioId - the radio ID.
++    * @param frequency - the frequency to set. Valid if and only if frequency is greater than 0.
++    */
++   void requestConfigureRadio(String radioId, String frequency);
++
++
++   /**
+     * To request to change RF paths
+     * 
+     * @param linkId - the link ID.
+Index: src/main/java/mil/navy/lcs/mvcs/common/messages/LinkConfigureMessage.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/messages/LinkConfigureMessage.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/common/messages/LinkConfigureMessage.java	(working copy)
+@@ -1,27 +1,35 @@
++
++
+ package mil.navy.lcs.mvcs.common.messages;
+ 
++
+ public class LinkConfigureMessage extends Message
+ {
++
+    private static final long serialVersionUID = 1L;
+ 
+    // Name shortened for serialization length
+    private final String li;
+-   
++
++   /** Denotes the frequency to configure. */
+    private final String fr;
+ 
+-   public LinkConfigureMessage(String linkId, String frequency)
++
++   /** To construct the message with link ID and frequency. */
++   public LinkConfigureMessage( String linkId, String frequency)
+    {
+       super(MessageCategory.LINK_CONFIGURE);
+-      
+       this.li = linkId;
+       this.fr = frequency;
+    }
+ 
++
+    public String getLinkId()
+    {
+       return li;
+    }
+-   
++
++
+    public String getFrequency()
+    {
+       return fr;
+Index: src/main/java/mil/navy/lcs/mvcs/common/messages/RadioConfigureMessage.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/messages/RadioConfigureMessage.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/messages/RadioConfigureMessage.java	(working copy)
+@@ -0,0 +1,44 @@
++
++
++package mil.navy.lcs.mvcs.common.messages;
++
++
++/**
++ * This class is used to denote a failure while attempting to change radio frequency.
++ * <p>
++ * Date Created: Jan 5, 2016
++ * <p>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
++ * $LastChangedRevision$
++ *
++ * @author Dan
++ * @version 1.0
++ */
++public class RadioConfigureMessage extends LinkConfigureMessage
++{
++
++   /** serialize version ID */
++   private static final long serialVersionUID = 1L;
++
++   /** Denotes configuration failure. Should only be set when an attempt has failed. */
++   private boolean fa;
++
++
++   /**
++    * To construct a radio configuration message with link ID, frequency, and a failure has
++    * occurred.
++    */
++   public RadioConfigureMessage( String linkId, String frequency, boolean failed)
++   {
++      super(linkId, frequency);
++      this.fa = failed;
++   }
++
++
++   public boolean getFailed()
++   {
++      return fa;
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/RmmvNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/RmmvNodeBuilder.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/RmmvNodeBuilder.java	(working copy)
+@@ -7,6 +7,8 @@
+ 
+ import com.google.common.collect.ImmutableMap;
+ 
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.Channel;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+@@ -120,7 +122,13 @@
+ 
+       final RFDevice rfDevice = createPRC117RFDevice();
+ 
+-      return new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.PRC117F, CommsType.OTH, power, ampPower, rfDevice, configRadio.getLosRange());
++      RadioLink radioLink = new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.PRC117F, CommsType.OTH, power, ampPower, rfDevice, configRadio.getLosRange());
++
++      // create frequency list from vehicle radio configurations
++      for (Channel channel : configRadio.getListOfChannels())
++         radioLink.addFrequency((int) channel.getFrequency());
++
++      return radioLink;
+    }
+ 
+ 
+@@ -145,7 +153,13 @@
+ 
+       final RFDevice rfDevice = createRT1944RFDevice();
+ 
+-      return new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.RT1944, CommsType.LOS, power, ampPower, rfDevice, configRadio.getLosRange());
++      RadioLink radioLink = new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.RT1944, CommsType.LOS, power, ampPower, rfDevice, configRadio.getLosRange());
++
++      // create valid frequency list for RT-1944: 2212~2387 with 5 MHz increment
++      for (int i = 2212; i <= 2387; i = i + 5)
++         radioLink.addFrequency(i);
++
++      return radioLink;
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/ShipNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/ShipNodeBuilder.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/ShipNodeBuilder.java	(working copy)
+@@ -8,7 +8,10 @@
+ 
+ import com.google.common.collect.ImmutableMap;
+ 
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.Channel;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
++import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstantsEnum;
+@@ -122,7 +125,16 @@
+ 
+       final RFDevice rfDevice = createPRC117RFDevice();
+ 
+-      return new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.PRC117F, CommsType.OTH, power, ampPower, rfDevice, configRadio.getLosRange());
++      RadioLink radioLink = new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.PRC117F, CommsType.OTH, power, ampPower, rfDevice, configRadio.getLosRange());
++
++      // create frequency list from every vehicle radio configurations
++      for (Vehicle vehicle : ConfigManager.getInstance().getListOfVehicles())
++         for (Radio radio : vehicle.getListOfRadios())
++            if (radio.getLinkType().equalsIgnoreCase(configRadio.getLinkType()))
++               for (Channel channel : radio.getListOfChannels())
++                  radioLink.addFrequency((int) channel.getFrequency());
++
++      return radioLink;
+    }
+ 
+ 
+@@ -145,7 +157,13 @@
+ 
+       final RFDevice rfDevice = createRT1944RFDevice();
+ 
+-      return new RadioLink(configRadio.getId(), node.getNodeId(), linkNumber, MvcsLinkType.RT1944, CommsType.LOS, power, ampPower, rfDevice, configRadio.getLosRange());
++      RadioLink radioLink = new RadioLink(configRadio.getId(), node.getNodeId(), linkNumber, MvcsLinkType.RT1944, CommsType.LOS, power, ampPower, rfDevice, configRadio.getLosRange());
++
++      // create valid frequency list for RT-1944: 2212~2387 with 5 MHz increment
++      for (int i = 2212; i <= 2387; i = i + 5)
++         radioLink.addFrequency(i);
++
++      return radioLink;
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/UissNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/UissNodeBuilder.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/UissNodeBuilder.java	(working copy)
+@@ -7,6 +7,7 @@
+ 
+ import com.google.common.collect.ImmutableMap;
+ 
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+@@ -80,7 +81,14 @@
+ 
+       final RFDevice rfDevice = createRT1944RFDevice();
+ 
+-      return new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.RT1944, CommsType.LOS, power, ampPower, rfDevice, configRadio.getLosRange());
++
++      RadioLink radioLink = new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.RT1944, CommsType.LOS, power, ampPower, rfDevice, configRadio.getLosRange());
++
++      // create valid frequency list for RT-1944: 2212~2387 with 5 MHz increment
++      for (int i = 2212; i <= 2387; i = i + 5)
++         radioLink.addFrequency(i);
++
++      return radioLink;
+    }
+ 
+ 

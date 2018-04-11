@@ -1,0 +1,2418 @@
+Index: configs/Copy of prc117Rim.configuration.xml
+===================================================================
+--- configs/Copy of prc117Rim.configuration.xml	(revision 9513)
++++ configs/Copy of prc117Rim.configuration.xml	(working copy)
+@@ -18,12 +18,8 @@
+ 	<dliIpPort>7000</dliIpPort>
+ 	<dlcIpAddress>192.168.140.12</dlcIpAddress>
+ 	<dlcIpPort>4099</dlcIpPort>
+-	<channelMap vehicleId="1234" loopbackIf="lo:1">
+-		<netsAndFrequencies net="1" frequency="33160000" />
+-		<netsAndFrequencies net="2" frequency="35160000" />
+-	</channelMap>
+-	<channelMap vehicleId="5678" loopbackIf="lo:2">
+-		<netsAndFrequencies net="3" frequency="38000000" />
+-		<netsAndFrequencies net="4" frequency="39000000" />
+-	</channelMap>
++	<frequencyMap frequency="31000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="32000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="33000000" vehicleId="2" loopbackIf="lo:2" />
++	<frequencyMap frequency="34000000" vehicleId="2" loopbackIf="lo:2" />
+ </Prc117RimProperties>
+\ No newline at end of file
+Index: configs/SnmpAgent.xml
+===================================================================
+--- configs/SnmpAgent.xml	(revision 9513)
++++ configs/SnmpAgent.xml	(working copy)
+@@ -66,7 +66,7 @@
+     engineBoots="0"
+     informTimeout="1000"
+     informRetries="3"
+-    ipAddress="localhost"
++    ipAddress="0.0.0.0"
+     reloadConfigOID=".1.3.6.1.2.1.5000.1.0"
+     authTrapEnabled="no"
+     system.sysObjectID=".1.3.1.4.15145.1.1"
+Index: configs/prc117Rim.configuration-ship.xml
+===================================================================
+--- configs/prc117Rim.configuration-ship.xml	(revision 9513)
++++ configs/prc117Rim.configuration-ship.xml	(working copy)
+@@ -21,12 +21,8 @@
+ 	<dliIpPort>7000</dliIpPort>
+ 	<dlcIpAddress>192.168.140.12</dlcIpAddress>
+ 	<dlcIpPort>4099</dlcIpPort>
+-	<channelMap vehicleId="RMMV1" loopbackIf="eth1:1">
+-		<netsAndFrequencies net="1" frequency="33160000" />
+-		<netsAndFrequencies net="2" frequency="35160000" />
+-	</channelMap>
+-	<channelMap vehicleId="RMMV2" loopbackIf="eth1:2">
+-		<netsAndFrequencies net="3" frequency="37160000" />
+-		<netsAndFrequencies net="4" frequency="39160000" />
+-	</channelMap>
++	<frequencyMap frequency="31000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="32000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="33000000" vehicleId="2" loopbackIf="lo:2" />
++	<frequencyMap frequency="34000000" vehicleId="2" loopbackIf="lo:2" />
+ </Prc117RimProperties>
+\ No newline at end of file
+Index: configs/prc117Rim.configuration-vehicle.xml
+===================================================================
+--- configs/prc117Rim.configuration-vehicle.xml	(revision 9513)
++++ configs/prc117Rim.configuration-vehicle.xml	(working copy)
+@@ -1,32 +1,28 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <Prc117RimProperties>
+-   <log-level>DEBUG</log-level>
+-   <log-file-directory>/var/log/mvcs/</log-file-directory>
+-   <mvcsIpAddress>127.0.0.1</mvcsIpAddress>
+-   <udpPort>9868</udpPort>
+-   <snmpPort>1560</snmpPort>
+-   <trapPort>1562</trapPort>
+-   <snmpV2CommunityWriteString>mvcs</snmpV2CommunityWriteString>
+-   <snmpV2CommunityReadString>mvcs</snmpV2CommunityReadString>
+-   <snmpVersion>3</snmpVersion>
+-   <snmpV3AuthProtocol>MD5</snmpV3AuthProtocol>
+-   <snmpV3PrivProtocol>AES</snmpV3PrivProtocol>
+-   <snmpV3UserName>mvcssrv</snmpV3UserName>
+-   <snmpV3AuthPassword>ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)
+-   </snmpV3AuthPassword>
+-   <snmpv3PrivPassword>ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)
+-   </snmpv3PrivPassword>
+-   <snmpOidPrefix>.1.3.6.1.4.1.15001.1</snmpOidPrefix>
+-   <dliIpAddress>127.0.0.1</dliIpAddress>
+-   <dliIpPort>7000</dliIpPort>
+-   <dlcIpAddress>192.168.123.17</dlcIpAddress>
+-   <dlcIpPort>4099</dlcIpPort>
+-   <channelMap vehicleId="RMMV1" loopbackIf="eth1:1">
+-      <netsAndFrequencies net="1" frequency="33160000" />
+-      <netsAndFrequencies net="2" frequency="35160000" />
+-   </channelMap>
+-   <channelMap vehicleId="RMMV2" loopbackIf="eth1:2">
+-      <netsAndFrequencies net="3" frequency="37160000" />
+-      <netsAndFrequencies net="4" frequency="39160000" />
+-   </channelMap>
++	<log-level>DEBUG</log-level>
++	<log-file-directory>/var/log/mvcs/</log-file-directory>
++	<mvcsIpAddress>127.0.0.1</mvcsIpAddress>
++	<udpPort>9868</udpPort>
++	<snmpPort>1560</snmpPort>
++	<trapPort>1562</trapPort>
++	<snmpV2CommunityWriteString>mvcs</snmpV2CommunityWriteString>
++	<snmpV2CommunityReadString>mvcs</snmpV2CommunityReadString>
++	<snmpVersion>3</snmpVersion>
++	<snmpV3AuthProtocol>MD5</snmpV3AuthProtocol>
++	<snmpV3PrivProtocol>AES</snmpV3PrivProtocol>
++	<snmpV3UserName>mvcssrv</snmpV3UserName>
++	<snmpV3AuthPassword>ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)
++	</snmpV3AuthPassword>
++	<snmpv3PrivPassword>ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)
++	</snmpv3PrivPassword>
++	<snmpOidPrefix>.1.3.6.1.4.1.15001.1</snmpOidPrefix>
++	<dliIpAddress>127.0.0.1</dliIpAddress>
++	<dliIpPort>7000</dliIpPort>
++	<dlcIpAddress>192.168.123.17</dlcIpAddress>
++	<dlcIpPort>4099</dlcIpPort>
++	<frequencyMap frequency="31000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="32000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="33000000" vehicleId="2" loopbackIf="lo:2" />
++	<frequencyMap frequency="34000000" vehicleId="2" loopbackIf="lo:2" />
+ </Prc117RimProperties>
+\ No newline at end of file
+Index: configs/prc117Rim.configuration.mapping.xml
+===================================================================
+--- configs/prc117Rim.configuration.mapping.xml	(revision 9513)
++++ configs/prc117Rim.configuration.mapping.xml	(working copy)
+@@ -64,11 +64,27 @@
+ 		<field cst:name="dlcIpPort" cst:type="int">
+ 			<bind-xml name="dlcIpPort" node="element" />
+ 		</field>
+-		<field cst:name="channelMaps" cst:type="java.lang.Object" cst:collection="collection">
+-			<bind-xml name="channelMap" node="element" />
++		<field cst:name="frequencyMaps" cst:type="java.lang.Object" cst:collection="collection">
++			<bind-xml name="frequencyMap" node="element" />
+ 		</field>
+ 	</class>
+ 
++	<class cst:name="mil.navy.mvcs.rim.prc117f.property.FrequencyMap">
++		<description>Default mapping for class mil.navy.mvcs.rim.prc117f.property.FrequencyMap
++		</description>
++		<map-to cst:xml="frequencyMap" />
++		<field cst:name="frequency" cst:type="int">
++			<bind-xml name="frequency" node="attribute" />
++		</field>
++		<field cst:name="vehicleId" cst:type="java.lang.String">
++			<bind-xml name="vehicleId" node="attribute" />
++		</field>
++		<field cst:name="loopbackIf" cst:type="java.lang.String">
++			<bind-xml name="loopbackIf" node="attribute" />
++		</field>
++	</class>
++	
++
+ 	<class cst:name="mil.navy.mvcs.rim.prc117f.property.VehicleChannelMap">
+ 		<description>Default mapping for class mil.navy.mvcs.rim.prc117f.property.VehicleChannelMap
+ 		</description>
+Index: configs/test.prc117Rim.configuration.xml
+===================================================================
+--- configs/test.prc117Rim.configuration.xml	(revision 9513)
++++ configs/test.prc117Rim.configuration.xml	(working copy)
+@@ -18,12 +18,8 @@
+ 	<dliIpPort>7000</dliIpPort>
+ 	<dlcIpAddress>127.0.0.1</dlcIpAddress>
+ 	<dlcIpPort>4099</dlcIpPort>
+-	<channelMap vehicleId="1234" loopbackIf="lo:1">
+-		<netsAndFrequencies net="1" frequency="30000000" />
+-		<netsAndFrequencies net="2" frequency="31000000" />
+-	</channelMap>
+-	<channelMap vehicleId="5678" loopbackIf="lo:2">
+-		<netsAndFrequencies net="3" frequency="37000000" />
+-		<netsAndFrequencies net="4" frequency="38000000" />
+-	</channelMap>
++	<frequencyMap frequency="31000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="32000000" vehicleId="1" loopbackIf="lo:1" />
++	<frequencyMap frequency="33000000" vehicleId="2" loopbackIf="lo:2" />
++	<frequencyMap frequency="34000000" vehicleId="2" loopbackIf="lo:2" />
+ </Prc117RimProperties>
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHClientTcp.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHClientTcp.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHClientTcp.java	(working copy)
+@@ -20,13 +20,12 @@
+ import mil.navy.mvcs.rim.prc117f.dli.DLIMessageHandler;
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues;
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues.DataLinkMode;
+-import mil.navy.mvcs.rim.prc117f.property.PropertyManager;
+ 
+ 
+ public class OTHClientTcp
+ {
+    private static final Logger logger = LoggerFactory.getLogger(OTHClientTcp.class);
+-   
++
+    /** The destination IP */
+    private String destinationIp = "127.0.0.1";
+ 
+@@ -340,7 +339,7 @@
+                }
+             }
+ 
+-         }// end of while()
++         } // end of while()
+ 
+          logger.info("OTH message receiver is terminated.");
+ 
+@@ -398,9 +397,9 @@
+                {
+                   try
+                   {
+-                     // send valid OTH mode message after re-connect to OTH and also received ChMap
+-                     // from MVCS.
+-                     if (OTHConfigManager.recievedChMapConfig)
++                     // send valid OTH mode message after re-connect to OTH and also received
++                     // frequency map from MVCS.
++                     if (OTHConfigManager.recievedFreqMapConfig)
+                      {
+                         logger.info("Sending channelMap and frequency to OTH...");
+ 
+@@ -429,10 +428,9 @@
+                            try
+                            {
+                               // use the first frequency in the list.
+-                              String firstFrequecy = OTHConfigManager.vehicleChannelMaps.firstEntry().getValue().getFrequencyOfTheFirstNetId();
+-                              int firstFreq = (int) Float.parseFloat(firstFrequecy);
++                              int firstFrequecy = OTHConfigManager.vehicleFrequencyMaps.firstKey();
+                               dlsMode.setOthSettingsValid(true);
+-                              dlsMode.setOthFrequency(firstFreq);
++                              dlsMode.setOthFrequency(firstFrequecy);
+                               // Don't change other OTH settings. such as antenna, frequencyMode and
+                               // transmitPower.
+                               dlsMode.setOthAntenna(OTHConfigManager.getInstance().dlcStateMessage.getOthAntenna());
+@@ -461,9 +459,9 @@
+                      logger.error("Error: ", e);
+                   }
+ 
+-               }// end of if (new socket)
++               } // end of if (new socket)
+ 
+-            }// end of if (othConnection == false)
++            } // end of if (othConnection == false)
+ 
+             if (quit)
+                return;
+@@ -477,7 +475,7 @@
+                logger.error("Error: ", e);
+             }
+ 
+-         }// end of while(!quit)
++         } // end of while(!quit)
+ 
+       }// end of run()
+ 
+@@ -538,7 +536,7 @@
+                logger.error("Error: ", e);
+             }
+ 
+-         }// end of while(!quit)
++         } // end of while(!quit)
+ 
+       }// end of run()
+ 
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java	(working copy)
+@@ -8,9 +8,14 @@
+ import java.io.BufferedReader;
+ import java.io.InputStreamReader;
+ import java.util.List;
++import java.util.Set;
++import java.util.SortedMap;
+ import java.util.TreeMap;
+ import java.util.concurrent.LinkedBlockingQueue;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.mvcs.rim.prc117f.dli.DLIMessageHandler;
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues;
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues.ConfigRequest;
+@@ -21,13 +26,10 @@
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues.LinkQuality;
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues.NodeState;
+ import mil.navy.mvcs.rim.prc117f.misc.ConstantValues.OthTransmitPowerLevel;
++import mil.navy.mvcs.rim.prc117f.property.FrequencyMap;
+ import mil.navy.mvcs.rim.prc117f.property.PropertyKeys;
+ import mil.navy.mvcs.rim.prc117f.property.PropertyManager;
+-import mil.navy.mvcs.rim.prc117f.property.VehicleChannelMap;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+ /*
+  * File History.
+  * 
+@@ -39,7 +41,7 @@
+ public class OTHConfigManager implements PropertyChangeListener
+ {
+    private static final Logger logger = LoggerFactory.getLogger(OTHConfigManager.class);
+-   
++
+    /** The instance of the OTHConfigManager */
+    private volatile static OTHConfigManager instance = null;
+ 
+@@ -55,9 +57,10 @@
+    /** The blocking queue for incoming messages. */
+    protected LinkedBlockingQueue<IOthStatusMessage> incomingMsg;
+ 
+-   /** List of vehicles, loopbackIf, and its channel maps. The key is vehicleId. */
+-   protected static TreeMap<String, VehicleChannelMap> vehicleChannelMaps;
+ 
++   /** List of frequencies, loopbackIf, and its vehicle IDs in ordered frequency. */
++   protected static SortedMap<Integer, FrequencyMap> vehicleFrequencyMaps;
++
+    /** Denotes the date-time that last update has received from OTH. */
+    private long lastUpdatedDateTime = -1;
+ 
+@@ -82,8 +85,8 @@
+    /** DLC state log Count */
+    private int dlcStateLogCount = 0;
+ 
+-   /** Denotes whether the Channel Map has ever received from MVCS. */
+-   protected static boolean recievedChMapConfig = false;
++   /** Denotes whether the Frequency Map has ever received from MVCS. */
++   protected static boolean recievedFreqMapConfig = false;
+ 
+    /** Time to wait between OTH settings and othMode message. Defaults to 5,000 milliseconds. */
+    public static int WAIT_BETWEEN_SETTING_AND_OTHMODE = 5000;
+@@ -109,7 +112,9 @@
+    /** The time to sleep when there is no socket. 1000 milliseconds. */
+    public final static int SLEEP_TIME_WHEN_NO_SOCKET = 1000;
+ 
+-   /** The maximum number of socket error count that is allowed before shut it down. Defaults to 50. */
++   /**
++    * The maximum number of socket error count that is allowed before shut it down. Defaults to 50.
++    */
+    public static int MAX_SOCKET_ERROR_COUNT = 50;
+ 
+    /** The frequency change monitor. */
+@@ -145,25 +150,20 @@
+       try
+       {
+          this.incomingMsg = new LinkedBlockingQueue<IOthStatusMessage>();
+-         vehicleChannelMaps = new TreeMap<String, VehicleChannelMap>();
++         vehicleFrequencyMaps = new TreeMap<Integer, FrequencyMap>();
+          othClient = new OTHClientTcp((String) PropertyManager.getInstance().getProperty(PropertyKeys.DLC_IP_ADDRESS), (Integer) PropertyManager.getInstance().getProperty(PropertyKeys.DLC_IP_PORT));
+          messageProcess = new OTHMessageProcess();
+          messageProcess.start();
+ 
+-         // testing the loop-back execution
+-         // this.vehicleChannelMaps.put("1234", new VehicleChannelMap("1234", "lo:1"));
+-         // this.executeLoopback("1234", false);
+-
+-         // retrieve channel map configurations from database.
+-         List<VehicleChannelMap> vehChannelMaps = (List<VehicleChannelMap>) PropertyManager.getInstance().getProperty(PropertyKeys.CHANNEL_MAPS);
+-         if (vehChannelMaps != null)
++         // retrieve frequency map configurations from database
++         List<FrequencyMap> freqMap = (List<FrequencyMap>) PropertyManager.getInstance().getProperty(PropertyKeys.FREQUENCY_MAPS);
++         if (freqMap != null)
+          {
+-            for (VehicleChannelMap vehicleChMap : vehChannelMaps)
++            for (FrequencyMap vehicleChMap : freqMap)
+             {
+-               vehicleChannelMaps.put(vehicleChMap.getVehicleId(), vehicleChMap);
++               vehicleFrequencyMaps.put(vehicleChMap.getFrequency(), vehicleChMap);
+             }
+          }
+-
+          // update the loop-back.
+          this.updateLoopback();
+ 
+@@ -176,20 +176,9 @@
+ 
+ 
+    /**
+-    * To get the currently used net ID.
++    * To change connected vehicle by re-sending frequency map and changing frequency of the radio
++    * that vehicle uses.
+     * 
+-    * @return the current net. -1 if not able to retrieve.
+-    */
+-   public int getCurrentNet()
+-   {
+-      return findNet(dlcStateMessage.getOthFrequency());
+-   }
+-
+-
+-   /**
+-    * To change connected vehicle by re-sending channel map and changing frequency of the radio that
+-    * vehicle uses.
+-    * 
+     * @param vehicleId - the vehicle Id.
+     */
+    public synchronized void changeConnectedVehicle(String vehicleId)
+@@ -197,31 +186,25 @@
+       try
+       {
+          // get find net id to set.
+-         VehicleChannelMap cMap = vehicleChannelMaps.get(vehicleId.trim());
+-         if (cMap == null)
++         FrequencyMap freqMap = retrieveFirstFrequencyMap(vehicleId.trim());
++         if (freqMap == null)
+          {
+-            logger.error("No channel map is available for vehicle " + vehicleId + " to connect.");
++            logger.error("No frequency map is available for vehicle " + vehicleId + " to connect.");
+             return;
+          }
+ 
+-         String firstFrequency = cMap.getFrequencyOfTheFirstNetId();
+-         if (firstFrequency == null)
++         int firstFrequency = freqMap.getFrequency();
++         if (firstFrequency < 1)
+          {
+             logger.error("No frequency is available for vehicle " + vehicleId + " to connect.");
+             return;
+          }
+ 
+-         /*
+-          * IMPORTANT: must convert the frequency to float and then convert it to integer because
+-          * float can be displayed as "3.3E7" not 33000000.0.
+-          */
+-         int frequency = (int) Float.parseFloat(firstFrequency);
+-
+          // change only the frequency and maintain other OTH settings. such as antenna,
+          // frequencyMode and transmitPower. Then, ensure it is accepted.
+          MDLSModeMessage dlsMode = new MDLSModeMessage();
+          dlsMode.setOthSettingsValid(true);
+-         dlsMode.setOthFrequency(frequency);
++         dlsMode.setOthFrequency(firstFrequency);
+          dlsMode.setOthAntenna(this.dlcStateMessage.getOthAntenna());
+          dlsMode.setOthFrequencyMode(this.dlcStateMessage.getOthFrequencyMode());
+          dlsMode.setOthTransmitPowerLevel(this.dlcStateMessage.getOthTransmitPowerLevel());
+@@ -232,7 +215,7 @@
+          // send message
+          if (!sendMsg(dlsMode))
+          {
+-            String message = "Error! changing frequency " + frequency + " to connect vehicle " + vehicleId;
++            String message = "Error! changing frequency " + firstFrequency + " to connect vehicle " + vehicleId;
+             logger.error(message);
+             String trapMsg = message + ConstantValues.SNMP_TRAP_MVCS_DELIMITER + ConstantValues.ALERT_PRIORITY_HIGH + ConstantValues.SNMP_TRAP_MVCS_DELIMITER + ConstantValues.ALERT_CATEGORY_OTHER;
+             DLIMessageHandler.snmpHandler.sendTrap(ConstantValues.SNMP_TRAP_MVCS_ALERT, trapMsg);
+@@ -251,7 +234,7 @@
+          }
+ 
+          // initialize a monitor to check see if frequency has changed after some(?) time.
+-         this.frequencyChangeMonitor = new FrequencyChangeMonitor(frequency);
++         this.frequencyChangeMonitor = new FrequencyChangeMonitor(firstFrequency);
+          this.frequencyChangeMonitor.start();
+ 
+          try
+@@ -339,13 +322,13 @@
+    {
+       // NOTE: command is "ifup eth1:1" and "ifdown eth1:1"
+ 
+-      VehicleChannelMap cMap = vehicleChannelMaps.get(vehicleId);
++      FrequencyMap freqMap = retrieveFirstFrequencyMap(vehicleId);
+ 
+-      if (cMap == null)
++      if (freqMap == null)
+          return false;
+ 
+       // system command to run
+-      String cmd = cMap.getLoopbackIf();
++      String cmd = freqMap.getLoopbackIf();
+       if (up)
+       {
+          cmd = "ifup " + cmd;
+@@ -488,15 +471,15 @@
+    public int getFirstFrequencyForConnectedVehicle()
+    {
+       int frequency = -1;
+-      VehicleChannelMap vChMap = vehicleChannelMaps.get(this.connectedVehicle);
++      FrequencyMap freqMap = retrieveFirstFrequencyMap(this.connectedVehicle);
+ 
+-      if (vChMap != null)
++      if (freqMap != null)
+       {
+          /*
+           * IMPORTANT: must convert the frequency to float and then convert it to integer because
+           * float can be displayed as "3.3E7" not 33000000.0.
+           */
+-         frequency = (int) Float.parseFloat(vChMap.getFrequencyOfTheFirstNetId());
++         frequency = freqMap.getFrequency();
+       }
+ 
+       return frequency;
+@@ -504,7 +487,7 @@
+ 
+ 
+    /**
+-    * To fill the given message with OTH channel maps.
++    * To fill the given message with OTH frequencies.
+     * 
+     * @param dlsMode - the message
+     */
+@@ -511,92 +494,75 @@
+    public void fillMsgWithOthChannelMap(MDLSModeMessage dlsMode)
+    {
+ 
+-      for (VehicleChannelMap vehChMap : vehicleChannelMaps.values())
++      for (int frequency : vehicleFrequencyMaps.keySet())
+       {
+-         for (String frequency : vehChMap.getNetsAndFrequencies().values())
++         try
+          {
+-            try
+-            {
+-               /*
+-                * IMPORTANT: must convert the frequency to float and then convert it to integer
+-                * because float can be displayed as "3.3E7" not 33000000.0.
+-                */
+-               int freq = (int) Float.parseFloat(frequency);
+-               // set channel map message for OTH to configure the radio.
+-               dlsMode.addOthChannelMap(freq);
+-               dlsMode.setOthChannelMapValid(true);
+-            }
+-            catch (Exception e)
+-            {
+-               logger.info("Info: ", e);
+-            }
++            /*
++             * IMPORTANT: When converting to string, must convert the frequency to float and then
++             * convert it to integer because float can be displayed as "3.3E7" not 33000000.0.
++             */
++
++            // set channel map message for OTH to configure the radio.
++            dlsMode.addOthChannelMap(frequency);
++            dlsMode.setOthChannelMapValid(true);
+          }
++         catch (Exception e)
++         {
++            logger.info("Info: ", e);
++         }
+       }
+    }
+ 
+ 
+    /**
+-    * To change channel map configurations. Expected format is
+-    * vehicleId/loopbackIf/netId/frequency,vehicleId/loopbackIf/netId/frequency,... Separated by
+-    * comma. Remove the existing configurations and create new one with given string. If the given
+-    * string does not contain any channel map remove them all.
++    * To update frequency map configurations. Expected format is
++    * frequency/loopbackIf/vehicleId,frequency/loopbackIf/vehicleId,... Separated by comma. Update
++    * the existing configurations with given frequency map string. If the given string does not
++    * contain any frequency map, the frequency map remains unchanged.
+     * 
+-    * @param vIdLoopbackNetidAndFreq - the channel map configurations.
++    * @param freqLoopbackVehIds - the frequency map configurations.
+     */
+-   public synchronized void changeChannelMapConfigurations(String vIdLoopbackNetidAndFreq)
++   public synchronized void updateFrequencyMapConfigurations(String freqLoopbackVehIds)
+    {
+-      // remove the current cached configurations.
+-      vehicleChannelMaps.clear();
+ 
+-
+-      // store channel map configurations
+-      String[] cMapConfigs = vIdLoopbackNetidAndFreq.split(",");
+-      for (String cMapConfig : cMapConfigs)
++      // store frequency map configurations
++      String[] freqMapConfigs = freqLoopbackVehIds.split(",");
++      for (String freqMapConfig : freqMapConfigs)
+       {
+-         String[] cMapEntries = cMapConfig.split("/");
++         String[] freqMapEntry = freqMapConfig.split("/");
+ 
+-         // must have 4 entries. vId, loop-back, net, frequency.
+-         if (cMapEntries.length != 4)
++         // must have 3 entries. frequency, loop-back, vehicleId.
++         if (freqMapEntry.length != 3)
+             continue;
+ 
+-         String vehicleId = cMapEntries[0].trim();
++         /*
++          * IMPORTANT: must convert the frequency to float and then convert it to integer because
++          * the frequency value could be entered as "3.3E7" not 33000000.
++          */
++         int frequency = (int) Float.parseFloat(freqMapEntry[0].trim());
+ 
+-         // overwrite existing vehicle channel maps
+-         VehicleChannelMap cMap = vehicleChannelMaps.get(vehicleId);
++         // overwrite existing vehicle frequency maps
++         FrequencyMap freqMap = vehicleFrequencyMaps.get(frequency);
+ 
+-         // System.out.println("vehicleId:" + vehicleId + " cMap: " + cMap);
++         // create a map if does not exist
++         if (freqMap == null)
++            freqMap = new FrequencyMap(frequency);
+ 
+-         if (cMap == null)
+-            cMap = new VehicleChannelMap(vehicleId);
++         // set the loop-back to frequency map.
++         freqMap.setLoopbackIf(freqMapEntry[1]);
+ 
+-         try
+-         {
+-            // set the loop-back to channel map.
+-            cMap.setLoopbackIf(cMapEntries[1]);
++         // set vehicle ID to frequency map.
++         freqMap.setVehicleId(freqMapEntry[2]);
+ 
+-            /*
+-             * IMPORTANT: must convert the frequency to float and then convert it to integer because
+-             * float can be displayed as "3.3E7" not 33000000.0.
+-             */
+-            int frequency = (int) Float.parseFloat(cMapEntries[3]);
++         // store the freqMap.
++         vehicleFrequencyMaps.put(frequency, freqMap);
+ 
+-            // add net&frequency to channel map.
+-            cMap.addNetAndFrequency(cMapEntries[2], String.valueOf(frequency));
+-            // System.out.println("Net:"+ cMapEntries[2]+" Freq:"+frequency);
+-         }
+-         catch (Exception e)
+-         {
+-            logger.error("Error converting frequency " + cMapEntries[3], e);
+-         }
++      } // end of for
+ 
+-         // store the cMap.
+-         vehicleChannelMaps.put(vehicleId, cMap);
++      // persist the frequency maps.
++      PropertyManager.getInstance().updateFrequencyMapConfigurationToFile(vehicleFrequencyMaps.values());
+ 
+-      }// end of for
+-
+-      // persist the channel maps.
+-      PropertyManager.getInstance().updateChannelMapConfigurationToFile(vehicleChannelMaps.values());
+-
+       // update the loop-back.
+       updateLoopback();
+ 
+@@ -643,24 +609,23 @@
+          }
+       }.start();
+ 
+-      // set the ChMap received flag
+-      recievedChMapConfig = true;
++      // set the frequency map received flag
++      recievedFreqMapConfig = true;
+ 
+    }// end of method
+ 
+ 
+    /**
+-    * To get the list of channel map configuration. Format is
+-    * vehicleId:loopbackIp:netId:frequency,vehicleId:loopbackIp:netId:frequency... Separated by
+-    * comma.
++    * To get the list of frequency map configuration. Format is
++    * frequency/loopbackIf/vehicleId,frequency/loopbackIf/vehicleId... Separated by comma.
+     * 
+-    * @return the channel map configurations.
++    * @return the frequency map configurations.
+     */
+-   public String getChannelMapConfigurations()
++   public String getFrequencyMapConfigurations()
+    {
+       String str = "";
+ 
+-      for (VehicleChannelMap cMap : vehicleChannelMaps.values())
++      for (FrequencyMap cMap : vehicleFrequencyMaps.values())
+       {
+          str += cMap.getConfigurationString() + ",";
+       }
+@@ -833,9 +798,9 @@
+ 
+ 
+    /**
+-    * To change the currently used frequency to another one in the channel map.
++    * To change the currently used frequency to another one in the frequency map.
+     * 
+-    * @param frequency - the new frequency. It must be exist in the current channel map list.
++    * @param frequency - the new frequency. It must exist in the current frequency map list.
+     */
+    public synchronized void changeCurrentFrequency(String frequency)
+    {
+@@ -853,10 +818,10 @@
+ 
+       final int newFrequency = Integer.parseInt(frequency);
+ 
+-      // make sure the new frequency is in the channel map.
+-      if (findNet(newFrequency) == -1)
++      // make sure the new frequency is in the frequency map.
++      if (findVehicleId(newFrequency) == null)
+       {
+-         logger.error("Invalid frequency " + newFrequency + " which is not in the channel map.");
++         logger.error("Invalid frequency " + newFrequency + " which is not in the frequency map.");
+          holdThreadToTimeout();
+          return;
+       }
+@@ -935,7 +900,7 @@
+    private void updateLoopback()
+    {
+       this.vehicleWithLoopbackEnabled = "";
+-      for (VehicleChannelMap chMap : vehicleChannelMaps.values())
++      for (FrequencyMap freqMap : vehicleFrequencyMaps.values())
+       {
+          /*
+           * Enable loop-back for connected vehicle that meets followings:
+@@ -946,7 +911,7 @@
+           * 
+           * 3. connection to DLI is good.
+           */
+-         if (DLIMessageHandler.isDliConnected() && chMap.getVehicleId().equalsIgnoreCase(connectedVehicle) && this.updatedTimeGood && (dlcStateMessage.getOthLinkQuality() == ConstantValues.LinkQuality.GOOD.ordinal() || dlcStateMessage.getOthLinkQuality() == ConstantValues.LinkQuality.FAIR.ordinal() || dlcStateMessage.getOthLinkQuality() == ConstantValues.LinkQuality.POOR.ordinal()))
++         if (DLIMessageHandler.isDliConnected() && freqMap.getVehicleId().equalsIgnoreCase(connectedVehicle) && this.updatedTimeGood && (dlcStateMessage.getOthLinkQuality() == ConstantValues.LinkQuality.GOOD.ordinal() || dlcStateMessage.getOthLinkQuality() == ConstantValues.LinkQuality.FAIR.ordinal() || dlcStateMessage.getOthLinkQuality() == ConstantValues.LinkQuality.POOR.ordinal()))
+          {
+             if (executeLoopback(connectedVehicle, true))
+                this.vehicleWithLoopbackEnabled = connectedVehicle;
+@@ -953,7 +918,7 @@
+          }
+          else
+          {
+-            executeLoopback(chMap.getVehicleId(), false);
++            executeLoopback(freqMap.getVehicleId(), false);
+          }
+       }
+    }
+@@ -978,33 +943,26 @@
+       }
+ 
+       /*
+-       * check see if the current frequency belongs to any vehicle in the channelMaps and connected
+-       * vehicle has changed. If so, update the currently connected vehicle.
++       * check see if the current frequency belongs to any vehicle in the frequency map and
++       * connected vehicle has changed. If so, update the currently connected vehicle.
+        */
+-      freqFound: for (VehicleChannelMap chMap : vehicleChannelMaps.values())
++      for (FrequencyMap chMap : vehicleFrequencyMaps.values())
+       {
+-         for (String frequency : chMap.getNetsAndFrequencies().values())
++         int freq = chMap.getFrequency();
++
++         // found matching frequency in the map
++         if (freq == dlcMsg.getOthFrequency())
+          {
+-            /*
+-             * IMPORTANT: must convert the frequency to float and then convert it to integer because
+-             * float can be displayed as "3.3E7" not 33000000.0.
+-             */
+-            int freq = (int) Float.parseFloat(frequency);
+-
+-            // found match frequency from the channel map.
+-            if (freq == dlcMsg.getOthFrequency())
++            // new frequency from DLC_MSG does not belong to the stored connectedVehicle
++            if (!this.connectedVehicle.equalsIgnoreCase(chMap.getVehicleId()))
+             {
+-               // new frequency from DLC_MSG does not belong to the stored connectedVehicle
+-               if (!this.connectedVehicle.equalsIgnoreCase(chMap.getVehicleId()))
+-               {
+-                  newFreqFound = true;
+-                  // store the connectedVehicle
+-                  this.connectedVehicle = chMap.getVehicleId();
+-                  logger.info("New connectedVehicle " + this.connectedVehicle);
+-               }
++               newFreqFound = true;
++               // store the connectedVehicle
++               this.connectedVehicle = chMap.getVehicleId();
++               logger.info("New connectedVehicle " + this.connectedVehicle);
++            }
+ 
+-               break freqFound;
+-            }
++            break;
+          }
+       }
+ 
+@@ -1138,60 +1096,45 @@
+ 
+ 
+    /**
+-    * To find matching net ID from the channel map.
++    * To find vehicle that contains the given frequency.
+     * 
+-    * @param frequency - the frequency paired with net ID.
+-    * @return - the net ID. -1 if not found.
++    * @param frequency - the frequency.
++    * @return the vehicle ID. null if not found the vehicle with given frequency.
+     */
+-   public static int findNet(int frequency)
++   public static String findVehicleId(int frequency)
+    {
+-      for (VehicleChannelMap chMap : vehicleChannelMaps.values())
++      for (int freqKey : vehicleFrequencyMaps.keySet())
+       {
+-         for (int netId : chMap.getNetsAndFrequencies().keySet())
++         // find matching frequency from the map.
++         if (freqKey == frequency)
+          {
+-            /*
+-             * IMPORTANT: must convert the frequency to float and then convert it to integer because
+-             * float can be displayed as "3.3E7" not 33000000.0.
+-             */
+-            int netFreq = (int) Float.parseFloat(chMap.getNetsAndFrequencies().get(netId).trim());
+-
+-            // find match frequency from the channel map.
+-            if (netFreq == frequency)
+-            {
+-               return netId;
+-            }
++            return vehicleFrequencyMaps.get(freqKey).getVehicleId();
+          }
+       }
+-      return -1;
++
++      return null;
+    }
+ 
+ 
+    /**
+-    * To find vehicle that contains the given frequency.
++    * To retrieve the first frequency map with vehicle id in the frequency maps.
+     * 
+-    * @param frequency - the frequency.
+-    * @return the vehicle ID. null if not found the vehicle with given frequency.
++    * @return the first frequencyMap of the vehicle id.
+     */
+-   public static String findVehicleId(int frequency)
++   public FrequencyMap retrieveFirstFrequencyMap(String vehicleId)
+    {
+-      for (VehicleChannelMap chMap : vehicleChannelMaps.values())
++      try
+       {
+-         for (String freq : chMap.getNetsAndFrequencies().values())
+-         {
+-            /*
+-             * IMPORTANT: must convert the frequency to float and then convert it to integer because
+-             * float can be displayed as "3.3E7" not 33000000.0.
+-             */
+-            int netFreq = (int) Float.parseFloat(freq);
++         Set<Integer> orderedFrequencies = vehicleFrequencyMaps.keySet();
+ 
+-            // find match frequency from the channel map.
+-            if (netFreq == frequency)
+-            {
+-               return chMap.getVehicleId();
+-            }
+-         }
++         for (int frequency : orderedFrequencies)
++            if (vehicleFrequencyMaps.get(frequency).getVehicleId().equalsIgnoreCase(vehicleId))
++               return vehicleFrequencyMaps.get(frequency);
+       }
+-
++      catch (Exception e)
++      {
++         logger.info("Error finding first frequency for vehicle: " + vehicleId, e);
++      }
+       return null;
+    }
+ 
+@@ -1317,7 +1260,7 @@
+                   // update the time.
+                   lastUpdatedDateTime = System.currentTimeMillis();
+ 
+-               }// end of while (queue is not empty)
++               } // end of while (queue is not empty)
+ 
+                // check the last updated time. the last updated time has been awhile
+                setUpdatedTimeGood((System.currentTimeMillis() - lastUpdatedDateTime <= MAX_ALLOWED_BEFORE_NEXT_UPDATE) ? true : false);
+@@ -1330,7 +1273,7 @@
+                logger.error("Error: ", e);
+             }
+ 
+-         }// end of while(not quit)
++         } // end of while(not quit)
+ 
+       }// end of run()
+    }// end of OTHMessageProcess class
+@@ -1377,7 +1320,7 @@
+                // NA
+             }
+ 
+-         }// end of while
++         } // end of while
+ 
+          // terminate
+          if (this.terminate)
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/property/FrequencyMap.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/property/FrequencyMap.java	(nonexistent)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/property/FrequencyMap.java	(working copy)
+@@ -0,0 +1,115 @@
++
++
++package mil.navy.mvcs.rim.prc117f.property;
++
++
++/**
++ * This is a property class to map a frequency for particular vehicle and loop-back interface.
++ * <p>
++ * Date Created: Dec 7, 2015
++ * <p>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
++ * $LastChangedRevision$
++ *
++ * @author Dan
++ * @version 1.0
++ */
++public class FrequencyMap
++{
++
++   /** The frequency */
++   private int frequency;
++
++   /** The loop-back interface */
++   private String loopbackIf;
++
++   /** The vehicle ID */
++   private String vehicleId;
++
++
++   /**
++    * The default constructor.
++    * 
++    */
++   public FrequencyMap()
++   {
++   }
++
++
++   /**
++    * Constructs a frequency map with given frequency.
++    * 
++    * @param frequency
++    */
++   public FrequencyMap( int frequency)
++   {
++      this.frequency = frequency;
++   }
++
++
++   /**
++    * @return the frequency
++    */
++   public int getFrequency()
++   {
++      return this.frequency;
++   }
++
++
++   /**
++    * 
++    * @param frequency the frequency to set.
++    */
++   public void setFrequency(int frequency)
++   {
++      this.frequency = frequency;
++   }
++
++
++   /**
++    * @return the loopbackIf
++    */
++   public String getLoopbackIf()
++   {
++      return loopbackIf;
++   }
++
++
++   /**
++    * @param loopbackIf the loopbackIf to set
++    */
++   public void setLoopbackIf(String loopbackIf)
++   {
++      this.loopbackIf = loopbackIf;
++   }
++
++
++   /**
++    * @return the vehicleId
++    */
++   public String getVehicleId()
++   {
++      return vehicleId;
++   }
++
++
++   /**
++    * @param vehicleId the vehicleId to set
++    */
++   public void setVehicleId(String vehicleId)
++   {
++      this.vehicleId = vehicleId;
++   }
++
++
++   /**
++    * To get the frequency map configuration string.
++    * 
++    * @return - frequency/loopbackIf/vehicleId in string format.
++    */
++   public String getConfigurationString()
++   {
++      return frequency + "/" + loopbackIf + "/" + vehicleId;
++   }
++}
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/property/Prc117RimProperties.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/property/Prc117RimProperties.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/property/Prc117RimProperties.java	(working copy)
+@@ -33,7 +33,7 @@
+    private int dlcIpPort;
+    private int snmpPort;
+    private int udpPort;
+-   private Collection<VehicleChannelMap> channelMaps;
++   private Collection<FrequencyMap> frequencyMaps;
+ 
+ 
+    public String getDliIpAddress()
+@@ -283,20 +283,20 @@
+ 
+ 
+    /**
+-    * @return the channelMaps
++    * @return the frequencyMaps
+     */
+-   public Collection<VehicleChannelMap> getChannelMaps()
++   public Collection<FrequencyMap> getFrequencyMaps()
+    {
+-      return channelMaps;
++      return frequencyMaps;
+    }
+ 
+ 
+    /**
+-    * @param channelMaps the channelMaps to set
++    * @param frequencyMaps the frequencyMaps to set
+     */
+-   public void setChannelMaps(Collection<VehicleChannelMap> channelMaps)
++   public void setFrequencyMaps(Collection<FrequencyMap> frequencyMaps)
+    {
+-      this.channelMaps = channelMaps;
++      this.frequencyMaps = frequencyMaps;
+    }
+ 
+ 
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/property/PropertyKeys.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/property/PropertyKeys.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/property/PropertyKeys.java	(working copy)
+@@ -48,7 +48,7 @@
+    public static final String DLI_IP_PORT = "dliIpPort";
+    public static final String DLC_IP_ADDRESS = "dlcIpAddress";
+    public static final String DLC_IP_PORT = "dlcIpPort";
+-   public static final String CHANNEL_MAPS = "channelMaps";
++   public static final String FREQUENCY_MAPS = "frequencyMaps";
+ 
+    /** RIM URL key */
+    public static final String RIM_URL_KEY = "prc117f_url";
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/property/PropertyManager.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/property/PropertyManager.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/property/PropertyManager.java	(working copy)
+@@ -8,14 +8,14 @@
+ import java.util.Collection;
+ import java.util.LinkedHashMap;
+ 
+-import mil.navy.mvcs.rim.prc117f.util.FileUtilities;
+-
+ import org.exolab.castor.mapping.Mapping;
+ import org.exolab.castor.xml.Marshaller;
+ import org.exolab.castor.xml.Unmarshaller;
+ import org.xml.sax.InputSource;
+ 
++import mil.navy.mvcs.rim.prc117f.util.FileUtilities;
+ 
++
+ /**
+  * This singleton class maintains the RIM property settings.
+  * 
+@@ -52,6 +52,9 @@
+    /** RIM configuration file name. */
+    public static final String CONFIGURATION_FILE = "prc117Rim.configuration.xml";
+ 
++   /** RIM configuration file name. */
++   public static final String TEST_CONFIGURATION_FILE = "prc117Rim.configuration-test.xml";
++
+    /** RIM configuration mapping file name. */
+    public static final String CONFIGURATION_MAPPING = "prc117Rim.configuration.mapping.xml";
+ 
+@@ -103,12 +106,12 @@
+ 
+ 
+    /**
+-    * To update and save channel map configuration to a file.
++    * To update and save frequency map configuration to a file.
+     */
+-   public void updateChannelMapConfigurationToFile(Collection<VehicleChannelMap> channelMaps)
++   public void updateFrequencyMapConfigurationToFile(Collection<FrequencyMap> frequencyMaps)
+    {
+       // update and save.
+-      this.rimProperties.setChannelMaps(channelMaps);
++      this.rimProperties.setFrequencyMaps(frequencyMaps);
+       PropertyManager.writeRimConfigurationToXML(this.rimProperties);
+    }
+ 
+@@ -146,7 +149,7 @@
+       RIM_PROPERTIES.put(PropertyKeys.DLC_IP_PORT, rimProperties.getDlcIpPort());
+       RIM_PROPERTIES.put(PropertyKeys.DLI_IP_ADDRESS, rimProperties.getDliIpAddress());
+       RIM_PROPERTIES.put(PropertyKeys.DLI_IP_PORT, rimProperties.getDliIpPort());
+-      RIM_PROPERTIES.put(PropertyKeys.CHANNEL_MAPS, rimProperties.getChannelMaps());
++      RIM_PROPERTIES.put(PropertyKeys.FREQUENCY_MAPS, rimProperties.getFrequencyMaps());
+    }
+ 
+ 
+@@ -201,6 +204,30 @@
+ 
+ 
+    /**
++    * To write the RIM configuration to XML file.
++    * 
++    * @param properties
++    */
++   protected static void writeTestRimConfigurationToXML(Prc117RimProperties properties)
++   {
++      try
++      {
++         String configDirLocation = (String) FileUtilities.getRimDirectoryPath() + "configs/";
++         Mapping myMapping = new Mapping();
++         myMapping.loadMapping(configDirLocation + CONFIGURATION_MAPPING);
++         Marshaller mar = new Marshaller(new FileWriter(configDirLocation + TEST_CONFIGURATION_FILE));
++         mar.setMapping(myMapping);
++         mar.setSuppressNamespaces(true);
++         mar.setSuppressXSIType(true);
++         mar.marshal(properties);
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++      }
++   }
++
++   /**
+     * To read the RIM configuration from XML file.
+     * 
+     * @return
+@@ -216,6 +243,7 @@
+       {
+          // 1. Load the mapping information from the file
+          // myMapping.setAllowRedefinitions(true);
++         System.out.println("Loading mapping file: " + configDirLocation + CONFIGURATION_MAPPING);
+          myMapping.loadMapping(configDirLocation + CONFIGURATION_MAPPING);
+       }
+       catch (Exception e)
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/request/RequestManager.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/request/RequestManager.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/request/RequestManager.java	(working copy)
+@@ -11,7 +11,6 @@
+ import mil.navy.mvcs.rim.prc117f.Prc117Main;
+ import mil.navy.mvcs.rim.prc117f.dli.DLIMessageHandler;
+ import mil.navy.mvcs.rim.prc117f.oth.OTHConfigManager;
+-import mil.navy.mvcs.rim.prc117f.property.PropertyManager;
+ 
+ /**
+  * This is the RequestManager to handle incoming SNMP GET/SET
+@@ -41,7 +40,7 @@
+ public class RequestManager extends Observable
+ {
+    private static final Logger logger = LoggerFactory.getLogger(RequestManager.class);
+-   
++
+    /** The instance of the PropertyManager */
+    private volatile static RequestManager instance = null;
+ 
+@@ -137,14 +136,14 @@
+ 
+ 
+    /**
+-    * To get the current net information.
++    * DEPRECATED. To get the current net information.
+     * 
+-    * @return - the current net.
++    * @return - the empty string "".
+     */
+    public String getCurrentNet()
+    {
+       // logger.info("Received getCurrentNet()");
+-      return String.valueOf(OTHConfigManager.getInstance().getCurrentNet());
++      return "";
+    }
+ 
+ 
+@@ -255,7 +254,8 @@
+       logger.info("Received sendMvcsMessageOverOthRadio() PARAM:" + mvcsMessage);
+       DLIMessageHandler.getInstance().sendMessageOverDLI(mvcsMessage);
+    }
+-   
++
++
+    /**
+     * To send SNMP SET over the radio.
+     * 
+@@ -307,28 +307,27 @@
+ 
+ 
+    /**
+-    * To get the currently used channel map configuration.
++    * To get the currently used frequency map configuration.
+     * 
+-    * @return - the channel map configurations.
++    * @return - the frequency map configurations.
+     */
+-   public String getChannelMapConfigurations()
++   public String getFrequencyMapConfigurations()
+    {
+-      logger.info("Received getChannelMapConfigurations()");
+-      return OTHConfigManager.getInstance().getChannelMapConfigurations();
++      logger.info("Received getFrequencyMapConfigurations()");
++      return OTHConfigManager.getInstance().getFrequencyMapConfigurations();
+    }
+ 
+ 
+    /**
+-    * To set the channel map configurations.Expected format is
+-    * vehicleId/loopbackIf/netId/frequency,vehicleId/loopbackIf/netId/frequency,... Separated by
+-    * comma.
++    * To set the frequency map configurations. Expected format is
++    * frequency/loopbackIf/vehicleId,frequency/loopbackIf/vehicleId,... Separated by comma.
+     * 
+-    * @param vIdLoopbackNetidAndFreq - list of vehicle and their channel map configurations.
++    * @param freqLoopbackVehicleIds - list of vehicle and their frequency map configurations.
+     */
+-   public void setChannelMapConfigurations(String vIdLoopbackNetidAndFreq)
++   public void setFrequencyMapConfigurations(String freqLoopbackVehicleIds)
+    {
+-      logger.info("Received setChannelMapConfigurations() PARAM:" + vIdLoopbackNetidAndFreq);
+-      OTHConfigManager.getInstance().changeChannelMapConfigurations(vIdLoopbackNetidAndFreq);
++      logger.info("Received setFrequencyMapConfigurations() PARAM:" + freqLoopbackVehicleIds);
++      OTHConfigManager.getInstance().updateFrequencyMapConfigurations(freqLoopbackVehicleIds);
+    }
+ 
+ 
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/snmp/RadioCommandsGroup.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/snmp/RadioCommandsGroup.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/snmp/RadioCommandsGroup.java	(working copy)
+@@ -1,438 +1,476 @@
++
++
+ package mil.navy.mvcs.rim.prc117f.snmp;
+ 
+-import mil.navy.mvcs.rim.prc117f.request.RequestManager;
+ 
+ import com.ireasoning.protocol.snmp.OIDTreeNode;
+ import com.ireasoning.protocol.snmp.SnmpBaseGroup;
+ 
++import mil.navy.mvcs.rim.prc117f.request.RequestManager;
+ 
++
+ /**
+  * Class represents radioCommands mib object in PRC117F_MIB
+  */
+-public  class RadioCommandsGroup extends SnmpBaseGroup
+-	implements RadioCommandsGroupMBean
++public class RadioCommandsGroup extends SnmpBaseGroup implements RadioCommandsGroupMBean
+ {
+-	protected  String _currentNet = "";
+-	protected  String _bit = "";
+-	protected  String _bitSetStatus = "";
+-	protected  String _bitReport = "";
+-	protected  String _sendSnmpSetOverOthRadio = "";
+-	protected  String _sendSnmpGetOverOthRadio = "";
+-	protected  String _sendSnmpTrapOverOthRadio = "";
+-	protected  String _emcon = "";
+-	protected  String _channelMapConfiguration = "";
+-	protected  String _connectedVehicle = "";
+-	protected  String _dlcStatus = "";
+-	protected  String _loopbackStatus = "";
+-	protected  String _ampPowerLevel = "";
+-	protected  String _startFcs = "";
+-	protected  String _stopFcs = "";
+-	protected  String _currentFrequency = "";
+-	protected  String _linkQuality = "";
+-	protected  String currentNet = "";
+-	protected  String bit = "";
+-	protected  String bitSetStatus = "";
+-	protected  String bitReport = "";
+-	protected  String sendSnmpSetOverOthRadio = "";
+-	protected  String sendSnmpGetOverOthRadio = "";
+-	protected  String sendSnmpTrapOverOthRadio = "";
+-	protected  String emcon = "";
+-	protected  String channelMapConfiguration = "";
+-	protected  String connectedVehicle = "";
+-	protected  String dlcStatus = "";
+-	protected  String loopbackStatus = "";
+-	protected  String ampPowerLevel = "";
+-	protected  String startFcs = "";
+-	protected  String stopFcs = "";
+-	protected  String currentFrequency = "";
+-	protected  String linkQuality = "";
+-	protected  String sendUdpMessageOverOthRadio = "";
+-	
+-	
+-	/**
+-	 * Constructor
+-	 *
+-	 * @param root SnmpOID tree root
+-	 * @param oid the SnmpOID of this group
+-	 * @param args the objects passed from caller for Initialization purpose
+-	 */
+-	public  RadioCommandsGroup(OIDTreeNode root, String oid, Object[] args)
+-	{
+-		super(root, oid); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new currentNet value
+-	 */
+-	public synchronized String getCurrentNet()
+-	{
+-		return RequestManager.getInstance().getCurrentNet(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new currentNet value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setCurrentNet(String newValue)
+-	{
+-		this._currentNet = newValue; 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new bit value
+-	 */
+-	public synchronized String getBit()
+-	{
+-		return this._bit; 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new bit value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setBit(String newValue)
+-	{
+-		this._bit = newValue; 
+-		RequestManager.getInstance().setBit(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new bitSetStatus value
+-	 */
+-	public synchronized String getBitSetStatus()
+-	{
+-		return RequestManager.getInstance().getBitStatus(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new bitSetStatus value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setBitSetStatus(String newValue)
+-	{
+-		this._bitSetStatus = newValue; 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new bitReport value
+-	 */
+-	public synchronized String getBitReport()
+-	{
+-		return RequestManager.getInstance().getBitReport(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new bitReport value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setBitReport(String newValue)
+-	{
+-		this._bitReport = newValue; 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new sendSnmpSetOverOthRadio value
+-	 */
+-	public synchronized String getSendSnmpSetOverOthRadio()
+-	{
+-		return this._sendSnmpSetOverOthRadio; 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new sendSnmpSetOverOthRadio value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setSendSnmpSetOverOthRadio(String newValue)
+-	{
+-		this._sendSnmpSetOverOthRadio = newValue; 
+-		RequestManager.getInstance().sendSnmpSetOverOthRadio(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new sendSnmpGetOverOthRadio value
+-	 */
+-	public synchronized String getSendSnmpGetOverOthRadio()
+-	{
+-		return RequestManager.getInstance().sendSnmpGetOverOthRadio(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new sendSnmpGetOverOthRadio value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setSendSnmpGetOverOthRadio(String newValue)
+-	{
+-		this._sendSnmpGetOverOthRadio = newValue; 
+-		RequestManager.getInstance().setSendSnmpGetOverOthRadio(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new sendSnmpTrapOverOthRadio value
+-	 */
+-	public synchronized String getSendSnmpTrapOverOthRadio()
+-	{
+-		return this._sendSnmpTrapOverOthRadio; 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new sendSnmpTrapOverOthRadio value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setSendSnmpTrapOverOthRadio(String newValue)
+-	{
+-		this._sendSnmpTrapOverOthRadio = newValue; 
+-		RequestManager.getInstance().sendSnmpTrapOverOthRadio(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new emcon value
+-	 */
+-	public synchronized String getEmcon()
+-	{
+-		return RequestManager.getInstance().getEmcon(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new emcon value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setEmcon(String newValue)
+-	{
+-		this._emcon = newValue; 
+-		RequestManager.getInstance().setEmcon(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new channelMapConfiguration value
+-	 */
+-	public synchronized String getChannelMapConfiguration()
+-	{
+-		return RequestManager.getInstance().getChannelMapConfigurations(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new channelMapConfiguration value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setChannelMapConfiguration(String newValue)
+-	{
+-		this._channelMapConfiguration = newValue; 
+-		RequestManager.getInstance().setChannelMapConfigurations(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new connectedVehicle value
+-	 */
+-	public synchronized String getConnectedVehicle()
+-	{
+-		return RequestManager.getInstance().getConnectedVehicle(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new connectedVehicle value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setConnectedVehicle(String newValue)
+-	{
+-		this._connectedVehicle = newValue; 
+-		RequestManager.getInstance().connectToVehicle(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new dlcStatus value
+-	 */
+-	public synchronized String getDlcStatus()
+-	{
+-		return RequestManager.getInstance().getDlcStatus(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new dlcStatus value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setDlcStatus(String newValue)
+-	{
+-		this._dlcStatus = newValue; 
+-		RequestManager.getInstance().setDlcStatus(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new loopbackStatus value
+-	 */
+-	public synchronized String getLoopbackStatus()
+-	{
+-		return RequestManager.getInstance().getLoopbackStatus(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new loopbackStatus value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setLoopbackStatus(String newValue)
+-	{
+-		this._loopbackStatus = newValue; 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new ampPowerLevel value
+-	 */
+-	public synchronized String getAmpPowerLevel()
+-	{
+-		return RequestManager.getInstance().getAmpPowerLevel(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new ampPowerLevel value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setAmpPowerLevel(String newValue)
+-	{
+-		this._ampPowerLevel = newValue; 
+-		RequestManager.getInstance().setAmpPowerLevel(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new startFcs value
+-	 */
+-	public synchronized String getStartFcs()
+-	{
+-		return this._startFcs; 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new startFcs value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setStartFcs(String newValue)
+-	{
+-		this._startFcs = newValue; 
+-		RequestManager.getInstance().startFcs(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new stopFcs value
+-	 */
+-	public synchronized String getStopFcs()
+-	{
+-		return this._stopFcs; 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new stopFcs value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setStopFcs(String newValue)
+-	{
+-		this._stopFcs = newValue; 
+-		RequestManager.getInstance().stopFcs(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new currentFrequency value
+-	 */
+-	public synchronized String getCurrentFrequency()
+-	{
+-		return RequestManager.getInstance().getCurrentFrequency(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new currentFrequency value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setCurrentFrequency(String newValue)
+-	{
+-		this._currentFrequency = newValue; 
+-		RequestManager.getInstance().setCurrentFrequency(newValue); 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new linkQuality value
+-	 */
+-	public synchronized String getLinkQuality()
+-	{
+-		return RequestManager.getInstance().getLinkQuality(); 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new linkQuality value
+-	 *
+-	 * @param value the new value
+-	 */
+-	public synchronized void setLinkQuality(String newValue)
+-	{
+-		this._linkQuality = newValue; 
+-		
+-	}
+-	
+-	/**
+-	 * Gets new sendUdpMessageOverOthRadio value
+-	 */
+-	public synchronized String getSendUdpMessageOverOthRadio()
+-	{
+-		return this.sendUdpMessageOverOthRadio; 
+-		
+-	}
+-	
+-	/**
+-	 * Sets new sendUdpMessageOverOthRadio value
+-	 * @param value the new value
+-	 */
+-	public synchronized void setSendUdpMessageOverOthRadio(String newValue)
+-	{
+-		this.sendUdpMessageOverOthRadio = newValue; 
+-		RequestManager.getInstance().sendMvcsMessageOverOthRadio(newValue);
+-	}
+-	
+-	
+-	
++   protected String _currentNet = "";
++   protected String _bit = "";
++   protected String _bitSetStatus = "";
++   protected String _bitReport = "";
++   protected String _sendSnmpSetOverOthRadio = "";
++   protected String _sendSnmpGetOverOthRadio = "";
++   protected String _sendSnmpTrapOverOthRadio = "";
++   protected String _emcon = "";
++   protected String _channelMapConfiguration = "";
++   protected String _connectedVehicle = "";
++   protected String _dlcStatus = "";
++   protected String _loopbackStatus = "";
++   protected String _ampPowerLevel = "";
++   protected String _startFcs = "";
++   protected String _stopFcs = "";
++   protected String _currentFrequency = "";
++   protected String _linkQuality = "";
++   protected String currentNet = "";
++   protected String bit = "";
++   protected String bitSetStatus = "";
++   protected String bitReport = "";
++   protected String sendSnmpSetOverOthRadio = "";
++   protected String sendSnmpGetOverOthRadio = "";
++   protected String sendSnmpTrapOverOthRadio = "";
++   protected String emcon = "";
++   protected String channelMapConfiguration = "";
++   protected String connectedVehicle = "";
++   protected String dlcStatus = "";
++   protected String loopbackStatus = "";
++   protected String ampPowerLevel = "";
++   protected String startFcs = "";
++   protected String stopFcs = "";
++   protected String currentFrequency = "";
++   protected String linkQuality = "";
++   protected String sendUdpMessageOverOthRadio = "";
++
++
++   /**
++    * Constructor
++    *
++    * @param root SnmpOID tree root
++    * @param oid the SnmpOID of this group
++    * @param args the objects passed from caller for Initialization purpose
++    */
++   public RadioCommandsGroup( OIDTreeNode root, String oid, Object[] args)
++   {
++      super(root, oid);
++
++   }
++
++
++   /**
++    * DEPRECATED. Gets new currentNet value
++    */
++   public synchronized String getCurrentNet()
++   {
++      return RequestManager.getInstance().getCurrentNet();
++
++   }
++
++
++   /**
++    * Sets new currentNet value
++    *
++    * @param value the new value
++    */
++   public synchronized void setCurrentNet(String newValue)
++   {
++      this._currentNet = newValue;
++
++   }
++
++
++   /**
++    * Gets new bit value
++    */
++   public synchronized String getBit()
++   {
++      return this._bit;
++
++   }
++
++
++   /**
++    * Sets new bit value
++    *
++    * @param value the new value
++    */
++   public synchronized void setBit(String newValue)
++   {
++      this._bit = newValue;
++      RequestManager.getInstance().setBit(newValue);
++
++   }
++
++
++   /**
++    * Gets new bitSetStatus value
++    */
++   public synchronized String getBitSetStatus()
++   {
++      return RequestManager.getInstance().getBitStatus();
++
++   }
++
++
++   /**
++    * Sets new bitSetStatus value
++    *
++    * @param value the new value
++    */
++   public synchronized void setBitSetStatus(String newValue)
++   {
++      this._bitSetStatus = newValue;
++
++   }
++
++
++   /**
++    * Gets new bitReport value
++    */
++   public synchronized String getBitReport()
++   {
++      return RequestManager.getInstance().getBitReport();
++
++   }
++
++
++   /**
++    * Sets new bitReport value
++    *
++    * @param value the new value
++    */
++   public synchronized void setBitReport(String newValue)
++   {
++      this._bitReport = newValue;
++
++   }
++
++
++   /**
++    * Gets new sendSnmpSetOverOthRadio value
++    */
++   public synchronized String getSendSnmpSetOverOthRadio()
++   {
++      return this._sendSnmpSetOverOthRadio;
++
++   }
++
++
++   /**
++    * Sets new sendSnmpSetOverOthRadio value
++    *
++    * @param value the new value
++    */
++   public synchronized void setSendSnmpSetOverOthRadio(String newValue)
++   {
++      this._sendSnmpSetOverOthRadio = newValue;
++      RequestManager.getInstance().sendSnmpSetOverOthRadio(newValue);
++
++   }
++
++
++   /**
++    * Gets new sendSnmpGetOverOthRadio value
++    */
++   public synchronized String getSendSnmpGetOverOthRadio()
++   {
++      return RequestManager.getInstance().sendSnmpGetOverOthRadio();
++
++   }
++
++
++   /**
++    * Sets new sendSnmpGetOverOthRadio value
++    *
++    * @param value the new value
++    */
++   public synchronized void setSendSnmpGetOverOthRadio(String newValue)
++   {
++      this._sendSnmpGetOverOthRadio = newValue;
++      RequestManager.getInstance().setSendSnmpGetOverOthRadio(newValue);
++
++   }
++
++
++   /**
++    * Gets new sendSnmpTrapOverOthRadio value
++    */
++   public synchronized String getSendSnmpTrapOverOthRadio()
++   {
++      return this._sendSnmpTrapOverOthRadio;
++
++   }
++
++
++   /**
++    * Sets new sendSnmpTrapOverOthRadio value
++    *
++    * @param value the new value
++    */
++   public synchronized void setSendSnmpTrapOverOthRadio(String newValue)
++   {
++      this._sendSnmpTrapOverOthRadio = newValue;
++      RequestManager.getInstance().sendSnmpTrapOverOthRadio(newValue);
++
++   }
++
++
++   /**
++    * Gets new emcon value
++    */
++   public synchronized String getEmcon()
++   {
++      return RequestManager.getInstance().getEmcon();
++
++   }
++
++
++   /**
++    * Sets new emcon value
++    *
++    * @param value the new value
++    */
++   public synchronized void setEmcon(String newValue)
++   {
++      this._emcon = newValue;
++      RequestManager.getInstance().setEmcon(newValue);
++
++   }
++
++
++   /**
++    * Gets new channelMapConfiguration value
++    */
++   public synchronized String getChannelMapConfiguration()
++   {
++      return RequestManager.getInstance().getFrequencyMapConfigurations();
++
++   }
++
++
++   /**
++    * Sets new channelMapConfiguration value
++    *
++    * @param value the new value
++    */
++   public synchronized void setChannelMapConfiguration(String newValue)
++   {
++      this._channelMapConfiguration = newValue;
++      RequestManager.getInstance().setFrequencyMapConfigurations(newValue);
++
++   }
++
++
++   /**
++    * Gets new connectedVehicle value
++    */
++   public synchronized String getConnectedVehicle()
++   {
++      return RequestManager.getInstance().getConnectedVehicle();
++
++   }
++
++
++   /**
++    * Sets new connectedVehicle value
++    *
++    * @param value the new value
++    */
++   public synchronized void setConnectedVehicle(String newValue)
++   {
++      this._connectedVehicle = newValue;
++      RequestManager.getInstance().connectToVehicle(newValue);
++
++   }
++
++
++   /**
++    * Gets new dlcStatus value
++    */
++   public synchronized String getDlcStatus()
++   {
++      return RequestManager.getInstance().getDlcStatus();
++
++   }
++
++
++   /**
++    * Sets new dlcStatus value
++    *
++    * @param value the new value
++    */
++   public synchronized void setDlcStatus(String newValue)
++   {
++      this._dlcStatus = newValue;
++      RequestManager.getInstance().setDlcStatus(newValue);
++
++   }
++
++
++   /**
++    * Gets new loopbackStatus value
++    */
++   public synchronized String getLoopbackStatus()
++   {
++      return RequestManager.getInstance().getLoopbackStatus();
++
++   }
++
++
++   /**
++    * Sets new loopbackStatus value
++    *
++    * @param value the new value
++    */
++   public synchronized void setLoopbackStatus(String newValue)
++   {
++      this._loopbackStatus = newValue;
++
++   }
++
++
++   /**
++    * Gets new ampPowerLevel value
++    */
++   public synchronized String getAmpPowerLevel()
++   {
++      return RequestManager.getInstance().getAmpPowerLevel();
++
++   }
++
++
++   /**
++    * Sets new ampPowerLevel value
++    *
++    * @param value the new value
++    */
++   public synchronized void setAmpPowerLevel(String newValue)
++   {
++      this._ampPowerLevel = newValue;
++      RequestManager.getInstance().setAmpPowerLevel(newValue);
++
++   }
++
++
++   /**
++    * Gets new startFcs value
++    */
++   public synchronized String getStartFcs()
++   {
++      return this._startFcs;
++
++   }
++
++
++   /**
++    * Sets new startFcs value
++    *
++    * @param value the new value
++    */
++   public synchronized void setStartFcs(String newValue)
++   {
++      this._startFcs = newValue;
++      RequestManager.getInstance().startFcs(newValue);
++
++   }
++
++
++   /**
++    * Gets new stopFcs value
++    */
++   public synchronized String getStopFcs()
++   {
++      return this._stopFcs;
++
++   }
++
++
++   /**
++    * Sets new stopFcs value
++    *
++    * @param value the new value
++    */
++   public synchronized void setStopFcs(String newValue)
++   {
++      this._stopFcs = newValue;
++      RequestManager.getInstance().stopFcs(newValue);
++
++   }
++
++
++   /**
++    * Gets new currentFrequency value
++    */
++   public synchronized String getCurrentFrequency()
++   {
++      return RequestManager.getInstance().getCurrentFrequency();
++
++   }
++
++
++   /**
++    * Sets new currentFrequency value
++    *
++    * @param value the new value
++    */
++   public synchronized void setCurrentFrequency(String newValue)
++   {
++      this._currentFrequency = newValue;
++      RequestManager.getInstance().setCurrentFrequency(newValue);
++
++   }
++
++
++   /**
++    * Gets new linkQuality value
++    */
++   public synchronized String getLinkQuality()
++   {
++      return RequestManager.getInstance().getLinkQuality();
++
++   }
++
++
++   /**
++    * Sets new linkQuality value
++    *
++    * @param value the new value
++    */
++   public synchronized void setLinkQuality(String newValue)
++   {
++      this._linkQuality = newValue;
++
++   }
++
++
++   /**
++    * Gets new sendUdpMessageOverOthRadio value
++    */
++   public synchronized String getSendUdpMessageOverOthRadio()
++   {
++      return this.sendUdpMessageOverOthRadio;
++
++   }
++
++
++   /**
++    * Sets new sendUdpMessageOverOthRadio value
++    * 
++    * @param value the new value
++    */
++   public synchronized void setSendUdpMessageOverOthRadio(String newValue)
++   {
++      this.sendUdpMessageOverOthRadio = newValue;
++      RequestManager.getInstance().sendMvcsMessageOverOthRadio(newValue);
++   }
++
++
+ }
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/util/MappingFileCreator.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/util/MappingFileCreator.java	(revision 9513)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/util/MappingFileCreator.java	(working copy)
+@@ -14,14 +14,11 @@
+ package mil.navy.mvcs.rim.prc117f.util;
+ 
+ 
+-import java.io.FileWriter;
+-import java.util.TreeMap;
++import org.exolab.castor.tools.MappingTool;
+ 
++import mil.navy.mvcs.rim.prc117f.property.FrequencyMap;
+ import mil.navy.mvcs.rim.prc117f.property.Prc117RimProperties;
+-import mil.navy.mvcs.rim.prc117f.property.VehicleChannelMap;
+ 
+-import org.exolab.castor.tools.MappingTool;
+-
+ /**
+  * A utility class for creating the configuration mapping file.
+  * 
+@@ -32,8 +29,6 @@
+ 
+    /**
+     * Creates configuration mapping file that is being used by Caster API.
+-    * 
+-    * @return true if successfully created.
+     */
+    public static void createConfigurationMapXML()
+    {
+@@ -40,11 +35,13 @@
+       MappingTool mt = new MappingTool();
+       try
+       {
+-         mt.addClass(Prc117RimProperties.class);
+-         mt.addClass(VehicleChannelMap.class);
+-         mt.addClass(TreeMap.class);
+-         FileWriter fw = new FileWriter("./configs/prc117Rim.configurations.mapping.test-1.xml");
+-         mt.write(fw);
++         System.out.println("MT " + mt.toString());
++         System.out.println("is null? " + Prc117RimProperties.class == null);
++         // mt.addClass(Prc117RimProperties.class);
++         mt.addClass(FrequencyMap.class);
++         // mt.addClass(TreeMap.class);
++         //FileWriter fw = new FileWriter("./configs/prc117Rim.configurations.mapping.test-1.xml");
++         //mt.write(fw);
+       }
+       catch (Exception e)
+       {
+Index: src/main/test/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManagerTest.java	(revision 9513)
++++ src/main/test/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManagerTest.java	(working copy)
+@@ -6,17 +6,17 @@
+ package mil.navy.mvcs.rim.prc117f.oth;
+ 
+ 
+-import junit.framework.Assert;
+-
+ import org.junit.After;
+ import org.junit.Before;
+ import org.junit.Test;
+ 
++import junit.framework.TestCase;
++
+ /**
+  * @author danny
+  * 
+  */
+-public class OTHConfigManagerTest
++public class OTHConfigManagerTest extends TestCase
+ {
+ 
+    /**
+@@ -59,19 +59,12 @@
+ 
+ 
+    @Test
+-   public void testGetCurrentNet()
+-   {
+-      Assert.assertNotNull("getCurrentNet", OTHConfigManager.getInstance().getCurrentNet());
+-   }
+-
+-
+-   @Test
+    public void testGetCurrentFrequency()
+    {
+       if (OTHConfigManager.isOthConnected())
+-         Assert.assertTrue("Current Frequency w/ DLC", OTHConfigManager.getInstance().getCurrentFrequency() > 0);
++         assertTrue("Current Frequency w/ DLC", OTHConfigManager.getInstance().getCurrentFrequency() > 0);
+       else
+-         Assert.assertTrue("Current Frequency w/o DLC", OTHConfigManager.getInstance().getCurrentFrequency() <= 0);
++         assertTrue("Current Frequency w/o DLC", OTHConfigManager.getInstance().getCurrentFrequency() <= 0);
+    }
+ 
+ 
+@@ -78,7 +71,7 @@
+    @Test
+    public void testGetBITStatus()
+    {
+-      Assert.assertNotNull("BIT status", OTHConfigManager.getInstance().getBITStatus());
++      assertNotNull("BIT status", OTHConfigManager.getInstance().getBITStatus());
+    }
+ 
+ 
+@@ -85,7 +78,7 @@
+    @Test
+    public void testGetConnectedVehicle()
+    {
+-      Assert.assertNotNull("Connected vehicle", OTHConfigManager.getInstance().getConnectedVehicle());
++      assertNotNull("Connected vehicle", OTHConfigManager.getInstance().getConnectedVehicle());
+    }
+ 
+ 
+@@ -92,7 +85,7 @@
+    @Test
+    public void testGetEmcon()
+    {
+-      Assert.assertEquals("Emcon", false, OTHConfigManager.getInstance().getEmconState());
++      assertEquals("Emcon", false, OTHConfigManager.getInstance().getEmconState());
+    }
+ 
+ 
+@@ -99,24 +92,24 @@
+    @Test
+    public void testGetOthTransmitPowerLevel()
+    {
+-      Assert.assertNotNull("Oth transmit power level", OTHConfigManager.getInstance().getOthTransmitPowerLevel());
++      assertNotNull("Oth transmit power level", OTHConfigManager.getInstance().getOthTransmitPowerLevel());
+    }
+ 
+ 
+    @Test
+-   public void testChannelMapConfigurations()
++   public void testFrequencyMapConfigurations()
+    {
+-      String chMaps_before_test = OTHConfigManager.getInstance().getChannelMapConfigurations();
++      String freqMaps_before_test = OTHConfigManager.getInstance().getFrequencyMapConfigurations();
+       System.out.println("Before testing:");
+-      System.out.println(chMaps_before_test);
+-      String chMaps_in = "RMMV1/lo0:1/1/33160000,RMMV1/lo0:1/2/35160000";
+-      OTHConfigManager.getInstance().changeChannelMapConfigurations(chMaps_in);
+-      String chMaps_out = OTHConfigManager.getInstance().getChannelMapConfigurations();
+-      System.out.println("After change:");
+-      System.out.println(chMaps_out);
+-      Assert.assertEquals("Change channel map configurations", chMaps_in, chMaps_out);
+-      OTHConfigManager.getInstance().changeChannelMapConfigurations(chMaps_before_test);
++      System.out.println(freqMaps_before_test);
++      String newFreqMapEntries = "33160000/lo0:1/RMMV1,35160000/lo0:2/RMMV2";
++      OTHConfigManager.getInstance().updateFrequencyMapConfigurations(newFreqMapEntries);
++      String freqMaps_After_update = OTHConfigManager.getInstance().getFrequencyMapConfigurations();
++      System.out.println("After update:");
++      System.out.println(freqMaps_After_update);
++      assertNotSame("frequency map configurations are changed", newFreqMapEntries, freqMaps_After_update);
++      assertTrue("Updated frequency map contains new frequency entries", freqMaps_After_update.contains(newFreqMapEntries));
+    }
+-   
+-   
++
++
+ }
+Index: src/main/test/mil/navy/mvcs/rim/prc117f/property/PropertyManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/mvcs/rim/prc117f/property/PropertyManagerTest.java	(revision 9513)
++++ src/main/test/mil/navy/mvcs/rim/prc117f/property/PropertyManagerTest.java	(working copy)
+@@ -3,46 +3,45 @@
+ package mil.navy.mvcs.rim.prc117f.property;
+ 
+ 
+-import static org.junit.Assert.assertEquals;
+-import junit.framework.Assert;
++import java.util.List;
++import java.util.SortedMap;
++import java.util.TreeMap;
+ 
+-import org.junit.Test;
++import junit.framework.TestCase;
+ 
+ 
+-public class PropertyManagerTest
++public class PropertyManagerTest extends TestCase
+ {
+-   @Test
+-   public void getPrc117RimConfigurationTest()
++   public void testGetPrc117RimConfiguration()
+    {
+       PropertyManager.getInstance();
+-      Assert.assertNotSame("LOG Level", null, (String) PropertyManager.getInstance().getProperty(PropertyKeys.LOG_LEVEL_KEY));
+-      Assert.assertNotSame("LOG directory", null, (String) PropertyManager.getInstance().getProperty(PropertyKeys.LOG_FILE_DIRECTORY));
+-      Assert.assertNotSame("Host IP", "",(String) PropertyManager.getInstance().getProperty(PropertyKeys.MVCS_IP_ADDRESS_KEY));
+-      assertEquals(9867, PropertyManager.getInstance().getProperty(PropertyKeys.UDP_PORT_KEY));
++      assertNotSame("LOG Level", null, (String) PropertyManager.getInstance().getProperty(PropertyKeys.LOG_LEVEL_KEY));
++      assertNotSame("LOG directory", null, (String) PropertyManager.getInstance().getProperty(PropertyKeys.LOG_FILE_DIRECTORY));
++      assertNotSame("Host IP", "", (String) PropertyManager.getInstance().getProperty(PropertyKeys.MVCS_IP_ADDRESS_KEY));
++      assertEquals(9868, PropertyManager.getInstance().getProperty(PropertyKeys.UDP_PORT_KEY));
+       assertEquals(3, PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_VERSION_KEY));
+-      assertEquals(2162, PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_TRAP_PORT_KEY));
++      assertEquals(1462, PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_TRAP_PORT_KEY));
+       assertEquals("mvcs", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_V2_COMMUNITY_READ_KEY));
+       assertEquals("mvcs", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_V2_COMMUNITY_WRITE_KEY));
+       assertEquals("MD5", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_AUTH_PROTOCOL_KEY));
+-      assertEquals("DES", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_PRIV_PROTOCOL_KEY));
++      assertEquals("AES", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_PRIV_PROTOCOL_KEY));
+       assertEquals("abc12345", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_AUTH_PASSWORD_KEY));
+       assertEquals("abc12345", (String) PropertyManager.getInstance().getProperty(PropertyKeys.SNMP_PRIV_PASSWORD_KEY));
+ 
+-      assertEquals("10.30.28.218", (String) PropertyManager.getInstance().getProperty(PropertyKeys.DLI_IP_ADDRESS));
+-      assertEquals(6000, PropertyManager.getInstance().getProperty(PropertyKeys.DLI_IP_PORT));
+-      assertEquals("192.168.15.2", (String) PropertyManager.getInstance().getProperty(PropertyKeys.DLC_IP_ADDRESS));
+-      assertEquals(6001, PropertyManager.getInstance().getProperty(PropertyKeys.DLC_IP_PORT));
++      assertEquals("192.168.140.141", (String) PropertyManager.getInstance().getProperty(PropertyKeys.DLI_IP_ADDRESS));
++      assertEquals(7000, PropertyManager.getInstance().getProperty(PropertyKeys.DLI_IP_PORT));
++      assertEquals("192.168.140.12", (String) PropertyManager.getInstance().getProperty(PropertyKeys.DLC_IP_ADDRESS));
++      assertEquals(4099, PropertyManager.getInstance().getProperty(PropertyKeys.DLC_IP_PORT));
+ 
+    }
+ 
+ 
+-   @Test
+-   public void readPrc117RimConfigurationFromXMLTest()
++   public void testReadPrc117RimConfigurationFromXML()
+    {
+       Prc117RimProperties properties = PropertyManager.readRimConfigurationFromXML();
+       assertEquals("DEBUG", properties.getLogLevel());
+       assertEquals("", properties.getLogFileDirectory());
+-      assertEquals("172.16.102.130", properties.getMvcsIpAddress());
++      assertEquals("172.20.10.2", properties.getMvcsIpAddress());
+       assertEquals(3, properties.getSnmpVersion());
+       assertEquals(1462, properties.getTrapPort());
+       assertEquals("mvcs", properties.getSnmpV2CommunityReadString());
+@@ -53,18 +52,43 @@
+       // properties.getSnmpV3TrapAuthPassword());
+       // assertEquals("ENC(6IBG8asPxYT4awpTZoO7z5s5WwC7+H6f==\r\n)",
+       // properties.getSnmpv3TrapPrivPassword());
+-      assertEquals("127.0.0.1", properties.getDliIpAddress());
++      assertEquals("192.168.140.141", properties.getDliIpAddress());
+       assertEquals(7000, properties.getDliIpPort());
+-      assertEquals("127.0.0.1", properties.getDlcIpAddress());
++      assertEquals("192.168.140.12", properties.getDlcIpAddress());
+       assertEquals(4099, properties.getDlcIpPort());
++
++
++      System.out.println("FrequencyMaps");
++      List<FrequencyMap> frequencyMaps = (List<FrequencyMap>) properties.getFrequencyMaps();
++      for (FrequencyMap freqMap : frequencyMaps)
++         System.out.println("FrequencyMap: " + freqMap.getConfigurationString());
++
++      SortedMap<Integer, FrequencyMap> vehicleFrequencyMaps = new TreeMap<Integer, FrequencyMap>();
++      if (frequencyMaps != null)
++      {
++         for (FrequencyMap vehicleChMap : frequencyMaps)
++         {
++            vehicleFrequencyMaps.put(vehicleChMap.getFrequency(), vehicleChMap);
++         }
++      }
++
++      for (FrequencyMap freqMap : vehicleFrequencyMaps.values())
++         System.out.println("FreqMap:" + freqMap.getConfigurationString());
+    }
+ 
+ 
+-   @Test
+-   public void writePrc117RimConfigurationFromXMLTest()
++   public void testWritePrc117RimConfigurationFromXML()
+    {
+       Prc117RimProperties properties = new Prc117RimProperties();
+       properties.setDlcIpPort(8000);
+-      PropertyManager.writeRimConfigurationToXML(properties);
++      SortedMap<Integer, FrequencyMap> frequencyMaps = new TreeMap<Integer, FrequencyMap>();
++      FrequencyMap freqMap = new FrequencyMap(41000000);
++      FrequencyMap freqMap2 = new FrequencyMap(42000000);
++      freqMap.setLoopbackIf("lo:1");
++      freqMap.setVehicleId("RMMV4");
++      frequencyMaps.put(freqMap.getFrequency(), freqMap);
++      frequencyMaps.put(freqMap2.getFrequency(), freqMap2);
++      properties.setFrequencyMaps(frequencyMaps.values());
++      PropertyManager.writeTestRimConfigurationToXML(properties);
+    }
+ }

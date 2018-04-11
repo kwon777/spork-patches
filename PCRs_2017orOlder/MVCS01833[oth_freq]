@@ -1,0 +1,13 @@
+Index: src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java
+===================================================================
+--- src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java	(revision 9525)
++++ src/main/java/mil/navy/mvcs/rim/prc117f/oth/OTHConfigManager.java	(working copy)
+@@ -615,7 +615,7 @@
+             // NOTE: DLC requires a valid frequency from the list to be in as OTH frequency even
+             // though it's valid flag is set to false
+             if (getFirstFrequencyForConnectedVehicle() > 1)
+-               dlsMode.setOthAntenna(getFirstFrequencyForConnectedVehicle());
++               dlsMode.setOthFrequency(getFirstFrequencyForConnectedVehicle());
+             else
+                dlsMode.setOthFrequency(dlsMode.getFirstFrequency());
+ 

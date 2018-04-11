@@ -1,0 +1,30 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/encryptor/interfaces/IEncryptorPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/encryptor/interfaces/IEncryptorPlugin.java	(revision 9931)
++++ src/main/java/mil/navy/lcs/mvcs/common/encryptor/interfaces/IEncryptorPlugin.java	(working copy)
+@@ -3,6 +3,8 @@
+ package mil.navy.lcs.mvcs.common.encryptor.interfaces;
+ 
+ 
++import java.util.List;
++
+ /**
+  * This interface represents the interface that all inline encryption devices should implement.
+  * <p>
+@@ -89,7 +91,15 @@
+    /**
+     * To check whether the red side IP address of this encryptor is reachable.
+     * 
+-    * @return true if this 
++    * @return true if this
+     */
+    public boolean isReachable();
++
++
++   /**
++    * To get the Preplaced key information of the device
++    * 
++    * @return the Preplaced key information
++    */
++   public List<String> getPreplacedKeyInfo();
+ }

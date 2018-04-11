@@ -1,0 +1,16 @@
+Index: src/main/java/mil/navy/lcs/mvcs/sca/pmfl/UpsComponentData.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/pmfl/UpsComponentData.java	(revision 9873)
++++ src/main/java/mil/navy/lcs/mvcs/sca/pmfl/UpsComponentData.java	(working copy)
+@@ -41,9 +41,9 @@
+ 	public boolean upsPowerStatus()
+  	{
+ 		boolean status;
+-		status = UpsManager.getInstance().requestBackupPowerStatus();
++		//status = UpsManager.getInstance().requestBackupPowerStatus();
++        status = UpsManager.getInstance().getUpsHardwareData().isPowered();
+ 		logger.info("Checking UPS power status " + status);
+-		//status = UpsManager.getInstance().getUpsHardwareData().isPowered();
+ 
+ 		return status;
+ 

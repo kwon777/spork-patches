@@ -1,0 +1,276 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-interface
+Index: src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java	(working copy)
+@@ -121,7 +121,7 @@
+    SLEEP_MODE_CHANGED("The sleep mode has changed to %s", LOW, OTHER), //
+    SLEEP_NORMAL_RADIO_IN_USE("Cannot set sleep normal since higher priority vehicle, %s, is using the P2P radio", MEDIUM, OTHER), //
+    SLEEP_WHILE_EMCON("Cannot set sleep state while ship is in EMCON", MEDIUM, OTHER), //
+-   UPS_CONNECTION_SUCCESSFUL("Successfully connected to UPS device via serial port %s", MEDIUM, POWER), //
++   UPS_CONNECTION_SUCCESSFUL("Successfully opened serial port %s for UPS device.", MEDIUM, POWER), //
+    UPS_POWER_RESTORED("UPS AC power restored, aborting shutdown", MEDIUM, POWER), //
+    UPS_REMAINING_TIME("UPS AC power disrupted, %s minutes until shutdown", HIGH, POWER), //
+    UPS_SHUTODWN("Shutting down due to extended power loss", HIGH, POWER), //
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(working copy)
+@@ -29,15 +29,13 @@
+ public class UpsManager implements SerialReceivedDataListenerInterface
+ {
+    public static final String BATTERY_STATUS = "LOW BATTERY";
+-
+-   public static final String BATTLESHORT = "BATTLE SHORT";
+    public static final String INVERTER_STATUS = "INV OFF";
+    public static final String LOGIC_STATUS = "LOGIC FAULT";
+    public static final String SPACE = " ";
+-   public static final String UPS_OVERLOAD = "UPS OVERLOAD";
+-   public static final String UPS_TEMPERATURE = "UPS OVERTEMPERATURE";
++   public static final String UPS_OVERLOAD = "UPSOVERLOAD";
++   public static final String UPS_OVERTEMP = "UPSOVERTEMP";
+    public static final String UTILITY_POWER = "UTILITY OFF";
+-
++   
+    private static final Logger logger = LoggerFactory.getLogger(UpsManager.class);
+ 
+    /** The single instance of the ScaPowerManager. */
+@@ -94,8 +92,8 @@
+    /** checking communication to UPS device and polling status. */
+    protected UpsConnectionAndStatus upsConnectionAndPollStatus = null;
+ 
+-   /** Denotes ups device connection status. */
+-   protected boolean upsConnected = false;
++   /** Denotes the serial port connection of UPS device status. */
++   protected boolean upsSerialConnected = false;
+ 
+ 
+    /**
+@@ -398,44 +396,38 @@
+          while (st.hasMoreTokens())
+          {
+             String thisLine = "";
+-            thisLine = st.nextToken();
+-            int lastSpaceLocation = thisLine.lastIndexOf(UpsWorker.SPACE);
++            thisLine = st.nextToken().toUpperCase(); // next token in upper case
++            int lastSpaceLocation = thisLine.lastIndexOf(SPACE);
+             if (lastSpaceLocation != -1)
+             {
+                String status = thisLine.substring(lastSpaceLocation, thisLine.length());
+-               if (thisLine.startsWith(UpsWorker.UTILITY_POWER))
++               if (thisLine.startsWith(UTILITY_POWER))
+                {
+                   tempBoolean = new Boolean(convertStringToBoolean(status)).booleanValue();
+                   upsData.setUtilityPowerOk(tempBoolean);
+                   checkLossOfPower(tempBoolean);
+                }
+-               else if (thisLine.startsWith(UpsWorker.INVERTER_STATUS))
++               else if (thisLine.startsWith(INVERTER_STATUS))
+                {
+                   upsData.setInverterStatusOk(new Boolean(convertStringToBoolean(status)));
+-
+                }
+-               else if (thisLine.startsWith(UpsWorker.BATTERY_STATUS))
++               else if (thisLine.startsWith(BATTERY_STATUS))
+                {
+                   upsData.setBatteryStatusOk(new Boolean(convertStringToBoolean(status)));
+-
+                }
+-               else if (thisLine.startsWith(UpsWorker.LOGIC_STATUS))
++               else if (thisLine.startsWith(LOGIC_STATUS))
+                {
+                   upsData.setLogicStatusOk(new Boolean(convertStringToBoolean(status)));
+-
+                }
+-               else if (thisLine.startsWith(UpsWorker.UPS_OVERLOAD))
++               else if (thisLine.startsWith(UPS_OVERLOAD))
+                {
+                   upsData.setUpsOverloadOk(new Boolean(convertStringToBoolean(status)));
+-
+                }
+-               else if (thisLine.startsWith(UpsWorker.UPS_TEMPERATURE))
++               else if (thisLine.startsWith(UPS_OVERTEMP))
+                {
+                   upsData.setUpsTemperatureOk(new Boolean(convertStringToBoolean(status)));
+-
+                }
+-
+-            } // if
++            } // end of if 
+          } // end of while
+       } // end of for
+    }// end of method
+@@ -544,7 +536,7 @@
+       public void shutdownConnection()
+       {
+          connectionAllowed = false;
+-         upsConnected = false;
++         upsSerialConnected = false;
+          if (upsComms != null)
+          {
+             upsComms.closeSerialPort();
+@@ -559,7 +551,7 @@
+          while (connectionAllowed)
+          {
+             // ups is connected
+-            if (upsConnected)
++            if (upsSerialConnected)
+             {
+                // poll status
+                try
+@@ -579,8 +571,8 @@
+                {
+                   // try to connect
+                   upsComms = new SerialComms(upsSerialPort, UPS_BAUD_RATE, "UpsManager");
+-                  upsConnected = true;
+-                  logger.info("Successfully connected to UPS device via serial port {}!", upsSerialPort);
++                  upsSerialConnected = true;
++                  logger.info("Successfully opened serial port {} for UPS device.", upsSerialPort);
+                   AlertsManager.getInstance().addAlert(shipId, AlertType.UPS_CONNECTION_SUCCESSFUL, upsSerialPort);
+                   // add serial received data listener.
+                   upsComms.addSerialReceivedDataListener(serialReceivedDataListener);
+@@ -587,7 +579,7 @@
+                }
+                catch (Exception e)
+                {
+-                  logger.error("Failed to connect the UPS device: ", e);
++                  logger.error("Failed to open serial port {} for UPS device: ", upsSerialPort, e);
+                }
+             }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsWorker.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsWorker.java	(working copy)
+@@ -1,27 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.sca.powerUps;
+-
+-
+-/**
+- * Class Description
+- * <p>
+- * Date Created: Feb 14, 2010
+- * <p>
+- * $LastChangedBy$
+- * $LastChangedDate$ $LastChangedRevision$
+- * 
+- * @author st2
+- * @version 1.0
+- */
+-public class UpsWorker
+-{
+-   public static final String BATTERY_STATUS = "LOW BATTERY";
+-   public static final String BATTLESHORT = "BATTLE SHORT";
+-   public static final String INVERTER_STATUS = "INV OFF";
+-   public static final String LOGIC_STATUS = "LOGIC FAULT";
+-   public static final String SPACE = " ";
+-   public static final String UPS_OVERLOAD = "UPS OVERLOAD";
+-   public static final String UPS_TEMPERATURE = "UPS OVERTEMPERATURE";
+-   public static final String UTILITY_POWER = "UTILITY OFF";
+-}
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(working copy)
+@@ -29,7 +29,7 @@
+    private InputStream inputStream;
+    private SerialPort serialPort = null;
+ 
+-   private int gatherTime = 1000;
++   private static int GATHER_TIME = 1000;
+    private boolean checkForMoreData = false;
+ 
+    private OutputStream outputStream;
+@@ -75,9 +75,7 @@
+       {
+          serialPort = (SerialPort) portIdentifier.open(newPortOwner, 3000);
+          portOwner = portIdentifier.getCurrentOwner();
+-
+          serialPort.addEventListener(this);
+-
+          serialPort.notifyOnDataAvailable(true);
+          serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
+ 
+@@ -142,8 +140,8 @@
+          {
+ 
+             // Wait a little bit for some more data to come in
+-            if (gatherTime > 0)
+-               Thread.sleep(gatherTime);
++            if (GATHER_TIME > 0)
++               Thread.sleep(GATHER_TIME);
+ 
+             /*
+              * Keep reading 256 bytes at a time until we have read all the data. Need to read into
+@@ -161,8 +159,8 @@
+                // data actually stored in a growing buffer
+                readBuffer.write(tempReadBuf, 0, numBytes);
+ 
+-               if (checkForMoreData && gatherTime > 0)
+-                  Thread.sleep(gatherTime);
++               if (checkForMoreData && GATHER_TIME > 0)
++                  Thread.sleep(GATHER_TIME);
+             }
+ 
+             fireSerialReceivedData(readBuffer.toString(), readBuffer.toByteArray());
+@@ -169,13 +167,13 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getPrimaryLogger().error("SerialPortEvent.DATA_AVAILABLE exception", e);
++            LoggingManager.getPrimaryLogger().error("SerialEvent.DATA_AVAILABLE exception: ", e);
+          }
+ 
+       }
+       else
+       {
+-         LoggingManager.getPrimaryLogger().debug("Unexpected SerialEvent type: + " + event.getEventType());
++         LoggingManager.getPrimaryLogger().debug("Unexpected SerialEvent type: ", event.getEventType());
+       }
+    }
+ 
+@@ -186,12 +184,6 @@
+     * @param data - data to be written to output stream
+     * @return - true if write succeeded; false otherwise
+     */
+-   public boolean writeBytes(byte[] data)
+-   {
+-      return write(data);
+-   }
+-
+-
+    public boolean write(byte[] data)
+    {
+       boolean results = false;
+@@ -204,7 +196,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("serial write Error ", e);
++         LoggingManager.getPrimaryLogger().error("Serial write error: ", e);
+       }
+ 
+       return results;
+@@ -219,7 +211,7 @@
+     */
+    public boolean write(String data)
+    {
+-      return writeBytes(data.getBytes());
++      return write(data.getBytes());
+    }
+ 
+ 
+@@ -260,7 +252,7 @@
+    {
+       byte[] dataBytes = new byte[1];
+       dataBytes[0] = b;
+-      return writeBytes(dataBytes);
++      return write(dataBytes);
+    }
+ 
+ 

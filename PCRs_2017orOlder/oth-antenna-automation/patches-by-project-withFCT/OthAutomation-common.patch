@@ -1,0 +1,611 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/model/AntennaCoverage.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/model/AntennaCoverage.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/model/AntennaCoverage.java	(working copy)
+@@ -0,0 +1,111 @@
++
++
++package mil.navy.lcs.mvcs.common.config.model;
++
++
++import java.io.Serializable;
++
++/**
++ * The antenna coverage class represents antenna coverage of the radio. Properties include the side,
++ * forward, and aft of antenna coverage points in circle between 0 and 360 degree.
++ * 
++ * @author Dan Kwon
++ *
++ */
++public class AntennaCoverage implements Serializable
++{
++   private static final long serialVersionUID = 231L;
++   private String side = "";
++   private int forward = 0, aft = 0;
++
++
++   /**
++    * Default constructor
++    */
++   public AntennaCoverage()
++   {
++      super();
++   }
++
++
++   /**
++    * @param side The side of antenna coverage.
++    * @param forward The forward coverage point from the top half of a circle.
++    * @param aft The aft coverage point from the bottom half of a circle.
++    */
++   public AntennaCoverage( String side, int forward, int aft)
++   {
++      this.side = side;
++      this.forward = forward;
++      this.aft = aft;
++   }
++
++
++   /**
++    * 
++    * @return The String representation of antenna coverage.
++    */
++   public String toString()
++   {
++      return this.side + "/" + this.forward + "/" + this.aft;
++   }
++
++
++   /**
++    * 
++    * @return the side of antenna coverage.
++    */
++   public String getSide()
++   {
++      return this.side;
++   }
++
++
++   /**
++    * @param side the side to set.
++    */
++   public void setSide(String side)
++   {
++      this.side = side;
++   }
++
++
++   /**
++    * 
++    * @return the forward coverage of the antenna.
++    */
++   public int getForward()
++   {
++      return this.forward;
++   }
++
++
++   /**
++    * 
++    * @param forward the forward coverage to set.
++    */
++   public void setForward(int forward)
++   {
++      this.forward = forward;
++   }
++
++
++   /**
++    * 
++    * @return the aft coverage of the antenna.
++    */
++   public int getAft()
++   {
++      return this.aft;
++   }
++
++
++   /**
++    * @param aft the aft coverage to set.
++    */
++   public void setAft(int aft)
++   {
++      this.aft = aft;
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java	(revision 9549)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java	(working copy)
+@@ -1,5 +1,8 @@
++
++
+ package mil.navy.lcs.mvcs.common.config.model;
+ 
++
+ import java.io.Serializable;
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -11,10 +14,7 @@
+  *
+  * TODO {Purpose of This Class}
+  *
+- * Id: $Id$
+- * $LastChangedBy: $
+- * $LastChangedDate: $
+- * $LastChangedRevision: $
++ * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  *
+  */
+ public class Radio extends Link implements Serializable
+@@ -45,10 +45,12 @@
+    private String loopback;
+    private boolean launchRadio = false;
+    private List<Channel> listOfChannels = new ArrayList<Channel>();
++   private List<AntennaCoverage> antennaCoverages = new ArrayList<AntennaCoverage>();
+ 
+ 
+    /**
+     * Get the SNMP Agent port number
++    * 
+     * @return an Integer representing the SNMP Port number
+     */
+    public Integer getSnmpAgentPortNumber()
+@@ -56,8 +58,10 @@
+       return this.snmpAgentPortNumber;
+    }
+ 
++
+    /**
+     * Set the SNMP agent port number
++    * 
+     * @param portNumber the Integer representing the SNMP port number
+     */
+    public void setSnmpAgentPortNumber(Integer portNumber)
+@@ -65,8 +69,10 @@
+       this.snmpAgentPortNumber = portNumber;
+    }
+ 
++
+    /**
+     * This function returns the IP Address of the SNMP Agent for this particular radio
++    * 
+     * @return a String containing the IP address of the agent
+     */
+    public String getSnmpAgentIpAddress()
+@@ -74,8 +80,10 @@
+       return this.snmpAgentIpAddress;
+    }
+ 
++
+    /**
+     * This function sets the IP address of the SNMP agent
++    * 
+     * @param ipAddress the IP address of the SNMP agent
+     */
+    public void setSnmpAgentIpAddress(String ipAddress)
+@@ -83,8 +91,10 @@
+       this.snmpAgentIpAddress = ipAddress;
+    }
+ 
++
+    /**
+     * This function sets the frequency NET range for the 117 radio
++    * 
+     * @return a string containing the 117 NET range
+     */
+    public String getFrequencyNetRange()
+@@ -92,8 +102,10 @@
+       return this.frequencyNetRange;
+    }
+ 
++
+    /**
+     * This function sets the frequency NET range for the PRC117 radio
++    * 
+     * @param netRange the PRC117 range
+     */
+    public void setFrequencyNetRange(String netRange)
+@@ -101,8 +113,10 @@
+       this.frequencyNetRange = netRange;
+    }
+ 
++
+    /**
+     * Get the LNR frequency
++    * 
+     * @return an Integer containing the LNR frequency
+     */
+    public Integer getLnrFrequency()
+@@ -110,8 +124,10 @@
+       return this.lnrFrequency;
+    }
+ 
++
+    /**
+     * Set the LNR frequency
++    * 
+     * @param lnrFrequency an Integer containing the LNR frequency
+     */
+    public void setLnrFrequency(Integer lnrFrequency)
+@@ -122,6 +138,7 @@
+ 
+    /**
+     * Get the Mission frequency
++    * 
+     * @return an Integer containing the Mission frequency
+     */
+    public Integer getMissionFrequency()
+@@ -129,8 +146,10 @@
+       return this.missionFrequency;
+    }
+ 
++
+    /**
+     * Set the Mission frequency
++    * 
+     * @param missionFrequency an Integer containing the Mission frequency
+     */
+    public void setMissionFrequency(Integer missionFrequency)
+@@ -141,6 +160,7 @@
+ 
+    /**
+     * Get the Relay frequency
++    * 
+     * @return an Integer containing the Relay frequency
+     */
+    public Integer getRelayFrequency()
+@@ -148,8 +168,10 @@
+       return this.relayFrequency;
+    }
+ 
++
+    /**
+     * Set the Relay frequency
++    * 
+     * @param relayFrequency an Integer containing the Relay frequency
+     */
+    public void setRelayFrequency(Integer relayFrequency)
+@@ -165,6 +187,8 @@
+    {
+       return this.ampId;
+    }
++
++
+    /**
+     * @param ampId the ampId to set
+     */
+@@ -172,6 +196,8 @@
+    {
+       this.ampId = ampId;
+    }
++
++
+    /**
+     * @return the telephoneNum
+     */
+@@ -179,6 +205,8 @@
+    {
+       return this.telephoneNum;
+    }
++
++
+    /**
+     * @param telephoneNum the telephoneNum to set
+     */
+@@ -186,148 +214,188 @@
+    {
+       this.telephoneNum = telephoneNum;
+    }
++
++
+    /**
+     * @return the heartbeatFrequency
+     */
+-   public Integer getHeartbeatFrequency( )
++   public Integer getHeartbeatFrequency()
+    {
+       return this.heartbeatFrequency;
+    }
++
++
+    /**
+     * @param heartbeatFrequency the heartbeatFrequency to set
+     */
+-   public void setHeartbeatFrequency( Integer heartbeatFrequency )
++   public void setHeartbeatFrequency(Integer heartbeatFrequency)
+    {
+       this.heartbeatFrequency = heartbeatFrequency;
+    }
++
++
+    /**
+     * @return the heartbeatWindowSize
+     */
+-   public Integer getHeartbeatWindowSize( )
++   public Integer getHeartbeatWindowSize()
+    {
+       return this.heartbeatWindowSize;
+    }
++
++
+    /**
+     * @param heartbeatWindowSize the heartbeatWindowSize to set
+     */
+-   public void setHeartbeatWindowSize( Integer heartbeatWindowSize )
++   public void setHeartbeatWindowSize(Integer heartbeatWindowSize)
+    {
+       this.heartbeatWindowSize = heartbeatWindowSize;
+    }
++
++
+    /**
+     * @return the goodPercentage
+     */
+-   public Integer getGoodPercentage( )
++   public Integer getGoodPercentage()
+    {
+       return this.goodPercentage;
+    }
++
++
+    /**
+     * @param goodPercentage the goodPercentage to set
+     */
+-   public void setGoodPercentage( Integer goodPercentage )
++   public void setGoodPercentage(Integer goodPercentage)
+    {
+       this.goodPercentage = goodPercentage;
+    }
++
++
+    /**
+     * @return the warningPercentage
+     */
+-   public Integer getWarningPercentage( )
++   public Integer getWarningPercentage()
+    {
+       return this.warningPercentage;
+    }
++
++
+    /**
+     * @param warningPercentage the warningPercentage to set
+     */
+-   public void setWarningPercentage( Integer warningPercentage )
++   public void setWarningPercentage(Integer warningPercentage)
+    {
+       this.warningPercentage = warningPercentage;
+    }
++
++
+    /**
+     * @return the losRange
+     */
+-   public Integer getLosRange( )
++   public Integer getLosRange()
+    {
+       return this.losRange;
+    }
++
++
+    /**
+     * @param losRange the losRange to set
+     */
+-   public void setLosRange( Integer losRange )
++   public void setLosRange(Integer losRange)
+    {
+       this.losRange = losRange;
+    }
++
++
+    /**
+     * @return the losLowerGuardLine
+     */
+-   public Integer getLosLowerGuardLine( )
++   public Integer getLosLowerGuardLine()
+    {
+       return this.losLowerGuardLine;
+    }
++
++
+    /**
+     * @param losLowerGuardLine the losLowerGuardLine to set
+     */
+-   public void setLosLowerGuardLine( Integer losLowerGuardLine )
++   public void setLosLowerGuardLine(Integer losLowerGuardLine)
+    {
+       this.losLowerGuardLine = losLowerGuardLine;
+    }
++
++
+    /**
+     * @return the lrRange
+     */
+-   public Integer getLrRange( )
++   public Integer getLrRange()
+    {
+       return this.lrRange;
+    }
++
++
+    /**
+     * @param lrRange the lrRange to set
+     */
+-   public void setLrRange( Integer lrRange )
++   public void setLrRange(Integer lrRange)
+    {
+       this.lrRange = lrRange;
+    }
++
++
+    /**
+     * @return the lrLowerGuardLine
+     */
+-   public Integer getLrLowerGuardLine( )
++   public Integer getLrLowerGuardLine()
+    {
+       return this.lrLowerGuardLine;
+    }
++
++
+    /**
+     * @param lrLowerGuardLine the lrLowerGuardLine to set
+     */
+-   public void setLrLowerGuardLine( Integer lrLowerGuardLine )
++   public void setLrLowerGuardLine(Integer lrLowerGuardLine)
+    {
+       this.lrLowerGuardLine = lrLowerGuardLine;
+    }
++
++
+    /**
+     * @return the slaTimeout
+     */
+-   public Integer getSlaTimeout( )
++   public Integer getSlaTimeout()
+    {
+       return this.slaTimeout;
+    }
++
++
+    /**
+     * @param slaTimeout the slaTimeout to set
+     */
+-   public void setSlaTimeout( Integer slaTimeout )
++   public void setSlaTimeout(Integer slaTimeout)
+    {
+       this.slaTimeout = slaTimeout;
+    }
++
++
+    /**
+     * @return sleepRadio
+     */
+-   public Boolean getSleepRadio ()
++   public Boolean getSleepRadio()
+    {
+       return this.sleepRadio;
+    }
+ 
++
+    /**
+     * @param sleepRadio The sleepRadio boolean value is set.
+     */
+-   public void setSleepRadio( Boolean sleepRadio )
++   public void setSleepRadio(Boolean sleepRadio)
+    {
+       this.sleepRadio = sleepRadio;
+    }
+ 
++
+    /**
+     * @return the encrypterTypeId
+     */
+@@ -336,9 +404,9 @@
+       return this.encrypterTypeId;
+    }
+ 
++
+    /**
+-    * @param encrypterTypeId
+-    *            the encrypterTypeId to set
++    * @param encrypterTypeId the encrypterTypeId to set
+     */
+    public void setEncrypterTypeId(String encrypterTypeId)
+    {
+@@ -345,11 +413,13 @@
+       this.encrypterTypeId = encrypterTypeId;
+    }
+ 
++
+    public Encrypter getEncrypterCharacteristics()
+    {
+       return RadioConstants.getEncrypterCharacteristics(this.encrypterTypeId);
+    }
+ 
++
+    /**
+     * @return the listOfChannels
+     */
+@@ -358,6 +428,7 @@
+       return this.listOfChannels;
+    }
+ 
++
+    /**
+     * @param listOfChannels the listOfChannels to set
+     */
+@@ -366,6 +437,7 @@
+       this.listOfChannels = listOfChannels;
+    }
+ 
++
+    /**
+     * @return the loopback
+     */
+@@ -374,6 +446,7 @@
+       return this.loopback;
+    }
+ 
++
+    /**
+     * @param loopback the loopback to set
+     */
+@@ -382,6 +455,7 @@
+       this.loopback = loopback;
+    }
+ 
++
+    /**
+     * @return the launchRadio
+     */
+@@ -390,6 +464,7 @@
+       return this.launchRadio;
+    }
+ 
++
+    /**
+     * @param launchRadio the launchRadio to set
+     */
+@@ -398,6 +473,7 @@
+       this.launchRadio = launchRadio;
+    }
+ 
++
+    /**
+     * @param secondaryAmpId the secondaryAmpId to set
+     */
+@@ -406,6 +482,7 @@
+       this.secondaryAmpId = secondaryAmpId;
+    }
+ 
++
+    /**
+     * @return the secondaryAmpId
+     */
+@@ -413,4 +490,23 @@
+    {
+       return secondaryAmpId;
+    }
++
++
++   /**
++    * @return the antennaCoverages
++    */
++   public List<AntennaCoverage> getAntennaCoverages()
++   {
++      return this.antennaCoverages;
++   }
++
++
++   /**
++    * 
++    * @param antennaCoverages the antennaCoverages to set
++    */
++   public void setAntennaCoverages(List<AntennaCoverage> antennaCoverages)
++   {
++      this.antennaCoverages = antennaCoverages;
++   }
+ }

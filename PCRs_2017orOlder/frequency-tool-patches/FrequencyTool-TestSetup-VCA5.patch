@@ -1,0 +1,516 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml	(revision 9513)
++++ src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml	(working copy)
+@@ -153,7 +153,7 @@
+       <maxAllowableTimeForManualPathSwitchInSec>180
+       </maxAllowableTimeForManualPathSwitchInSec>
+       <plugin></plugin>
+-      <heartbeatPort></heartbeatPort>
++      <heartbeatPort>0</heartbeatPort>
+       <priority>
+          <number>0</number>
+          <properties>
+@@ -181,7 +181,7 @@
+       <maxAllowableTimeForManualPathSwitchInSec>180
+       </maxAllowableTimeForManualPathSwitchInSec>
+       <plugin></plugin>
+-      <heartbeatPort></heartbeatPort>
++      <heartbeatPort>0</heartbeatPort>
+       <priority>
+          <number>0</number>
+          <properties>
+Index: src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(revision 9513)
++++ src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(working copy)
+@@ -5,7 +5,7 @@
+ app_version_debug=${app_version}-@revision_number@
+ app_build_date=@app_build_date@
+ 
+-vessel_type=@vessel_type@
++vessel_type=VEHICLE
+ 
+ # database settings
+ datasource_driver=org.hsqldb.jdbcDriver
+#P mvcs-vca
+Index: .classpath
+===================================================================
+--- .classpath	(revision 9513)
++++ .classpath	(working copy)
+@@ -7,5 +7,6 @@
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
+ 	<classpathentry kind="output" path="bin"/>
+ </classpath>
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9513)
++++ configs/mission.xsd	(working copy)
+@@ -30,8 +30,8 @@
+ 			<xs:element name="snmpAgentPort" type="Port" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="snmpTrapPort" type="Port" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="networkTimeout" type="inttype" minOccurs="1" maxOccurs="1" />
+-			<xs:element name="crossDomain" type="crossdomain_type" minOccurs="1" />
+-         	<xs:element name="othAmpController" type="othamp_type" minOccurs="1" />
++			<xs:element name="crossDomain" type="crossdomain_type" minOccurs="0" />
++			<xs:element name="othAmpController" type="othamp_type" minOccurs="0" />
+ 			<xs:element name="radio" type="shipRadioType" maxOccurs="unbounded" />
+ 			<xs:element name="snmp" type="snmp_type" minOccurs="1" maxOccurs="1" />
+ 		</xs:sequence>
+@@ -50,7 +50,7 @@
+ 			<xs:element name="networkTimeout" type="inttype" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="switchoverModeDefault" type="stringtype" minOccurs="0" maxOccurs="1" />
+ 			<xs:element name="depthLimit" type="negativefloattype" minOccurs="1" maxOccurs="1" />
+-            <xs:element name="crossDomain" type="crossdomain_type" minOccurs="1" />
++			<xs:element name="crossDomain" type="crossdomain_type" minOccurs="0" />
+ 			<xs:element name="router" type="routertype" />
+ 			<xs:element name="lanBypass" type="lanBypassType" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="radio" type="vehicleRadioType" maxOccurs="unbounded" />
+@@ -59,25 +59,23 @@
+ 			<xs:element name="acl" type="aclType" minOccurs="0" maxOccurs="unbounded" />
+ 			<xs:element name="snmpAgentTest" type="snmpAgentTest_type" maxOccurs="1" />
+ 		</xs:sequence>
+-		
++
+ 	</xs:complexType>
+-		<xs:complexType name="crossdomain_type">
++	<xs:complexType name="crossdomain_type">
+ 		<xs:all>
+-			<xs:element name="name" type="stringtype" minOccurs="1"
+-				maxOccurs="1">
++			<xs:element name="name" type="stringtype" minOccurs="0" maxOccurs="1">
+ 				<xs:annotation>
+ 					<xs:documentation>Domain Name</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+-			<xs:element name="ipAddress" type="stringtype" minOccurs="1"
+-				maxOccurs="1">
++			<xs:element name="ipAddress" type="stringtype" minOccurs="0" maxOccurs="1">
+ 				<xs:annotation>
+ 					<xs:documentation>Ip Address</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+ 		</xs:all>
+ 	</xs:complexType>
+-	
++
+ 	<xs:complexType name="othamp_type">
+ 		<xs:all>
+ 			<xs:element name="ipAddress" type="stringtype" minOccurs="1" maxOccurs="1">
+@@ -85,14 +83,14 @@
+ 					<xs:documentation>Ip Address</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+-			<xs:element name="port" type="stringtype" minOccurs="1"	maxOccurs="1">
++			<xs:element name="port" type="stringtype" minOccurs="1" maxOccurs="1">
+ 				<xs:annotation>
+ 					<xs:documentation>Port</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+ 		</xs:all>
+ 	</xs:complexType>
+-	
++
+ 	<xs:complexType name="snmpAgentTest_type">
+ 		<xs:all>
+ 			<xs:element name="testing" type="booleantype" minOccurs="0" maxOccurs="1">
+@@ -150,7 +148,8 @@
+ 					<xs:documentation>Sys Log Port</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
+-			<xs:element name="lanBypassEthernetPortName" type="stringtype" minOccurs="1" maxOccurs="1">
++			<xs:element name="lanBypassEthernetPortName" type="stringtype" minOccurs="1"
++				maxOccurs="1">
+ 				<xs:annotation>
+ 					<xs:documentation>Lan Bypass Ethernet Port Name</xs:documentation>
+ 				</xs:annotation>
+@@ -243,47 +242,47 @@
+ 		<xs:complexContent>
+ 			<xs:extension base="radioType">
+ 				<xs:sequence>
+-					<xs:element name="sleepRadio" type="booleantype" minOccurs="1" maxOccurs="1">
++					<xs:element name="sleepRadio" type="booleantype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Whether this is the designated sleep radio</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="heartbeatFrequency" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="heartbeatFrequency" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Heartbeat Frequency</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="heartbeatWindowSize" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="heartbeatWindowSize" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Heartbeat Window Size</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="goodPercentage" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="goodPercentage" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Good (Green) Percentage</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="warningPercentage" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="warningPercentage" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Warning (Yellow) Percentage</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="losRange" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="losRange" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Line of Sight Range (in nautical miles)</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="losLowerGuardLine" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="losLowerGuardLine" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>Line of Wire Guard Line Value (in nautical miles)</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="lrRange" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="lrRange" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>LR Range (in feet)</xs:documentation>
+ 						</xs:annotation>
+ 					</xs:element>
+-					<xs:element name="lrLowerGuardLine" type="inttype" minOccurs="1" maxOccurs="1">
++					<xs:element name="lrLowerGuardLine" type="inttype" minOccurs="0" maxOccurs="1">
+ 						<xs:annotation>
+ 							<xs:documentation>LR Lower Guard Line (in feet)</xs:documentation>
+ 						</xs:annotation>
+@@ -439,7 +438,7 @@
+ 			</xs:element>
+ 			<xs:element name="serialPort" type="serialporttype" minOccurs="1" maxOccurs="1" />
+ 			<xs:element name="currentMode" type="stringtype" minOccurs="1" maxOccurs="1" />
+-			<xs:element name="radioId" type="stringtype" minOccurs="1" maxOccurs="unbounded" />
++			<xs:element name="radioId" type="stringtype" minOccurs="0" maxOccurs="unbounded" />
+ 		</xs:sequence>
+ 	</xs:complexType>
+ 
+@@ -505,7 +504,8 @@
+ 		</xs:annotation>
+ 
+ 		<xs:restriction base="stringtype">
+-			<xs:pattern value="((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])" />
++			<xs:pattern
++				value="((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])" />
+ 		</xs:restriction>
+ 	</xs:simpleType>
+ 
+@@ -524,7 +524,7 @@
+ 		<xs:restriction base="xs:unsignedShort">
+ 			<xs:minInclusive value="1" />
+ 		</xs:restriction>
+-	</xs:simpleType>	
++	</xs:simpleType>
+ 
+ 	<xs:simpleType name="aclTrafficType">
+ 		<xs:restriction base="stringtype">
+@@ -534,7 +534,7 @@
+ 			<xs:enumeration value="icmp" />
+ 		</xs:restriction>
+ 	</xs:simpleType>
+-	
++
+ 	<xs:simpleType name="aclMessageType">
+ 		<xs:restriction base="stringtype">
+ 			<xs:enumeration value="unicast" />
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/UuvHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/UuvHandlerBuilder.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/UuvHandlerBuilder.java	(working copy)
+@@ -10,6 +10,7 @@
+ import mil.navy.lcs.mvcs.vca.dio.JniDigitalIO;
+ import mil.navy.lcs.mvcs.vca.dio.MockDigitalIO;
+ import mil.navy.lcs.mvcs.vca.power.PowerDeviceHandler_Uiss;
++import mil.navy.lcs.mvcs.vca.power.PowerDeviceHandler_Uuv;
+ 
+ /**
+  * This class is responsible for providing methods to build the handler for UUV type vehicle.
+@@ -50,9 +51,9 @@
+       // Set power handler based on testing flag
+       Power powerConfig = config.getPower();
+       if (powerConfig.isTesting())
+-         handler.setPowerHandler(new PowerDeviceHandler_Uiss(new MockDigitalIO()));
++         handler.setPowerHandler(new PowerDeviceHandler_Uuv(new MockDigitalIO()));
+       else
+-         handler.setPowerHandler(new PowerDeviceHandler_Uiss(new JniDigitalIO()));
++         handler.setPowerHandler(new PowerDeviceHandler_Uuv(new JniDigitalIO()));
+ 
+       return handler;
+    }
+Index: configs/SnmpAgent.xml
+===================================================================
+--- configs/SnmpAgent.xml	(revision 9513)
++++ configs/SnmpAgent.xml	(working copy)
+@@ -59,13 +59,13 @@
+ 	version="3"
+ 	port="1560"
+ 	encryptPasswordAndCommunity="yes"
+-	readCommunity="mvcs"
+-	writeCommunity="mvcs"
++	readCommunity="0x9E 0x2A 0x4C 0xDC 0x5B 0xEA 0x9A 0x93 0x85 0x85 0x06 0x55 0xE5 0x6A 0x06 0x85 0xAE 0xA8 0xC2 0x5A 0x20 0x77 0x08 0x49 0xA4 0xCC 0xC1 0xED 0x71 0x99 0xB8 0x7B"
++	writeCommunity="0x9E 0x2A 0x4C 0xDC 0x5B 0xEA 0x9A 0x93 0x85 0x85 0x06 0x55 0xE5 0x6A 0x06 0x85 0xAE 0xA8 0xC2 0x5A 0x20 0x77 0x08 0x49 0xA4 0xCC 0xC1 0xED 0x71 0x99 0xB8 0x7B"
+ 	maxPacketSize="4000"
+ 	useThreadPool="yes"
+ 	maxThreadCount="30"
+ 	engineID="mvcs"
+-	engineBoots="176"
++	engineBoots="177"
+ 	informTimeout="1000"
+ 	informRetries="3"
+ 	ipAddress="0.0.0.0"
+@@ -97,7 +97,7 @@
+ <trapSink
+ 	hostname="0.0.0.0"
+ 	port="1462"
+-	community="mvcs"
++	community="0x9E 0x2A 0x4C 0xDC 0x5B 0xEA 0x9A 0x93 0x85 0x85 0x06 0x55 0xE5 0x6A 0x06 0x85 0xAE 0xA8 0xC2 0x5A 0x20 0x77 0x08 0x49 0xA4 0xCC 0xC1 0xED 0x71 0x99 0xB8 0x7B"
+ 	version="2"
+ 	isInform="no"
+ 	description=""
+@@ -105,7 +105,7 @@
+ <trapSink
+ 	hostname="0.0.0.0"
+ 	port="1462"
+-	community="mvcs"
++	community="0x9E 0x2A 0x4C 0xDC 0x5B 0xEA 0x9A 0x93 0x85 0x85 0x06 0x55 0xE5 0x6A 0x06 0x85 0xAE 0xA8 0xC2 0x5A 0x20 0x77 0x08 0x49 0xA4 0xCC 0xC1 0xED 0x71 0x99 0xB8 0x7B"
+ 	version="1"
+ 	isInform="no"
+ 	description=""
+@@ -132,14 +132,14 @@
+ 	port="1462"
+ 	userName="newUser"
+ 	auth="MD5"
+-	authPassword="abc12345"
++	authPassword="0x0C 0xDA 0x7C 0x3E 0xED 0xCB 0x8E 0x22 0xDA 0x7E 0xAB 0x74 0x13 0xE0 0xCB 0xF2 0xA2 0xE8 0x04 0xC8 0xE2 0xB1 0x2B 0xDE 0xC7 0x48 0x39 0x54 0x3A 0x55 0xA9 0x7D"
+ 	priv="DES"
+-	privPassword="abc12345"
++	privPassword="0x0C 0xDA 0x7C 0x3E 0xED 0xCB 0x8E 0x22 0xDA 0x7E 0xAB 0x74 0x13 0xE0 0xCB 0xF2 0xA2 0xE8 0x04 0xC8 0xE2 0xB1 0x2B 0xDE 0xC7 0x48 0x39 0x54 0x3A 0x55 0xA9 0x7D"
+ 	contextName=""
+ 	isInform="no"
+ />
+ <communityView
+-	community="mvcs"
++	community="0x9E 0x2A 0x4C 0xDC 0x5B 0xEA 0x9A 0x93 0x85 0x85 0x06 0x55 0xE5 0x6A 0x06 0x85 0xAE 0xA8 0xC2 0x5A 0x20 0x77 0x08 0x49 0xA4 0xCC 0xC1 0xED 0x71 0x99 0xB8 0x7B"
+ 	readView="view1"
+ 	writeView="view1"
+ />
+@@ -168,9 +168,9 @@
+ <user
+ 	name="mvcssrv"
+ 	auth="MD5"
+-	authPassword="abc12345"
++	authPassword="0x0C 0xDA 0x7C 0x3E 0xED 0xCB 0x8E 0x22 0xDA 0x7E 0xAB 0x74 0x13 0xE0 0xCB 0xF2 0xA2 0xE8 0x04 0xC8 0xE2 0xB1 0x2B 0xDE 0xC7 0x48 0x39 0x54 0x3A 0x55 0xA9 0x7D"
+ 	priv="AES"
+-	privPassword="abc12345"
++	privPassword="0x0C 0xDA 0x7C 0x3E 0xED 0xCB 0x8E 0x22 0xDA 0x7E 0xAB 0x74 0x13 0xE0 0xCB 0xF2 0xA2 0xE8 0x04 0xC8 0xE2 0xB1 0x2B 0xDE 0xC7 0x48 0x39 0x54 0x3A 0x55 0xA9 0x7D"
+ 	group="aGroup"
+ />
+ <!-- Group Properties
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9513)
++++ missions/default-mission.xml	(working copy)
+@@ -5,10 +5,12 @@
+ 	<name>default-mission.xml</name>
+ 	<author>MVCS Administrator</author>
+ 	<description>This mission is responsible for managing a Vehicle. The radios on-board are the
+-		RT-1944 and the Iridium SCU.</description>
++		RT-1944 and the Iridium SCU.
++	</description>
+ 	<dateCreated>2009-08-26T14:32:00-06:00</dateCreated>
+ 	<ship>
+ 		<id>100</id>
++		<name>LCS1</name>
+ 		<typeId>lcs1</typeId>
+ 		<type>LCS</type>
+ 		<ipAddress>172.20.10.2</ipAddress>
+@@ -38,33 +40,29 @@
+ 		</snmp>
+ 	</ship>
+ 	<vehicle>
+-		<id>1</id>
+-		<name>RMMV1</name>
+-		<typeId>rmv</typeId>
+-		<type>RMV</type>
+-		<ipAddress>172.20.11.2</ipAddress>
++		<id>5</id>
++		<name>UUV1</name>
++		<typeId>uuv</typeId>
++		<type>UUV</type>
++		<ipAddress>172.20.15.2</ipAddress>
+ 		<snmpAgentPort>1560</snmpAgentPort>
+-		<mpsName>RMV1</mpsName>
++		<mpsName>UUV1</mpsName>
+ 		<networkTimeout>300</networkTimeout><!-- Units in seconds -->
+ 		<depthLimit>30.5</depthLimit>
+-      <crossDomain>
+-         <name>HAF100</name>
+-         <ipAddress>172.20.11.3</ipAddress>
+-      </crossDomain>
+ 		<router>
+-			<id>router-45</id>
++			<id>router-85</id>
+ 			<typeId>router</typeId>
+ 			<type>Router</type>
+-			<testing>false</testing>
+-			<ipAddress>172.20.11.1</ipAddress>
++			<testing>true</testing>
++			<ipAddress>172.20.15.1</ipAddress>
+ 			<connectionType>SSH</connectionType>
+ 			<connectionPort>22</connectionPort>
+ 			<serialPort>/dev/ttyM0</serialPort>
+ 			<sysLogPort>13514</sysLogPort>
+-			<lanBypassEthernetPortName>FastEthernet0/1</lanBypassEthernetPortName>
++			<lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+ 		</router>
+ 		<lanBypass>
+-			<id>lanbypass-1</id>
++			<id>lanbypass-5</id>
+ 			<typeId>lanbypass</typeId>
+ 			<linkType>LAN Bypass</linkType>
+ 			<linkNumber>1</linkNumber>
+@@ -72,110 +70,53 @@
+ 			<networkId>1</networkId>
+ 		</lanBypass>
+ 		<radio>
+-			<id>rt1944-1</id>
+-			<typeId>rt1944</typeId>
+-			<linkType>RT-1944</linkType>
+-			<linkNumber>2</linkNumber>
+-			<priority>2</priority>
++			<id>SATCOM</id>
++			<typeId>rt1988</typeId>
++			<linkType>RT-1988</linkType>
++			<linkNumber>3</linkNumber>
++			<priority>3</priority>
+ 			<networkId>1</networkId>
+ 			<encrypterTypeId>ips250</encrypterTypeId>
+-			<ampId>rt1944Amp-1</ampId>
+-			<secondaryAmpId>rt1944Amp-2</secondaryAmpId>
+ 			<sleepRadio>false</sleepRadio>
+-			<heartbeatFrequency>1</heartbeatFrequency>
+-			<heartbeatWindowSize>10</heartbeatWindowSize>
+-			<goodPercentage>80</goodPercentage>
+-			<warningPercentage>60</warningPercentage>
+-			<losRange>10</losRange>
+-			<losLowerGuardLine>1</losLowerGuardLine>
+-			<lrRange>50</lrRange>
+-			<lrLowerGuardLine>2</lrLowerGuardLine>
+-			<slaTimeout>10</slaTimeout>
+-			<snmpAgentIpAddress>172.20.11.3</snmpAgentIpAddress>
+-			<snmpAgentPortNumber>5001</snmpAgentPortNumber>
+-		</radio>
+-		<radio>
+-			<id>prc117-1</id>
+-			<typeId>prc117</typeId>
+-			<linkType>PRC-117</linkType>
+-			<linkNumber>4</linkNumber>
+-			<priority>4</priority>
+-			<networkId>1</networkId>
+-			<encrypterTypeId></encrypterTypeId>
+-			<ampId>prc117Amp-1</ampId>
+-			<sleepRadio>true</sleepRadio>
+-			<heartbeatFrequency>10</heartbeatFrequency>
+-			<heartbeatWindowSize>300</heartbeatWindowSize>
++			<heartbeatFrequency>30</heartbeatFrequency>
++			<heartbeatWindowSize>600</heartbeatWindowSize>
+ 			<goodPercentage>80</goodPercentage>
+ 			<warningPercentage>60</warningPercentage>
+-			<losRange>2000</losRange>
+-			<losLowerGuardLine>2</losLowerGuardLine>
+-			<lrRange>50</lrRange>
+-			<lrLowerGuardLine>2</lrLowerGuardLine>
++			<losRange>2000</losRange><!-- in nautical miles -->
++			<losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
++			<lrRange>50</lrRange><!-- in nautical miles -->
++			<lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+ 			<slaTimeout>10</slaTimeout>
+-			<frequencyNetRange>1-4</frequencyNetRange>
+-			<snmpAgentIpAddress>172.20.11.2</snmpAgentIpAddress>
+-			<snmpAgentPortNumber>5161</snmpAgentPortNumber>
+-			<loopback>lo:1</loopback>
+-			<channel id="1">
+-				<frequency>31000000</frequency>
+-			</channel>
+-			<channel id="2">
+-				<frequency>32000000</frequency>
+-			</channel>
++			<snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
++			<snmpAgentPortNumber>4161</snmpAgentPortNumber>
+ 		</radio>
+ 		<matrixSwitch>
+-			<id>ms-10</id>
++			<id>ms-50</id>
+ 			<typeId>ms</typeId>
+ 			<type>Matrix Switch</type>
+-			<testing>false</testing>
+-			<serialPort>172.20.11.3</serialPort>
++			<testing>true</testing>
++			<serialPort>172.20.12.3</serialPort>
+ 			<currentMode>dummy</currentMode>
+-			<radioId>rt1944-1</radioId>
+-			<radioId>prc117-1</radioId>
+ 		</matrixSwitch>
+ 		<power>
+-			<id>power-1</id>
++			<id>power-5</id>
+ 			<typeId>psu</typeId>
+ 			<type>Power Supply</type>
+-			<testing>false</testing>
++			<testing>true</testing>
+ 			<voltage>28</voltage>
+ 			<serialPort>/dev/ttyS1</serialPort>
+ 			<reverseLogicAdapter>true</reverseLogicAdapter>
+ 			<circuitBreaker>
+-				<id>rt1944Amp-1</id>
+-				<devNumber>0</devNumber>
+-				<devName>RT-1944 Amplifier</devName>
+-			</circuitBreaker>
+-			<circuitBreaker>
+-				<id>rt1944Amp-2</id>
+-				<devNumber>13</devNumber>
+-				<devName>RT-1944 Amplifier</devName>
+-			</circuitBreaker>
+-			<circuitBreaker>
+-				<id>rt1944-1</id>
++				<id>SATCOM</id>
+ 				<devNumber>1</devNumber>
+-				<devName>RT-1944</devName>
++				<devName>RT-1988</devName>
+ 			</circuitBreaker>
+-			<circuitBreaker>
+-				<id>prc117-1</id>
+-				<devNumber>2</devNumber>
+-				<devName>PRC-117</devName>
+-			</circuitBreaker>
+-            <circuitBreaker>
+-                <id>prc117Amp-1</id>
+-                <devNumber>3</devNumber>
+-                <devName>PRC-117 Amplifier</devName>
+-            </circuitBreaker>
+ 		</power>
+-		<!--
+-			<acl> <state>Mission</state> <priority>Low</priority> <access>permit</access>
+-			<trafficType>udp</trafficType> <sourceType>host</sourceType> <source>10.30.28.1</source>
+-			<destinationType>host</destinationType> <destination>10.30.30.1</destination>
+-			<portMatching>eq</portMatching> <port>1111</port> </acl>
+-		-->
++		<!-- <acl> <state>Mission</state> <priority>Low</priority> <access>permit</access> <trafficType>udp</trafficType> 
++			<sourceType>host</sourceType> <source>10.30.28.1</source> <destinationType>host</destinationType> <destination>10.30.30.1</destination> 
++			<portMatching>eq</portMatching> <port>1111</port> </acl> -->
+ 		<snmpAgentTest>
+-		  <testing>false</testing>
++			<testing>false</testing>
+ 		</snmpAgentTest>
+ 	</vehicle>
+ </mission>

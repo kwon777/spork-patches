@@ -1,0 +1,148 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/network/SystemLogDaemon.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/network/SystemLogDaemon.java	(revision 9819)
++++ src/main/java/mil/navy/lcs/mvcs/common/network/SystemLogDaemon.java	(working copy)
+@@ -142,20 +142,28 @@
+     * 
+     * @param message A log message received from the router
+     */
+-   private void parseMessage(String message)
++   protected void parseMessage(String message)
+    {
+       LoggingManager.getPrimaryLogger().debug("Retrieved Syslog message = " + message);
+-      // ex: <189>267: <189>267: *Sep 2 18:35:46.879: %TRACKING-5-STATE: 69 ip sla 69 reachability
+-      // Up->Down
++
+       /*
++       * Examples: <189>267: <189>267: *Sep 2 18:35:46.879: %TRACKING-5-STATE: 69 ip sla 69
++       * reachability Up->Down.
++       * 
+        * NOTE: 2015/09/25 - Noticed that new IOS (15.4.3) has extra whitespace before and after the
+        * "->" therefore, modified match format from [a-zA-Z]*->[a-zA-Z]
++       * 
++       * NOTE: 2017/07/06 - Some reason, the logic (format match) to allow the space before&after
++       * "->" has been removed. Re-modified code so it would allow extra whitespace. Old format was
++       * ".*: .*: .*: .*: " + "[0-9]* ip sla [0-9]* reachability [a-zA-Z\\s]*->[a-zA-Z\\s]*";
+        */
+-      String stateChangeMessageFormat = ".*: .*: .*: .*: " + "[0-9]* ip sla [0-9]* reachability [a-zA-Z\\s]* -> [a-zA-Z\\s]*";
++      String stateChangeMessageFormat = ".*: .*: .*: " + "[0-9]* ip sla [0-9]* reachability [a-zA-Z\\s]*->[a-zA-Z\\s]*";
+ 
+-      // ex: 06-09-2010 16:10:54 Local7.Warning 10.12.12.1 264: *Jun 9 23:07:37.566:
+-      // %IPS-4-SIGNATURE: Sig:2004 Subsig:0 Sev:25 ICMP Echo Request [172.19.20.2:8 ->
+-      // 10.12.12.2:0] VRF:NONE RiskRating:25
++      /*
++       * ex: 06-09-2010 16:10:54 Local7.Warning 10.12.12.1 264: *Jun 9 23:07:37.566:
++       * %IPS-4-SIGNATURE: Sig:2004 Subsig:0 Sev:25 ICMP Echo Request [172.19.20.2:8 ->
++       * 10.12.12.2:0] VRF:NONE RiskRating:25
++       */
+       String intrusionDetectionMessageFormat = ".* %IPS-[0-9]+-SIGNATURE: .*";
+ 
+       if (message.matches(stateChangeMessageFormat))
+@@ -162,50 +170,32 @@
+       {
+          LoggingManager.getPrimaryLogger().debug("Parsing message from syslog daemon: " + message);
+ 
++         // split the message into ": "
+          String[] messageParts = message.split(": ");
+-         String messageBody = messageParts[4];
++         // the last part has state info including SLA and state up/down
++         String slaTrackAndState = messageParts[messageParts.length - 1];
+ 
+-         String[] messageBodyParts = messageBody.split(" ");
+-         int trackNumber = Integer.parseInt(messageBodyParts[0]);
+-         // String stateChange = messageBodyParts[5];
++         // split the message with whitespace to obtain SLA track number
++         String[] trackNumberParts = slaTrackAndState.split(" ");
++         // the first number is SLA track number
++         int trackNumber = Integer.parseInt(trackNumberParts[0]);
+ 
+-         // ex: <189>267: *Sep 2 18:35:46.879: %TRACKING-5-STATE: 69 ip sla 69 reachability Up->Down
+-         /*
+-          * NOTE: 2015/09/25 - Noticed that new IOS (15.4.3) has extra whitespace before and after
+-          * the "->" therefore, modified match format from [a-zA-Z]*->[a-zA-Z]
+-          * 
+-          * 2015/10/2 - Arthur Wagner Added if logic to handle 2 different variations of parsed
+-          * strings based on router IOS version The if logic will return true on old IOS where
+-          * stateChange = messageBodyParts[5] = "Up->Down" or "Down->Up" The if logic will return
+-          * false on new IOS (15.4.3) where stateChange = messageBodyParts[5] = "Up" or "Down"
+-          */
++         // split the message with "reachability" to obtain state
++         String[] trackSlaAndRoute = slaTrackAndState.split("reachability");
+ 
+-         // String[] stateChangeParts;
+-         String previousState;
+-         String currentState;
++         // route state is located after reachability.
++         // split the route info info with "->"
++         String[] stateParts = trackSlaAndRoute[1].split("->");
++         String previousState = stateParts[0].trim();
++         String currentState = stateParts[1].trim();
+ 
+-         // if (stateChange.contains("->"))
+-         // {
+-         // stateChangeParts = stateChange.split("->");
+-         // previousState = stateChangeParts[0];
+-         // currentState = stateChangeParts[1];
+-         // }
+-         //
+-         // else
+-         // {
+-         previousState = messageBodyParts[5];
+-         currentState = messageBodyParts[7];
+-         // }
+-
+-
+          LoggingManager.getPrimaryLogger().debug("Message parsed: tracker number = " + trackNumber + ", previous state = " + previousState + ", current state = " + currentState);
+ 
+-         // NOTE: 2015/09/25 - ignore case
+          if (previousState.equalsIgnoreCase("Down") && currentState.equalsIgnoreCase("Up"))
+          {
+             this.routeUp(trackNumber);
+          }
+-         else if (previousState.equals("Up") && currentState.equals("Down"))
++         else if (previousState.equalsIgnoreCase("Up") && currentState.equalsIgnoreCase("Down"))
+          {
+             this.routeDown(trackNumber);
+          }
+Index: src/main/test/mil/navy/lcs/mvcs/common/network/SystemLogDaemonTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/network/SystemLogDaemonTest.java	(revision 9819)
++++ src/main/test/mil/navy/lcs/mvcs/common/network/SystemLogDaemonTest.java	(working copy)
+@@ -11,7 +11,8 @@
+  * <p>
+  * Date Created: Sep 24, 2009
+  * <p>
+- * $LastChangedBy$ <br>
++ * $LastChangedBy$
++ * <br>
+  * $LastChangedDate$ <br>
+  * $LastChangedRevision$
+  * 
+@@ -21,6 +22,15 @@
+ public class SystemLogDaemonTest
+ {
+ 
++   static String MSG1 = "<189>182986: Jul  6 12:42:17.367: %TRACKING-5-STATE: 42 ip sla 42 reachability Down->Up";
++   static String MSG2 = "<189>267: *Sep 2 18:35:46.879: %TRACKING-5-STATE: 69 ip sla 69 reachability Up->Down";
++   static String MSG3 = "<189>267: *Sep 2 18:35:46.879: %TRACKING-5-STATE: 69 ip sla 69 reachability Up -> Down";
++   static String MSG4 = "<182>284: 000309: May  8 04:56:14.746 UTC: %TRACK-6-STATE: 13 ip sla 13 reachability Down -> Up";
++   static String MSG5 = "<182>284: 000309: May  8 04:56:14.746 UTC: %TRACK-6-STATE: 23 ip sla 23 reachability Down ->Up";
++   static String MSG6 = "<189>267: *Sep 2 18:35:46.879: %TRACKING-5-STATE: 69 ip sla 69 reachability Up-> Down";
++   static String[] MESSAGES = { MSG1, MSG2, MSG3, MSG4, MSG5, MSG6 };
++
++
+    /**
+     * Method Description
+     * 
+@@ -44,5 +54,11 @@
+ 
+       SystemLogDaemon systemLogDaemon = new TestSystemLogDaemon(13514);
+       systemLogDaemon.start();
++
++      /*
++       * Testing message parser for track up/down
++       */
++      for (int i = 0; i < MESSAGES.length; i++)
++         systemLogDaemon.parseMessage(MESSAGES[i]);
+    }
+ }

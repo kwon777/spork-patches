@@ -1,0 +1,47 @@
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9848)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -74,14 +74,14 @@
+ 	</div>
+ 	
+ 	<!-- hidden inline form -->
+-	<div class="hiddenForm" id="oth_testSettings">
++	<div class="hiddenForm" id="single_testSettings">
+ 		<div id="oth_testSettings_config_label"></div>
+ 		<h2>RF Test Port</h2>
+ 		<form action="" name="testConfigure">		
+ 			<button type="submit" class="configureBtn"
+-				onclick="submitRfOthTest(event, true);">Start</button>
++				onclick="submitSingleRfTest(event, true);">Start</button>
+ 			<button type="submit" class="configureBtn"
+-				onclick="submitRfOthTest(event, false);">Stop</button>
++				onclick="submitSingleRfTest(event, false);">Stop</button>
+ 			<input type="button" value="Close" onclick="$.fancybox.close()" />
+ 		</form>
+ 	</div>
+@@ -374,15 +374,22 @@
+ 											<!--  MVCS1597 No use button when link disconnected. -->
+ 										<button class="linkButton"
+ 											data-bind="click: requestLinkAction.bind($data, $parent, 'use'), visible: (status() == 'CONNECTED')">Use</button>
+-										<b data-bind="visible: commsType() == 'LOS'"> 
++										<b data-bind="visible: commsType() == 'LOS' && $parent.className() != 'UissNode' "> 
+ 										<a  class="linkButton rfTestportTestButton modalbox"
+ 											href="#testSettings"
+ 											data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
+ 										</a>
+ 										</b> 
++                                        <!-- MVCS1898 RF test for USV only equipped one test port -->
++                                        <b data-bind="visible: commsType() == 'LOS' && $parent.className() == 'UissNode' "> 
++                                        <a  class="linkButton rfTestportTestButton modalbox"
++                                          href="#single_testSettings"
++                                          data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
++                                        </a>
++                                        </b> 
+ 										<b data-bind="visible: commsType() == 'OTH'">
+ 										<a 	class="linkButton rfTestportTestButton modalbox"
+-											href="#oth_testSettings"
++											href="#single_testSettings"
+ 											data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button> </a>
+ 										</b>
+ 										<button class="linkButton disableButton"

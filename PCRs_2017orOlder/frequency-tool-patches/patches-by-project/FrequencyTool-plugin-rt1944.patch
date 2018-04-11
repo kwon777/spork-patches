@@ -1,0 +1,19 @@
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(revision 9510)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(working copy)
+@@ -566,11 +566,11 @@
+          RadioControl.setRadioFrequency(newRadioFreq);
+          return true;
+       }
+-      catch (IOException e)
++      catch (Exception e)
+       {
+-         // timeout or other problem
+-         return false;
++         logger.error("Error: ", e);
+       }
++      return false;
+    }
+ 
+ 

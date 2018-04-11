@@ -1,0 +1,12 @@
+Index: src/main/resources/mil/navy/lcs/mvcs/common/config/vehicle-mission.xslt
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/config/vehicle-mission.xslt	(revision 9580)
++++ src/main/resources/mil/navy/lcs/mvcs/common/config/vehicle-mission.xslt	(working copy)
+@@ -62,6 +62,7 @@
+ 	<xsl:template match="/mission/ship/radio/snmpAgentIpAddress" />
+ 	<xsl:template match="/mission/ship/radio/snmpAgentPortNumber" />
+ 	<xsl:template match="/mission/ship/radio/launchRadio" />
++	<xsl:template match="/mission/ship/radio/antennaCoverage" />
+ 	<xsl:template match="/mission/ship/matrixSwitch" />
+ 	<xsl:template match="/mission/ship/power" />
+ 	<xsl:template match="/mission/ship/powerUps" />

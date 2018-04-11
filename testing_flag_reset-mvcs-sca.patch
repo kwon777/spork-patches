@@ -1,0 +1,279 @@
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9926)
++++ missions/default-mission.xml	(working copy)
+@@ -53,7 +53,7 @@
+          <id>router-1</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.10.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -124,7 +124,7 @@
+          <id>ms-00</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.10.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -135,7 +135,7 @@
+          <id>power-0</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>172.20.10.3:4001</serialPort>
+@@ -180,7 +180,7 @@
+          <id>ups-0</id>
+          <typeId>ups</typeId>
+          <type>Uninterruptible Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>/dev/ttyS0</serialPort>
+          <pollRate>60000</pollRate>
+@@ -195,7 +195,7 @@
+          <primaryPort>8000</primaryPort>
+          <secondaryName>MPSCORBA2</secondaryName>
+          <secondaryPort>8001</secondaryPort>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <proxyHost />
+          <proxyPort />
+          <clientHost />
+@@ -207,10 +207,10 @@
+          <version>3</version>
+       </snmp>
+       <security>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </security>
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </ship>
+    <vehicle>
+@@ -235,7 +235,7 @@
+          <id>router-45</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.11.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -313,7 +313,7 @@
+          <id>ms-10</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.11.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -324,7 +324,7 @@
+          <id>power-1</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>/dev/ttyS1</serialPort>
+@@ -359,7 +359,7 @@
+          <sourceType>host</sourceType> <source>10.30.28.3</source> <destinationType>host</destinationType> <destination>10.30.30.3</destination> 
+          <portMatching>eq</portMatching> <port>1111</port> </acl> -->
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </vehicle>
+    <vehicle>
+@@ -385,7 +385,7 @@
+          <id>router-55</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.12.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -463,7 +463,7 @@
+          <id>ms-20</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.12.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -474,7 +474,7 @@
+          <id>power-2</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>/dev/ttyS1</serialPort>
+@@ -506,7 +506,7 @@
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </vehicle>
+    <vehicle>
+@@ -532,7 +532,7 @@
+          <id>router-65</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.13.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -579,7 +579,7 @@
+          <id>ms-30</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.13.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -589,7 +589,7 @@
+          <id>power-3</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>/dev/ttyS1</serialPort>
+@@ -606,7 +606,7 @@
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </vehicle>
+    <vehicle>
+@@ -632,7 +632,7 @@
+          <id>router-75</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.14.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -679,7 +679,7 @@
+          <id>ms-40</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.14.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -689,7 +689,7 @@
+          <id>power-4</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>/dev/ttyS1</serialPort>
+@@ -706,7 +706,7 @@
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </vehicle>
+    <vehicle>
+@@ -731,7 +731,7 @@
+          <id>router-85</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.15.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -777,7 +777,7 @@
+          <id>ms-50</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.15.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -787,7 +787,7 @@
+          <id>power-5</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>/dev/ttyS1</serialPort>
+@@ -799,7 +799,7 @@
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </vehicle>
+       <vehicle>
+@@ -824,7 +824,7 @@
+          <id>router-95</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.16.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -870,7 +870,7 @@
+          <id>ms-60</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.16.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -880,7 +880,7 @@
+          <id>power-6</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>true</testing>
++         <testing>false</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>/dev/ttyS1</serialPort>
+@@ -892,7 +892,7 @@
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+-         <testing>true</testing>
++         <testing>false</testing>
+       </snmpAgentTest>
+    </vehicle>
+ </mission>
+\ No newline at end of file

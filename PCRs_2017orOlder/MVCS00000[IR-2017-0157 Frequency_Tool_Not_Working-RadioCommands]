@@ -1,0 +1,957 @@
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java	(working copy)
+@@ -1,8 +1,6 @@
+-/*************************************************
+- * File History
+- *************************************************
++/*
++ * ************************************ File History *******************************************
+  *
+- *
+  * May 25, 2010 - AL - Inital Import of RadioCommand.java
+  *
+  * June 3rd, 2010 - AL - Added radioParamater support.
+@@ -35,25 +33,29 @@
+ import java.util.Vector;
+ import java.util.regex.Pattern;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.ireasoning.protocol.TimeoutException;
++import com.ireasoning.protocol.snmp.SnmpDataType;
++import com.ireasoning.protocol.snmp.SnmpTableModel;
++import com.ireasoning.protocol.snmp.SnmpVarBind;
++
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.graphics.util.SwingWorker;
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.interfaces.KeyEntryMethod;
+ import mil.navy.lcs.mvcs.plugins.rt1944.logger.Rt1944Logger;
++import mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues.QueueList;
+ import mil.navy.lcs.mvcs.plugins.rt1944.snmp.SnmpFunctions;
+ 
+-import com.ireasoning.protocol.TimeoutException;
+-import com.ireasoning.protocol.snmp.SnmpDataType;
+-import com.ireasoning.protocol.snmp.SnmpTableModel;
+-import com.ireasoning.protocol.snmp.SnmpVarBind;
+ 
+-
+ /**
+  * Radio Command interface for the GUI.
+  * <p>
+  * Date Created: May 25, 2010
+  * <p>
+- * $LastChangedBy$ <br>
++ * $LastChangedBy$
++ * <br>
+  * $LastChangedDate$ <br>
+  * $LastChangedRevision$
+  *
+@@ -70,13 +72,14 @@
+       public boolean requestInProgress = false;
+    }
+ 
++   /** The logger for this class */
++   protected static Logger logger = LoggerFactory.getLogger(RadioCommands.class);
+ 
++
+    /** How long to wait before applying the changes to the radio */
+    private static final long APPLY_CHANGES_GRACE_PERIOD = 3000;
+ 
+-   /**
+-    * A map of the vehicle queue list and their dscp values.
+-    */
++   /** A map of the vehicle queue list and their dscp values. */
+    private static final Map<QueueList, LinkedList<Integer>> priorityList = new HashMap<QueueList, LinkedList<Integer>>();
+ 
+    private static final long RADIO_SET_GAURD = 10000;
+@@ -117,62 +120,30 @@
+ 
+    private SnmpTableModel cosTable;
+    private String emcon;
+-
+    private String frequency;
+-
+    private String gateway;
+-
+    private String initialPowerLevel;
+-
+    private String ipAddress = "NA";
+-
+    private String keyEntry;
+-
+    private String msStatus;
+-
+    private boolean networkSessionFlag = false;
+-
+    private String nodeName;
+-
+    private boolean posEnabled = false;
+-
+    private LinkedList<Integer>[] posList = new LinkedList[6];
+-
+    private String powerLevel;
+-
+    private String radioIpAddress = "NA";
+-
+    private int radioPort;
+-
+-
+    private String rt1944_Snmp_Suffix = ".0";
+-
+    private String securityType;
+-
+    private boolean selackSessionFlag = false;
+-
+    private String snmpAgentIpAddress = "";
+-
+-
+    private String snmpAgentPort = "";
+    private String SSID;
+-
+-   /**
+-    * Flag used to determine whether the network section of the radio has been modified.
+-    */
++   /** Flag to denote the network section of the radio has been modified. */
+    boolean networkFlag = false;
+-
+-
+-   /**
+-    * Flag used to determine whether a value in the selack portion has been modified, so that the
+-    * proper value can be set.
+-    **/
++   /** Flag denotes a value in the selack portion has been modified. **/
+    boolean selackFlag = false;
+-
+-
+    SnmpFunctions SnmpCommands = null;
+-
+-
+    SwingWorker worker;
+ 
+ 
+@@ -180,16 +151,13 @@
+    {
+       String defaultRadioIpAddress = "172.16.102.130";
+       SnmpCommands = new SnmpFunctions(defaultRadioIpAddress);
+-
+    }
+ 
+ 
+-   //
+    public RadioCommands( String ipAddress)
+    {
+       this.ipAddress = ipAddress;
+       SnmpCommands = new SnmpFunctions(ipAddress);
+-
+    }
+ 
+ 
+@@ -197,8 +165,6 @@
+     * This function will save the most recently set radio configurations.
+     *
+     * @throws Exception
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public void _saveChangesForSession() throws Exception
+    {
+@@ -228,9 +194,6 @@
+          Rt1944Logger.getInstance().getLogger().debug("No network configurations have been made!");
+       }
+ 
+-      // Compares the new radio values with the previous settings
+-      // to verify that the changes were updated to the radio.
+-      // compareValues();
+       resetSessionFlags();
+    }
+ 
+@@ -273,9 +236,7 @@
+       {
+          Rt1944Logger.getInstance().getLogger().debug("No network configurations have been saved!");
+       }
+-      // Compares the new radio values with the previous settings
+-      // to verify that the changes were updated to the radio.
+-      // compareValues();
++
+       resetFlags();
+    }
+ 
+@@ -296,40 +257,6 @@
+    }
+ 
+ 
+-   public void compareValues() throws Exception
+-   {
+-      if (!(this.frequency.contentEquals(getRadioFrequency())))
+-      {
+-         throw new Exception("The frequency did not get set.");
+-      }
+-      if (!(this.SSID.contentEquals(getSSID())))
+-      {
+-         throw new Exception("The SSID did not get set.");
+-      }
+-      if (!(this.emcon.contentEquals(getEmcon())))
+-      {
+-         throw new Exception("The frequency did not get set.");
+-      }
+-      if (!(this.powerLevel.contentEquals(getPowerLevel())))
+-      {
+-         throw new Exception("The power level did not get set.");
+-      }
+-      if (!(this.msStatus.contentEquals(getCommandStatus())))
+-      {
+-         throw new Exception("The master/slave did not get set.");
+-      }
+-      if (!(this.burstRate.contentEquals(getBurstRate())))
+-      {
+-         throw new Exception("The burst rate did not get set.");
+-      }
+-      if (!(this.radioIpAddress.contentEquals(getRadioIpAddress())))
+-      {
+-         throw new Exception("The Radio Ip address did not get set.");
+-      }
+-
+-   }
+-
+-
+    /**
+     * Used to connect to Set the IpAddress of the radio to Connect to
+     *
+@@ -352,7 +279,6 @@
+       this.radioPort = Integer.parseInt(port);
+       SnmpCommands = new SnmpFunctions(ipAddress);
+       SnmpCommands.setPort(radioPort);
+-
+    }
+ 
+ 
+@@ -359,9 +285,7 @@
+    public String getBurstRate() throws IOException
+    {
+       String burstRate = "NA";
+-
+       burstRate = SnmpCommands.snmpget("iciSelackOperRssiMapRate" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return burstRate;
+    }
+ 
+@@ -375,9 +299,7 @@
+    public String getCommandStatus() throws IOException
+    {
+       String msStatus = "NA";
+-
+       msStatus = SnmpCommands.snmpget("iciSelackOperOpMode" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return msStatus;
+    }
+ 
+@@ -442,10 +364,8 @@
+    /**
+     * This function returns the current status of the emcon status.
+     *
+-    * @return
++    * @return the EMCON status
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getEmcon() throws IOException
+    {
+@@ -459,7 +379,7 @@
+    /**
+     * Gets the Gateway value for the radio.
+     *
+-    * @return
++    * @return the gateway
+     * @throws IOException
+     */
+    public String getGateway() throws IOException
+@@ -477,8 +397,6 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getHPA1BitResult() throws IOException
+    {
+@@ -495,15 +413,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getHPA2BitResult() throws IOException
+    {
+       String HPA2Result = "NA";
+-
+       HPA2Result = SnmpCommands.snmpget("iciAppRssslRadioHpaTwoBit" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return HPA2Result;
+    }
+ 
+@@ -511,7 +425,7 @@
+    /**
+     * Gets the current IP Address.
+     *
+-    * @return
++    * @return the IP address
+     */
+    public String getIpAddress()
+    {
+@@ -522,9 +436,7 @@
+    public String getKeyEntry() throws IOException
+    {
+       String keyEntry = null;
+-
+       keyEntry = SnmpCommands.snmpget("iciAppRssslRadioKeyEntryMethod" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return keyEntry;
+    }
+ 
+@@ -544,9 +456,7 @@
+    public String getPath() throws IOException
+    {
+       String path = "NA";
+-
+       path = SnmpCommands.snmpget("iciAppRssslRadioAntenna" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return path;
+    }
+ 
+@@ -560,9 +470,7 @@
+    public String getPowerLevel() throws IOException
+    {
+       String powerLevel = "NA";
+-
+       powerLevel = SnmpCommands.snmpget("iciAppRssslRadioFullRadioPower" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return powerLevel;
+    }
+ 
+@@ -570,9 +478,7 @@
+    public String getPriorityOfServiceEnable() throws IOException
+    {
+       String posEnabled = "NA";
+-
+       posEnabled = SnmpCommands.snmpget("iciAppRssslNpmOperCosEnabling" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return posEnabled;
+    }
+ 
+@@ -581,7 +487,6 @@
+    {
+       // TODO: Add logic
+       return null;
+-
+    }
+ 
+ 
+@@ -590,15 +495,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioFrequency() throws IOException
+    {
+       String frequency = "NA";
+-
+       frequency = SnmpCommands.snmpget("iciAppRssslRadioFrequency" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return frequency;
+    }
+ 
+@@ -608,15 +509,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioFullPower() throws IOException
+    {
+       String fullPower = "NA";
+-
+       fullPower = SnmpCommands.snmpget("iciAppRssslRadioFullRadioPower" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return fullPower;
+    }
+ 
+@@ -626,15 +523,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioHWVersion() throws IOException
+    {
+       String hwVersion = null;
+-
+       hwVersion = SnmpCommands.snmpget("iciAppRssslRadioHwVerBIT" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return hwVersion;
+    }
+ 
+@@ -642,9 +535,7 @@
+    public String getRadioIpAddress() throws IOException
+    {
+       String radioIpAddress = "0.0.0.0";
+-
+       radioIpAddress = SnmpCommands.snmpget("iciAppRssslNpmOperIpAddr" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return radioIpAddress;
+    }
+ 
+@@ -654,15 +545,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioSWVersion() throws IOException
+    {
+       String swVersion = null;
+-
+       swVersion = SnmpCommands.snmpget("iciAppRssslRadioSwVerBIT" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return swVersion;
+    }
+ 
+@@ -676,9 +563,7 @@
+    public String getSecurityType() throws IOException
+    {
+       String securityType = "NA";
+-
+       securityType = SnmpCommands.snmpget("iciAppRssslRadioAuthentication" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return securityType;
+    }
+ 
+@@ -689,7 +574,6 @@
+       int numOfRadio = 0;
+       Vector<Vector<String>> listOfRadios = new Vector<Vector<String>>();
+ 
+-
+       // selackRadioTable = SnmpCommands.getTable("iciSelackDestStatTable", this.ipAddress);
+       selackRadioTable = SnmpCommands.getRadioTable(this.ipAddress);
+ 
+@@ -703,8 +587,8 @@
+       else
+       {
+ 
+-         System.out.println("Row Count = " + selackRadioTable.getRowCount());
+-         System.out.println("Column Count = " + selackRadioTable.getColumnCount());
++         logger.debug("Row Count = " + selackRadioTable.getRowCount());
++         logger.debug("Column Count = " + selackRadioTable.getColumnCount());
+          numOfRadio = selackRadioTable.getRowCount();
+          Rt1944Logger.getInstance().getLogger().debug("Number of Radios: " + numOfRadio);
+          for (int i = 0; i < numOfRadio; i++)
+@@ -734,7 +618,6 @@
+          }
+       }
+       return listOfRadios;
+-
+    }
+ 
+ 
+@@ -755,24 +638,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws Exception
+-    * @throws TimeoutException
+     */
+-   public String getSNR() throws Exception
++   public String getSNR() throws IOException
+    {
+-      String snr = "NA";
+-      try
+-      {
+-
+-         snr = SnmpCommands.snmpget("iciAppRssslRadioRssi" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+-      }
+-      catch (IOException exceptionIO)
+-      {
+-         snr = "0";
+-         throw new Exception("No Snr value available. Please Check Radio Connection.");
+-      }
+-
++      String snr = "0";
++      snr = SnmpCommands.snmpget("iciAppRssslRadioRssi" + rt1944_Snmp_Suffix, this.ipAddress);
+       return snr;
+    }
+ 
+@@ -782,7 +652,6 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getSSID() throws IOException
+    {
+@@ -859,14 +728,11 @@
+    {
+       try
+       {
+-
+          SnmpCommands.snmpset("iciAppRssslNpmConfigAction" + rt1944_Snmp_Suffix, "i", Value, this.ipAddress);
+-
+       }
+       catch (TimeoutException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+ 
+    }
+@@ -874,15 +740,7 @@
+ 
+    public void radioModifier(String Value) throws IOException
+    {
+-      try
+-      {
+-         SnmpCommands.snmpset("iciAppRssslRadioAction" + rt1944_Snmp_Suffix, "s", Value, this.ipAddress);
+-      }
+-      catch (TimeoutException e)
+-      {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
+-      }
++      SnmpCommands.snmpset("iciAppRssslRadioAction" + rt1944_Snmp_Suffix, "s", Value, this.ipAddress);
+    }
+ 
+ 
+@@ -902,8 +760,7 @@
+       }
+       catch (TimeoutException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+ 
+    }
+@@ -929,18 +786,11 @@
+       }
+       catch (Exception e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+    }
+ 
+ 
+-   /**
+-    * Set the Operator Mode of the radio to "Master/Slave"
+-    *
+-    * @param msStatus
+-    * @throws IOException
+-    */
+    public void setBurstRate(String burstRate) throws IOException
+    {
+       try
+@@ -953,7 +803,6 @@
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the burst rate.");
+          throw new TimeoutException("The system timed out while trying to set the burst rate.");
+-
+       }
+    }
+ 
+@@ -968,7 +817,7 @@
+    {
+       try
+       {
+-         System.out.println("Setting command status to: " + msStatus.toLowerCase());
++         logger.info("Setting command status to: " + msStatus.toLowerCase());
+          SnmpCommands.snmpset("iciSelackConfigOpMode" + rt1944_Snmp_Suffix, "s", msStatus.toLowerCase(), this.ipAddress);
+          setSelackFlags(true);
+          this.msStatus = msStatus;
+@@ -977,7 +826,6 @@
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the Master/Slave status.");
+          throw new TimeoutException("The system timed out while trying to set the Master/Slave status.");
+-
+       }
+    }
+ 
+@@ -1032,10 +880,8 @@
+    /**
+     * This function is to set the Emcon status to true or false.
+     *
+-    * @param string
++    * @param emconStr
+     * @throws IOException
+-    * @throws TimeoutException
+-    * @throws IOException
+     */
+    public void setEmcon(String emconStr) throws IOException
+    {
+@@ -1073,7 +919,6 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the gateway.");
+-
+       }
+ 
+    }
+@@ -1098,7 +943,6 @@
+ 
+    public void setKeyEntryMethod(KeyEntryMethod keyEntryMethod) throws IOException
+    {
+-
+       try
+       {
+          String keyValue = null;
+@@ -1116,8 +960,7 @@
+       }
+       catch (TimeoutException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+ 
+    }
+@@ -1135,7 +978,8 @@
+     * radio.
+     *
+     * @param path
+-    * @throws Exception
++    * @throws IOException
++    * @throws TimeoutException
+     */
+    public void setPath(String path) throws IOException, TimeoutException
+    {
+@@ -1163,9 +1007,7 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the antenna path.");
+-
+       }
+-
+    }
+ 
+ 
+@@ -1203,32 +1045,23 @@
+ 
+ 
+    /**
+-    * This function is to set the frequency for the current radio.
++    * To permanently set a frequency for current radio.
+     *
+-    * @param frequency
++    * @param frequency - the frequency to set
+     * @throws IOException
+-    * @throws TimeoutException
+-    * @throws IOException
+     */
+    public void setRadioFrequency(String frequency) throws IOException
+    {
+-      try
+-      {
+-         System.out.println("Setting radio Frequency " + this.ipAddress + " " + this.radioPort);
+-         getRequestState().requestedFrequency = frequency;
++      logger.info("Setting radio Frequency " + this.ipAddress + " " + this.radioPort);
++      getRequestState().requestedFrequency = frequency;
+ 
+-         SnmpCommands.snmpset("iciAppRssslRadioFrequency" + rt1944_Snmp_Suffix, "s", frequency, this.ipAddress);
+-         setAppFlags(true);
++      SnmpCommands.snmpset(ConstantValues.SNMP_OID_CHANGE_FREQ, "s", frequency, this.ipAddress);
++      setAppFlags(true);
+ 
+-         // Save the frequency changes to the radio.
+-         saveChangesPermanently();
+-         this.frequency = frequency;
+-      }
+-      catch (TimeoutException e)
+-      {
+-         throw new TimeoutException("The system timed out while trying to set the frequency.");
+-
+-      }
++      // Save the frequency changes to the radio.
++      SnmpCommands.snmpset(ConstantValues.SNMP_OID_SAVE_SESSION, "s", ConstantValues.SNMP_VALUE_SAVE_SESSION);
++      SnmpCommands.snmpset(ConstantValues.SNMP_OID_SAVE_PERMANENT, "i", ConstantValues.SNMP_VALUE_SAVE_PERMANENT);
++      this.frequency = frequency;
+    }
+ 
+ 
+@@ -1236,11 +1069,9 @@
+     * This function will allow the programmer to set the max allowable power for the radio.
+     *
+     * @param powerLevel
+-    * @throws IOException
+     * @throws TimeoutException
+-    * @throws IOException
+     */
+-   public void setRadioFullPower(String initialPowerLevel) throws IOException
++   public void setRadioFullPower(String initialPowerLevel) throws TimeoutException
+    {
+       try
+       {
+@@ -1248,11 +1079,10 @@
+          setAppFlags(true);
+          this.initialPowerLevel = initialPowerLevel;
+       }
+-      catch (TimeoutException e)
++      catch (Exception e)
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the Power status.");
+          throw new TimeoutException("The system timed out while trying to set the Power status.");
+-
+       }
+    }
+ 
+@@ -1308,9 +1138,7 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the Radio Power Level");
+-
+       }
+-
+    }
+ 
+ 
+@@ -1325,9 +1153,7 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the Authentication");
+-
+       }
+-
+    }
+ 
+ 
+@@ -1392,14 +1218,12 @@
+             returnVal = true;
+          }
+       }
+-
+       return returnVal;
+-
+    }
+ 
+ 
+    /**
+-    * These actions are effective immediately, no system reboot is required. Committ modification
++    * These actions are effective immediately, no system reboot is required. Commit modification
+     * that were made to the app section of the radio.
+     *
+     * @throws IOException
+@@ -1408,7 +1232,6 @@
+    {
+       String Value = Integer.toString(mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues.RADIO_COMMIT);
+       networkModifier(Value);
+-
+    }
+ 
+ 
+@@ -1435,9 +1258,7 @@
+     */
+    private void populateCosQueue()
+    {
+-
+       Rt1944Logger.getInstance().getLogger().debug("Table Row count = " + cosTable.getRowCount());
+-
+       // This initializes the array values so that they can be read.
+       for (int j = 0; j < QueueList.values().length; j++)
+       {
+@@ -1481,8 +1302,6 @@
+             posList[QueueList.LOW.ordinal()].add(i);
+          }
+       }
+-
+-
+    }
+ 
+ 
+@@ -1493,10 +1312,8 @@
+       for (QueueList queueId : QueueList.values())
+       {
+          removedValue = posList[queueId.ordinal()].remove(dscpVal);
+-
+       }
+       return removedValue;
+-
+    }
+ 
+ 
+@@ -1526,17 +1343,10 @@
+       {
+          radioModifier("commit");
+       }
+-      catch (TimeoutException e)
+-      {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
+-      }
+       catch (IOException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+-
+    }
+ 
+ 
+@@ -1547,7 +1357,6 @@
+     */
+    private void saveChanges(final boolean session)
+    {
+-
+       worker = new SwingWorker()
+       {
+          public Object construct()
+@@ -1554,16 +1363,8 @@
+          {
+             return doWork(session);
+          }
+-
+-
+-         public void finished()
+-         {
+-
+-         }
+       };
+       worker.start();
+-
+-
+    }
+ 
+ 
+@@ -1586,10 +1387,8 @@
+     */
+    private void saveSelackChanges()
+    {
+-
+       String Value = Integer.toString(mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues.RADIO_SAVE);
+       selackModifier(Value);
+-
+    }
+ 
+ 
+@@ -1597,29 +1396,23 @@
+    {
+       appFlag = flag;
+       appSessionFlag = flag;
+-
+    }
+ 
+ 
+    private String setCosDscp(int dscpVal, int queueValue) throws IOException
+    {
+-
+       String oid = "iciAppRssslNpmConfigCosMark." + dscpVal;
+       try
+       {
+          SnmpCommands.snmpset(oid, "i", Integer.toString(queueValue), this.ipAddress);
+          setNetworkFlags(true);
+-
+       }
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the priotiy of service");
+-
+       }
+       String oidToCheck = "iciAppRssslNpmOperCosMark." + dscpVal;
+       return oidToCheck + ":" + dscpVal;
+-
+-
+    }
+ 
+ 
+@@ -1627,7 +1420,6 @@
+    {
+       networkFlag = flag;
+       networkSessionFlag = flag;
+-
+    }
+ 
+ 
+@@ -1635,7 +1427,6 @@
+    {
+       selackFlag = flag;
+       selackSessionFlag = flag;
+-
+    }
+ 
+ 
+@@ -1667,7 +1458,6 @@
+ 
+    Object doWork(final boolean session)
+    {
+-      // System.out.println("_---------------------Doing work");
+       RequestState reqState = getRequestState();
+ 
+       // synchronize around reqState so that there can only be one request in
+@@ -1676,17 +1466,17 @@
+       {
+          try
+          {
+-            LoggingManager.getPrimaryLogger().debug("starting apply settings delay");
++            logger.debug("starting apply settings delay");
+ 
+             reqState.requestInProgress = true;
+             Thread.sleep(APPLY_CHANGES_GRACE_PERIOD);
+ 
+-            LoggingManager.getPrimaryLogger().debug("applying settings");
++            logger.debug("applying settings");
+             reqState.radioRebooting = false;
+             radioControlSaveChanges(session);
+             reqState.radioRebooting = true;
+             // make sure the radio has entered the reboot phase
+-            LoggingManager.getPrimaryLogger().debug("waiting for radio reboot");
++            logger.debug("waiting for radio reboot");
+             // add a guard here in case the radio never reboots so we don't lock up
+ 
+             long setStartTime = System.currentTimeMillis();
+@@ -1694,25 +1484,25 @@
+                Thread.sleep(200);
+ 
+             // wait for the radio to become available
+-            LoggingManager.getPrimaryLogger().debug("waiting for radio to become available");
++            logger.debug("waiting for radio to become available");
+             reqState.radioRebooting = true;
+             while (!isRadioResponding())
+                Thread.sleep(200);
+ 
+-            LoggingManager.getPrimaryLogger().debug("radio is available");
++            logger.debug("radio is available");
+             reqState.radioRebooting = false;
+          }
+          catch (InterruptedException e)
+          {
+-            LoggingManager.getPrimaryLogger().warn("Unexpected interrupt, exiting");
++            logger.warn("Unexpected interrupt, exiting");
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getSystemErrorLogger().error("Exception while saving radio settings: ", e);
++            logger.error("Exception while saving radio settings: ", e);
+          }
+          finally
+          {
+-            LoggingManager.getPrimaryLogger().debug("completed apply settings thread");
++            logger.debug("completed apply settings thread");
+             // make sure to cancel the request in progress status no matter
+             // how the request ends
+             reqState.requestInProgress = false;
+@@ -1721,5 +1511,4 @@
+       return "All Done";
+    }
+ 
+-
+ }

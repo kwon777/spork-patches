@@ -1,0 +1,1128 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-mission-builder
+Index: src/main/java/mil/navy/lcs/mvcs/mission/server/security/SecurityManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/mission/server/security/SecurityManager.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/mission/server/security/SecurityManager.java	(working copy)
+@@ -234,7 +234,6 @@
+     * This method shutsdown the Security Manager.
+     * 
+     * @return a boolean stating whether shutdown was successful or not
+-    * @see mil.navy.lcs.mvcs.common.misc.IMvcsManager#shutdown()
+     */
+    public boolean shutdown()
+    {
+#P mvcs-sca
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/config/ConfigManagerTest.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/config/ConfigManagerTest.java	(revision 9842)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/config/ConfigManagerTest.java	(working copy)
+@@ -15,6 +15,11 @@
+ import javax.xml.parsers.DocumentBuilderFactory;
+ import javax.xml.transform.TransformerException;
+ 
++import org.junit.After;
++import org.junit.Before;
++import org.junit.Test;
++import org.w3c.dom.Document;
++
+ import junit.framework.Assert;
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+@@ -26,25 +31,13 @@
+ import mil.navy.lcs.mvcs.common.config.model.ShipConfig;
+ import mil.navy.lcs.mvcs.common.constants.AppConstants;
+ import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
+ import mil.navy.lcs.mvcs.common.utils.FileUtils;
+ import mil.navy.lcs.mvcs.common.utils.XmlUtils;
+ import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+ 
+-import org.junit.After;
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.w3c.dom.Document;
+-
+ /**
+- * ConfigManagerTest
++ * Unit test for ConfigManager class.
+  * 
+- * TODO {Purpose of This Class}
+- * 
+- * Id: $Id$ $LastChangedBy: /C=US/O=U.S.
+- * Government/OU=DoD/OU=PKI/OU=USN/CN=PARHAMI.SEPAND.1393132910 $ $LastChangedDate: 2013-02-01
+- * 14:46:14 -0600 (Fri, 01 Feb 2013) $ $LastChangedRevision$
+- * 
+  */
+ public class ConfigManagerTest extends ScaTestCase
+ {
+@@ -64,23 +57,20 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+ 
+ 
+-   @SuppressWarnings("static-access")
+    @After
+    public void tearDown()
+    {
+       try
+       {
+-         ConfigManager.getInstance().staticShutdown();
++         ConfigManager.staticShutdown();
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -89,7 +79,7 @@
+    // @Test
+    public void getEncryptionPassword()
+    {
+-      System.out.println("Encryption Password: " + MvcsConstants.privacyKey);
++      System.out.println("Encryption Password: " + AppConstants.loadPrivacyKey());
+       System.out.println("Decrypted Password: " + "thiswillneverwork");
+       System.out.println("Encrypted Password: " + ConfigManager.encryptString("thiswillneverwork"));
+    }
+@@ -109,7 +99,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -132,7 +121,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -151,7 +139,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -270,7 +257,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+@@ -330,7 +316,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+          Assert.fail(e.getMessage());
+       }
+@@ -347,7 +332,6 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+       configObj.setDateUpdated(new Date());
+@@ -359,7 +343,6 @@
+       }
+       catch (InvalidConfigException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+    }
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/link/quality/ScaHeartbeatMonitorTest.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/link/quality/ScaHeartbeatMonitorTest.java	(revision 9842)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/link/quality/ScaHeartbeatMonitorTest.java	(working copy)
+@@ -3,11 +3,12 @@
+ package mil.navy.lcs.mvcs.sca.link.quality;
+ 
+ 
+-import junit.framework.TestCase;
++import junit.framework.Assert;
+ import mil.navy.lcs.mvcs.common.link.quality.HeartbeatMonitor;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+ 
+ 
+-public class ScaHeartbeatMonitorTest extends TestCase
++public class ScaHeartbeatMonitorTest extends ScaTestCase
+ {
+ 
+    public ScaHeartbeatMonitorTest()
+@@ -20,23 +21,23 @@
+    {
+       HeartbeatMonitor monitor = new ScaHeartbeatMonitor(null, null);
+ 
+-      assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 1);
+ 
+-      assertEquals("Enabled list size", 2, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 2, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-0", 0);
+ 
+-      assertEquals("Enabled list size", 3, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 3, monitor.getMonitoringEnabledKeys().size());
+ 
+    }
+ 
+@@ -47,19 +48,19 @@
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.disableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.disableHeartbeatMonitoring("1234", "v99-1", 0);
+ 
+-      assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 0, monitor.getMonitoringEnabledKeys().size());
+ 
+       monitor.enableHeartbeatMonitoring("1234", "v99-0", 0);
+ 
+-      assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
++      Assert.assertEquals("Enabled list size", 1, monitor.getMonitoringEnabledKeys().size());
+ 
+    }
+ }
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/db/DatabaseReadTest.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/db/DatabaseReadTest.java	(revision 9842)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/db/DatabaseReadTest.java	(working copy)
+@@ -5,17 +5,28 @@
+ 
+ import java.util.List;
+ 
+-import junit.framework.TestCase;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.db.DatabaseManager;
+ import mil.navy.lcs.mvcs.common.db.model.Route;
+ import mil.navy.lcs.mvcs.common.db.model.ShipInfo;
+ import mil.navy.lcs.mvcs.common.db.model.VehicleInfo;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+ 
+-import org.junit.Test;
+-
+-public class DatabaseReadTest extends TestCase
++public class DatabaseReadTest extends ScaTestCase
+ {
+ 
++   @Before
++   public void setUp() throws Exception
++   {
++
++   }
++
++
+    @Test
+    public void testReadRoute()
+    {
+@@ -22,6 +33,7 @@
+       List<Route> routes = DatabaseManager.getInstance().getRouteDao().findAll();
+       for (Route route : routes)
+       {
++         Assert.assertNotNull("Route is null!", route);
+          System.out.println(route);
+       }
+    }
+@@ -30,9 +42,10 @@
+    @Test
+    public void testReadShipInfo() throws Exception
+    {
+-      ShipInfo shipInfo = DatabaseManager.getInstance().getShipInfoDao().find("1111");
+-      // System.out.println("Warm start: " + shipInfo.isWarmStart());
+-      System.out.println("ShipInfo" + shipInfo);
++      ConfigManager cm = ConfigManager.getInstance();
++      ShipInfo shipInfo = DatabaseManager.getInstance().getShipInfoDao().find(cm.getShip().getId());
++      Assert.assertNotNull(shipInfo);
++      System.out.println("ShipInfo: " + shipInfo);
+    }
+ 
+ 
+@@ -39,7 +52,12 @@
+    @Test
+    public void testReadVehicleInfo() throws Exception
+    {
+-      VehicleInfo vehicleInfo = DatabaseManager.getInstance().getVehicleInfoDao().find("1234");
+-      System.out.println("VehicleInfo: " + vehicleInfo);
++      ConfigManager cm = ConfigManager.getInstance();
++      for (Vehicle veh : cm.getListOfVehicles())
++      {
++         VehicleInfo vehicleInfo = DatabaseManager.getInstance().getVehicleInfoDao().find(veh.getId());
++         Assert.assertNotNull(vehicleInfo);
++         System.out.println("VehicleInfo: " + vehicleInfo);
++      }
+    }
+ }
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/constants/AppConstantsEnum.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/constants/AppConstantsEnum.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/constants/AppConstantsEnum.java	(working copy)
+@@ -12,5 +12,5 @@
+  *
+  */
+ public enum AppConstantsEnum {
+-   APP_NAME_FULL, APP_NAME_SHORT, APP_VERSION, APP_VERSION_DEBUG, VESSEL_TYPE, DATASOURCE_DRIVER, DATASOURCE_URL, DATASOURCE_USERNAME, DATASOURCE_PASSWORD, ENV_PRIVACY_NAME, CONFIG_DIR, MISSION_DIR, CONFIG_PATH, SHIP_ROUTER_CONFIG_PATH, VEHICLE_ROUTER_CONFIG_PATH, MESSAGE_SCHEMA_PATH, MESSAGE_XSLT_PATH, MESSAGE_PUSH_XSLT_PATH, MISSION_BUILDER_APPLET_NAME, MISSION_XSLT_PATH, MISSION_COPY_XSLT_PATH, MISSION_UPDATE_XSLT_PATH, MISSION_NAME_XPATH, MISSION_AUTHOR_XPATH, MISSION_EDITOR_XPATH, MISSION_TITLE_XPATH, MISSION_DESCRIPTION_XPATH, MISSION_DATE_CREATED_XPATH, MISSION_DATE_UPDATED_XPATH, MISSION_VEHICLE_XPATH, COMMAND_XPATH, VEHICLE_XPATH, BODY_XPATH, MISSION_CURRENT_NAME, MISSION_CUSTOM_NAME, MISSION_SITE_NAME, MISSION_DEFAULT_NAME, MISSION_PUSHED_NAME, MISSION_PUSHED_PATH, MISSION_CURRENT_PATH, MISSION_CUSTOM_PATH, MISSION_SITE_PATH, MISSION_DEFAULT_PATH, MISSION_SCHEMA_PATH, MISSION_MAPPING_PATH, MISSION_CONFIG_MAPPING_PATH, CREATE_TABLES_PATH, RADIO_CHARACTERISTICS_PATH, RADIO_CHARACTERISTICS_MAPPING_PATH, ENCRYPTER_CONFIG_PATH, ENCRYPTER_CONFIG_MAPPING_PATH, CREDENTIALS_PATH, CREDENTIALS_MAPPING_PATH, ALERT_MESSAGES_PATH, CONFIG_PORT, CONFIG_TIMEOUT, APPLET_FONT_NAME, APPLET_FONT_SIZE, APPLET_NAME, APPLET_PORT, APPLET_DEFAULT_MESSAGES, CAJO_RMI_PORT, NETWORK_TIMEOUT, SNMP_TIMEOUT, SNMP_RETRIES, SNMP_VERSION, SNMP_AGENT_PORT, SNMP_TRAP_PORT, LCS_VERSION, ABOUT_TEXT, ABOUT_IMAGE, APPLET_LOGIN_IMAGE, APPLET_SCROLL_SPEED, APPLET_HIGH_PRIORITY_ALERT_HIGHLIGHT_COLOR, APPLET_HIGH_PRIORITY_ALERT_TEXT_COLOR, APPLET_CONSENT_STRING, APPLET_LCS_SMALL_IMAGE, APPLET_LCS_LARGE_IMAGE, APPLET_RT1944_SEA_LANCET_SMALL_IMAGE, APPLET_RT1944_SEA_LANCET_LARGE_IMAGE, APPLET_VRC99_SMALL_IMAGE, APPLET_VRC99_LARGE_IMAGE, APPLET_SCU_IRIDIUM_SMALL_IMAGE, APPLET_SCU_IRIDIUM_LARGE_IMAGE, APPLET_PRC117_SMALL_IMAGE, APPLET_PRC117_LARGE_IMAGE, APPLET_DUMMY_LOAD_SMALL_IMAGE, APPLET_DUMMY_LOAD_LARGE_IMAGE, APPLET_LNR_ANTENNA_SMALL_IMAGE, APPLET_LNR_ANTENNA_LARGE_IMAGE, APPLET_RF_TEST_PORT_SMALL_IMAGE, APPLET_RF_TEST_PORT_LARGE_IMAGE, APPLET_MAIN_ANTENNA_SMALL_IMAGE, APPLET_MAIN_ANTENNA_LARGE_IMAGE, APPLET_MATRIX_SWITCH_SMALL_IMAGE, APPLET_MATRIX_SWITCH_LARGE_IMAGE, APPLET_POWER_SUPPLY_SMALL_IMAGE, APPLET_POWER_SUPPLY_LARGE_IMAGE, APPLET_ROUTER_SMALL_IMAGE, APPLET_ROUTER_LARGE_IMAGE, APPLET_AMPLIFIER_SMALL_IMAGE, APPLET_AMPLIFIER_LARGE_IMAGE, APPLET_MEDIA_CONVERTER_SMALL_IMAGE, APPLET_MEDIA_CONVERTER_LARGE_IMAGE, APPLET_SERIAL_HUB_SERVER_SMALL_IMAGE, APPLET_SERIAL_HUB_SERVER_LARGE_IMAGE, APPLET_SERIAL_PORT_SERVER_SMALL_IMAGE, APPLET_SERIAL_PORT_SERVER_LARGE_IMAGE, APPLET_KIV7_SMALL_IMAGE, APPLET_KIV7_LARGE_IMAGE, APPLET_UPS_SMALL_IMAGE, APPLET_UPS_LARGE_IMAGE, APPLET_ASW_SMALL_IMAGE, APPLET_ASW_LARGE_IMAGE, APPLET_RMS_SMALL_IMAGE, APPLET_RMS_LARGE_IMAGE, APPLET_USV_SMALL_IMAGE, APPLET_USV_LARGE_IMAGE, APPLET_SEND_PRINTOUT_TO_MVCS_SERVER_ON_STARTUP, SWITCH_OVER_MODE_MANUAL, SWITCH_OVER_MODE_AUTO
++   APP_NAME_FULL, APP_NAME_SHORT, APP_VERSION, APP_VERSION_DEBUG, VESSEL_TYPE,DATABASE_DIR, DATASOURCE_DRIVER, DATASOURCE_URL, DATASOURCE_USERNAME, DATASOURCE_PASSWORD, DATABASE_LOGFILE, DATABASE_PROPERTIESFILE, DATABASE_SCRIPTFILE, ENV_PRIVACY_NAME, CONFIG_DIR, MISSION_DIR, CONFIG_PATH, SHIP_ROUTER_CONFIG_PATH, VEHICLE_ROUTER_CONFIG_PATH, MESSAGE_SCHEMA_PATH, MESSAGE_XSLT_PATH, MESSAGE_PUSH_XSLT_PATH, MISSION_BUILDER_APPLET_NAME, MISSION_XSLT_PATH, MISSION_COPY_XSLT_PATH, MISSION_UPDATE_XSLT_PATH, MISSION_NAME_XPATH, MISSION_AUTHOR_XPATH, MISSION_EDITOR_XPATH, MISSION_TITLE_XPATH, MISSION_DESCRIPTION_XPATH, MISSION_DATE_CREATED_XPATH, MISSION_DATE_UPDATED_XPATH, MISSION_VEHICLE_XPATH, COMMAND_XPATH, VEHICLE_XPATH, BODY_XPATH, MISSION_CURRENT_NAME, MISSION_CUSTOM_NAME, MISSION_SITE_NAME, MISSION_DEFAULT_NAME, MISSION_PUSHED_NAME, MISSION_PUSHED_PATH, MISSION_CURRENT_PATH, MISSION_CUSTOM_PATH, MISSION_SITE_PATH, MISSION_DEFAULT_PATH, MISSION_SCHEMA_PATH, MISSION_MAPPING_PATH, MISSION_CONFIG_MAPPING_PATH, CREATE_TABLES_PATH, RADIO_CHARACTERISTICS_PATH, RADIO_CHARACTERISTICS_MAPPING_PATH, ENCRYPTER_CONFIG_PATH, ENCRYPTER_CONFIG_MAPPING_PATH, CREDENTIALS_PATH, CREDENTIALS_MAPPING_PATH, ALERT_MESSAGES_PATH, CONFIG_PORT, CONFIG_TIMEOUT, APPLET_FONT_NAME, APPLET_FONT_SIZE, APPLET_NAME, APPLET_PORT, APPLET_DEFAULT_MESSAGES, CAJO_RMI_PORT, NETWORK_TIMEOUT, SNMP_TIMEOUT, SNMP_RETRIES, SNMP_VERSION, SNMP_AGENT_PORT, SNMP_TRAP_PORT, LCS_VERSION, ABOUT_TEXT, ABOUT_IMAGE, APPLET_LOGIN_IMAGE, APPLET_SCROLL_SPEED, APPLET_HIGH_PRIORITY_ALERT_HIGHLIGHT_COLOR, APPLET_HIGH_PRIORITY_ALERT_TEXT_COLOR, APPLET_CONSENT_STRING, APPLET_LCS_SMALL_IMAGE, APPLET_LCS_LARGE_IMAGE, APPLET_RT1944_SEA_LANCET_SMALL_IMAGE, APPLET_RT1944_SEA_LANCET_LARGE_IMAGE, APPLET_VRC99_SMALL_IMAGE, APPLET_VRC99_LARGE_IMAGE, APPLET_SCU_IRIDIUM_SMALL_IMAGE, APPLET_SCU_IRIDIUM_LARGE_IMAGE, APPLET_PRC117_SMALL_IMAGE, APPLET_PRC117_LARGE_IMAGE, APPLET_DUMMY_LOAD_SMALL_IMAGE, APPLET_DUMMY_LOAD_LARGE_IMAGE, APPLET_LNR_ANTENNA_SMALL_IMAGE, APPLET_LNR_ANTENNA_LARGE_IMAGE, APPLET_RF_TEST_PORT_SMALL_IMAGE, APPLET_RF_TEST_PORT_LARGE_IMAGE, APPLET_MAIN_ANTENNA_SMALL_IMAGE, APPLET_MAIN_ANTENNA_LARGE_IMAGE, APPLET_MATRIX_SWITCH_SMALL_IMAGE, APPLET_MATRIX_SWITCH_LARGE_IMAGE, APPLET_POWER_SUPPLY_SMALL_IMAGE, APPLET_POWER_SUPPLY_LARGE_IMAGE, APPLET_ROUTER_SMALL_IMAGE, APPLET_ROUTER_LARGE_IMAGE, APPLET_AMPLIFIER_SMALL_IMAGE, APPLET_AMPLIFIER_LARGE_IMAGE, APPLET_MEDIA_CONVERTER_SMALL_IMAGE, APPLET_MEDIA_CONVERTER_LARGE_IMAGE, APPLET_SERIAL_HUB_SERVER_SMALL_IMAGE, APPLET_SERIAL_HUB_SERVER_LARGE_IMAGE, APPLET_SERIAL_PORT_SERVER_SMALL_IMAGE, APPLET_SERIAL_PORT_SERVER_LARGE_IMAGE, APPLET_KIV7_SMALL_IMAGE, APPLET_KIV7_LARGE_IMAGE, APPLET_UPS_SMALL_IMAGE, APPLET_UPS_LARGE_IMAGE, APPLET_ASW_SMALL_IMAGE, APPLET_ASW_LARGE_IMAGE, APPLET_RMS_SMALL_IMAGE, APPLET_RMS_LARGE_IMAGE, APPLET_USV_SMALL_IMAGE, APPLET_USV_LARGE_IMAGE, APPLET_SEND_PRINTOUT_TO_MVCS_SERVER_ON_STARTUP, SWITCH_OVER_MODE_MANUAL, SWITCH_OVER_MODE_AUTO;
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/constants/MvcsConstants.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/constants/MvcsConstants.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/constants/MvcsConstants.java	(working copy)
+@@ -1,128 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.common.constants;
+-
+-
+-import java.io.FileNotFoundException;
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.util.Properties;
+-
+-
+-/**
+- * MvcsConstants
+- * 
+- * TODO {Purpose of This Class}
+- * 
+- * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+- * 
+- */
+-public class MvcsConstants
+-{
+-   private MvcsConstants()
+-   {
+-      // Thwart instantiation
+-   }
+-
+-   private static Properties props;
+-   private static final String sConfigFile = "mil/navy/lcs/mvcs/common/application.properties";
+-   public static final String privacyKey = loadPrivacyKey();
+-   public static final String dbDriver = loadDbDriver();
+-   public static final String dbUrl = loadDbUrl();
+-   public static final String dbUser = loadDbUser();
+-   public static final String dbPassword = loadDbPassword();
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static String loadPrivacyKey()
+-   {
+-      String key = System.getenv(getProperties().getProperty("env.privacy.name"));
+-      if (key == null)
+-      {
+-         key = "ihasjkIjkal983&pmqekeh6kq[";
+-      }
+-      return key;
+-   }
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static String loadDbDriver()
+-   {
+-      String driver = getProperties().getProperty("datasource.driver");
+-      return driver;
+-   }
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static String loadDbUrl()
+-   {
+-      String url = getProperties().getProperty("datasource.url");
+-      return url;
+-   }
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static String loadDbUser()
+-   {
+-      String user = getProperties().getProperty("datasource.username");
+-      return user;
+-   }
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static String loadDbPassword()
+-   {
+-      String passwd = getProperties().getProperty("datasource.password");
+-      return passwd;
+-   }
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static Properties loadProperties()
+-   {
+-      Properties props = null;
+-      try
+-      {
+-         InputStream in = MvcsConstants.class.getClassLoader().getResourceAsStream(sConfigFile);
+-         if (in == null)
+-         {
+-            // File not found!
+-            throw new FileNotFoundException("Application Properties File was not found!");
+-         }
+-         props = new Properties();
+-         props.load(in);
+-      }
+-      catch (IOException e)
+-      {
+-         // ignore
+-         System.err.println(e.getMessage());
+-      }
+-
+-      return props;
+-   }
+-
+-
+-   /**
+-    * @return
+-    */
+-   private static Properties getProperties()
+-   {
+-      if (props == null)
+-      {
+-         props = loadProperties();
+-      }
+-      return props;
+-   }
+-}
+Index: src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseManager.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseManager.java	(working copy)
+@@ -4,13 +4,13 @@
+ 
+ 
+ import java.io.BufferedReader;
++import java.io.File;
+ import java.io.FileNotFoundException;
+ import java.io.FileReader;
+ import java.io.IOException;
++import java.sql.SQLException;
+ import java.util.List;
+ 
+-import org.slf4j.Logger;
+-
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.exception.DataAccessException;
+@@ -25,6 +25,9 @@
+ import mil.navy.lcs.mvcs.common.db.model.VehicleInfo;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ 
++import org.apache.commons.io.FileUtils;
++import org.slf4j.Logger;
++
+ /**
+  * The DatabaseManager class is the primary database handling Singleton in the MVCS software.
+  * 
+@@ -63,8 +66,87 @@
+          errorLog.error("Could not retrieve vessel type! IsShip:" + isShip, e);
+       }
+ 
++      File databaseDirectory = new File(AppConstants.getConstant(AppConstantsEnum.DATABASE_DIR));
++      File scriptFile = new File(databaseDirectory, AppConstants.getConstant(AppConstantsEnum.DATABASE_SCRIPTFILE));
++      File propertiesFile = new File(databaseDirectory, AppConstants.getConstant(AppConstantsEnum.DATABASE_PROPERTIESFILE));
++      File logFile = new File(databaseDirectory, AppConstants.getConstant(AppConstantsEnum.DATABASE_LOGFILE));
++      boolean dbCorrupted = false;
++      try
++      {
++         primaryLog.info("Database script file {}, exist? {} ", scriptFile.getName(), scriptFile.exists());
++         primaryLog.info("Database properties file {}, exist? {} ", propertiesFile.getName(), propertiesFile.exists());
++         primaryLog.info("Database log file {}, exist? {} ", logFile.getName(), logFile.exists());
++         if (scriptFile.exists())
++         {
++            // examine the script file for possible corrupted database
++            FileReader fReader = new FileReader(scriptFile);
++            BufferedReader bReader = new BufferedReader(fReader);
++            String line = null;
++            boolean foundUser = false, foundDba = false;
++            String userName = AppConstants.getConstant(AppConstantsEnum.DATASOURCE_USERNAME);
++            String userEntry = "CREATE USER " + userName, dbaEntry = "GRANT DBA TO " + userName;
++            while ((line = bReader.readLine()) != null)
++            {
++               // find line contains the user entry
++               if (line.indexOf(userEntry) != -1)
++                  foundUser = true;
++               // find line contains the user entry
++               if (line.indexOf(dbaEntry) != -1)
++                  foundDba = true;
++            }
++            bReader.close();
++
++            if (!(foundUser && foundDba))
++            {
++               // script file exists but user or DBA entry is not found. DB probably corrupted.
++               primaryLog.warn("WARNING! [{}] or [{}] not found in the script file. Database likely corrupted.", userEntry, dbaEntry);
++               dbCorrupted = true;
++            }
++            else
++            {
++               primaryLog.info("[{}] and [{}] found in the script file.", userEntry, dbaEntry);
++            }
++         } // end of if (script file exists)
++
++         // properties file exits, must have either script file or log file
++         if (propertiesFile.exists() & !(scriptFile.exists() || logFile.exists()))
++         {
++            primaryLog.warn("WARNING! Script file or log file not found when the script file exists. Database likely corrupted.");
++            dbCorrupted = true;
++         }
++
++         if (dbCorrupted)
++         {
++            primaryLog.info("Removing the database directory [{}] and starting as a cold start.", databaseDirectory.getAbsolutePath());
++            FileUtils.deleteDirectory(databaseDirectory);
++         }
++      }
++      catch (Exception e1)
++      {
++         primaryLog.error("Error checking for corrupted database, directory is [{}]. ", databaseDirectory.getAbsolutePath(), e1);
++      }
++
+       // initialize a connection to database.
+-      DatabaseUtil.startup();
++      try
++      {
++         DatabaseUtil.startup();
++      }
++      catch (DatabaseCorruptedException | SQLException e)
++      {
++         // handle the database corrupted exception
++         primaryLog.error("Error occurred while attempting to START UP the HSQLDB datbase: ", e);
++         // wipe out the database and treat this start as cold start.
++         try
++         {
++            primaryLog.warn("Removing the corrupted database directory for the next startup.");
++            FileUtils.deleteDirectory(databaseDirectory);
++         }
++         catch (Exception e1)
++         {
++            primaryLog.error("Error removing corrupted database directory [{}]. Please manually remove the corrupted files (if needed) and restart. ", databaseDirectory.getAbsolutePath(), e1);
++            errorLog.error("Error removing corrupted database directory [{}]. Please manually remove the corrupted files (if needed) and restart. ", databaseDirectory.getAbsolutePath(), e1);
++         } // end of catch
++      } // end of catch
+ 
+       // create database tables if and only if tables are not already exist.
+       createDatabaseTables();
+@@ -172,7 +254,7 @@
+          }
+          catch (DataAccessException e)
+          {
+-            errorLog.warn("Unable to truncate Routes on shutdown.", e);
++            primaryLog.warn("Unable to truncate Routes on shutdown.", e);
+          }
+          primaryLog.info("Finished truncating database tables.");
+       }
+@@ -184,6 +266,7 @@
+       catch (Exception e)
+       {
+          errorLog.error("Unable to shutdown the database.", e);
++         primaryLog.error("Unable to shutdown the database.", e);
+       }
+    }
+ 
+@@ -204,11 +287,11 @@
+       }
+       catch (ConfigException e)
+       {
+-         errorLog.error("Unable to retrieve the Ship info from the ConfigManager.");
++         primaryLog.error("Unable to retrieve the Ship info from the ConfigManager.");
+       }
+       catch (DataAccessException e)
+       {
+-         errorLog.error("Unable to set the Shipboard WARM flag to: " + isWarm, e);
++         primaryLog.error("Unable to set the Shipboard WARM flag to: " + isWarm, e);
+       }
+    }
+ 
+@@ -229,11 +312,11 @@
+       }
+       catch (ConfigException e)
+       {
+-         errorLog.error("Unable to retrieve the Vehicle info from the ConfigManager.");
++         primaryLog.error("Unable to retrieve the Vehicle info from the ConfigManager.");
+       }
+       catch (DataAccessException e)
+       {
+-         errorLog.error("Unable to set the Vehicle WARM flag to: " + isWarm, e);
++         primaryLog.error("Unable to set the Vehicle WARM flag to: " + isWarm, e);
+       }
+    }
+ 
+@@ -251,7 +334,7 @@
+       }
+       catch (ConfigException e)
+       {
+-         errorLog.error("Unable to determine if a mission was pushed.", e);
++         primaryLog.error("Unable to determine if a mission was pushed.", e);
+       }
+ 
+       primaryLog.info("Initializing database tables: ShipInfo, VehicleInfo and Route...");
+@@ -293,11 +376,11 @@
+       }
+       catch (ConfigException e)
+       {
+-         errorLog.error("Unable to get the Ship object from the ConfigManager", e);
++         primaryLog.error("Unable to get the Ship object from the ConfigManager", e);
+       }
+       catch (DataAccessException e)
+       {
+-         errorLog.error("Unable to create a new Ship object", e);
++         primaryLog.error("Unable to create a new Ship object", e);
+       }
+       return ship;
+    }
+@@ -339,11 +422,11 @@
+       }
+       catch (ConfigException e)
+       {
+-         errorLog.error("Unable to get the Vehicle object from the ConfigManager", e);
++         primaryLog.error("Unable to get the Vehicle object from the ConfigManager", e);
+       }
+       catch (DataAccessException e)
+       {
+-         errorLog.error("Unable to create a new Vehicle object", e);
++         primaryLog.error("Unable to create a new Vehicle object", e);
+       }
+    }
+ 
+@@ -378,11 +461,11 @@
+       }
+       catch (ConfigException e)
+       {
+-         errorLog.error("Unable to get the Route objects from the ConfigManager", e);
++         primaryLog.error("Unable to get the Route objects from the ConfigManager", e);
+       }
+       catch (DataAccessException e)
+       {
+-         errorLog.error("Unable to create a new Route object", e);
++         primaryLog.error("Unable to create a new Route object", e);
+       }
+    }
+ 
+@@ -408,6 +491,7 @@
+ 
+          } // end of while
+ 
++         input.close();
+       }
+       catch (FileNotFoundException e)
+       {
+Index: src/main/java/mil/navy/lcs/mvcs/common/constants/AppConstants.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/constants/AppConstants.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/constants/AppConstants.java	(working copy)
+@@ -15,14 +15,11 @@
+ /**
+  * AppConstants
+  * 
+- * TODO {Purpose of This Class}
+- * 
+  * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  * 
+  */
+ public class AppConstants
+ {
+-   private static final AppConstants INSTANCE = new AppConstants();
+    private static Properties CONSTANTS = getConstants();
+ 
+    private static final String START_TOKEN = "\\$\\{";
+@@ -70,6 +67,22 @@
+ 
+ 
+    /**
++    * To get the system privacy key
++    * 
++    * @return the privacy key.
++    */
++   public static String loadPrivacyKey()
++   {
++      String key = System.getenv(AppConstants.getConstant(AppConstantsEnum.ENV_PRIVACY_NAME));
++      if (key == null)
++      {
++         key = "ihasjkIjkal983&pmqekeh6kq[";
++      }
++      return key;
++   }
++
++
++   /**
+     * TESTING ONLY This method is responsible for overriding the default constant value for VESSEL
+     * TYPE as SHIP.
+     */
+@@ -154,12 +167,10 @@
+       }
+       catch (FileNotFoundException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+       catch (IOException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+       return props;
+@@ -213,7 +224,6 @@
+          System.err.println("Replacement Property (with quote replacement): " + replacement);
+          System.err.println("Property with tokens: " + props.getProperty(key));
+ 
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+       return props;
+Index: src/main/java/mil/navy/lcs/mvcs/common/utils/FileUtils.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/utils/FileUtils.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/utils/FileUtils.java	(working copy)
+@@ -13,21 +13,15 @@
+ import java.io.InputStream;
+ import java.io.OutputStream;
+ 
++import mil.navy.lcs.mvcs.common.log.LoggingManager;
++
+ import org.slf4j.Logger;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+-
+ public class FileUtils
+ {
+-   private static final Logger errorLog = LoggingManager.getSystemErrorLogger();
++   private static final Logger primaryLog = LoggingManager.getPrimaryLogger();
+ 
+ 
+-   private FileUtils()
+-   {
+-      super();
+-   }
+-
+-
+    /**
+     * Copies src file to dst file. If the dst file does not exist, it is created
+     * 
+@@ -73,11 +67,11 @@
+       }
+       catch (FileNotFoundException ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       catch (IOException ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       return "";
+    }// end of getFileContent
+@@ -99,7 +93,7 @@
+       }
+       catch (Exception e)
+       {
+-         errorLog.error("", e);
++         primaryLog.error("", e);
+       }
+       return getFileContent(is);
+    }
+@@ -124,11 +118,11 @@
+       }
+       catch (FileNotFoundException ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       catch (IOException ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       return "";
+    }// end of getFileContent
+@@ -149,7 +143,7 @@
+       }
+       catch (Exception ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+          return false;
+       }
+    }
+@@ -172,15 +166,15 @@
+       }
+       catch (FileNotFoundException ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       catch (IOException ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       catch (Exception ex)
+       {
+-         errorLog.error("", ex);
++         primaryLog.error("", ex);
+       }
+       finally
+       {
+Index: src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseUtil.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseUtil.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseUtil.java	(working copy)
+@@ -11,7 +11,8 @@
+ import org.slf4j.Logger;
+ 
+ import mil.navy.lcs.mvcs.common.config.exception.DataAccessException;
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
++import mil.navy.lcs.mvcs.common.constants.AppConstants;
++import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ 
+ /**
+@@ -100,27 +101,32 @@
+     * This method is responsible for getting a connection to the HSQLDB.
+     * 
+     * @return HSQL Connection
++    * @throws SQLException
+     */
+-   public static Connection getHSQLConnection()
++   public static Connection getHSQLConnection() throws SQLException
+    {
++      Connection conn = null;
+       try
+       {
+-         Class.forName(MvcsConstants.dbDriver);
+-         return DriverManager.getConnection(MvcsConstants.dbUrl, MvcsConstants.dbUser, "");
++         Class.forName(AppConstants.getConstant(AppConstantsEnum.DATASOURCE_DRIVER));
++         conn = DriverManager.getConnection(AppConstants.getConstant(AppConstantsEnum.DATASOURCE_URL), AppConstants.getConstant(AppConstantsEnum.DATASOURCE_USERNAME), "");
+       }
+       catch (ClassNotFoundException e)
+       {
+-         errorLog.error("Unable to find HSQLDB driver class.", e);
++         errorLog.error("An exception occurred while attempting to get a HSQLDB connection.", e);
++         primaryLog.error("An exception occurred while attempting to get a HSQLDB connection.", e);
+       }
+       catch (SQLException e)
+       {
+          errorLog.error("An exception occurred while attempting to get a HSQLDB connection.", e);
+-         if (e.getMessage().indexOf(MvcsConstants.dbUser) != -1)
++         primaryLog.error("An exception occurred while attempting to get a HSQLDB connection.", e);
++         if (e.getMessage().indexOf(AppConstants.getConstant(AppConstantsEnum.DATASOURCE_USERNAME)) != -1)
+          {
+             errorLog.error("The HSQLDB appears to be corrupt. This problem normally requires removal of all database files to recover.", e);
+          }
+-      }
+-      return null;
++         throw e;
++      }    
++      return conn;
+    }
+ 
+ 
+@@ -140,9 +146,9 @@
+          conn.close();// if there are no other open connection
+          primaryLog.info("Successfully shut down database.");
+       }
+-      catch (SQLException e)
++      catch (SQLException se)
+       {
+-         errorLog.warn("Error occurred while attempting to SHUT DOWN the HSQLDB datbase", e);
++         primaryLog.error("Error occurred while attempting to SHUT DOWN the HSQLDB datbase", se);
+       }
+    }
+ 
+@@ -149,23 +155,32 @@
+ 
+    /**
+     * This method is responsible for starting the HSQLDB database.
++    * 
++    * @throws DatabaseCorruptedException
++    * @throws SQLException
+     */
+-   public static void startup()
++   public static void startup() throws DatabaseCorruptedException, SQLException
+    {
+       Connection conn = null;
++      Statement st = null;
++      primaryLog.info("Starting up database...");
+       try
+       {
+-         primaryLog.info("Starting up database...");
+          conn = getHSQLConnection();
+-         Statement st = conn.createStatement();
++         st = conn.createStatement();
+          st.execute("SET WRITE_DELAY FALSE");
+-         conn.close();
+          primaryLog.info("Successfully created a connection to database.");
+       }
+-      catch (SQLException e)
++      catch (Exception e)
+       {
+-         errorLog.warn("Error occurred while attempting to START UP the HSQLDB datbase", e);
++         primaryLog.error("Error while starting up database: ", e);
++         throw new DatabaseCorruptedException("Not able to read database.  Database may be corrupted.");
+       }
++      finally
++      {
++         if (conn != null)
++            conn.close();
++      }
+    }
+ 
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java	(working copy)
+@@ -44,7 +44,6 @@
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.common.constants.AppConstants;
+ import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
+ import mil.navy.lcs.mvcs.common.db.model.Route;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.utils.FileUtils;
+@@ -1174,7 +1173,7 @@
+       // String encPasswd = DataUtil.encryptString(str, encryptionAlgorithm);
+       StandardPBEStringEncryptor passwordEncryptor = new StandardPBEStringEncryptor();
+       passwordEncryptor.setAlgorithm(encryptionAlgorithm);
+-      passwordEncryptor.setPassword(MvcsConstants.privacyKey);
++      passwordEncryptor.setPassword(AppConstants.loadPrivacyKey());
+       String encPasswd = passwordEncryptor.encrypt(str);
+       return encPasswd;
+    }
+@@ -1192,7 +1191,7 @@
+       // String decPasswd = DataUtil.decryptString(str, encryptionAlgorithm);
+       StandardPBEStringEncryptor passwordEncryptor = new StandardPBEStringEncryptor();
+       passwordEncryptor.setAlgorithm(encryptionAlgorithm);
+-      passwordEncryptor.setPassword(MvcsConstants.privacyKey);
++      passwordEncryptor.setPassword(AppConstants.loadPrivacyKey());
+       String decPasswd = passwordEncryptor.decrypt(str);
+       return decPasswd;
+    }
+Index: src/main/java/mil/navy/lcs/mvcs/common/utils/DataUtil.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/utils/DataUtil.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/common/utils/DataUtil.java	(working copy)
+@@ -5,7 +5,8 @@
+ 
+ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+ 
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
++import mil.navy.lcs.mvcs.common.constants.AppConstants;
++import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
+ 
+ /**
+  * Data utility class to encrypt and decrypt strings.
+@@ -43,7 +44,7 @@
+    {
+       StandardPBEStringEncryptor passwordEncryptor = new StandardPBEStringEncryptor();
+       passwordEncryptor.setAlgorithm(algorithm);
+-      passwordEncryptor.setPassword(MvcsConstants.privacyKey);
++      passwordEncryptor.setPassword(AppConstants.loadPrivacyKey());
+       String encPasswd = passwordEncryptor.encrypt(str);
+       return encPasswd;
+    }
+@@ -58,7 +59,7 @@
+    {
+       StandardPBEStringEncryptor strEncryptor = new StandardPBEStringEncryptor();
+       strEncryptor.setAlgorithm(algorithm);
+-      strEncryptor.setPassword(MvcsConstants.privacyKey);
++      strEncryptor.setPassword(AppConstants.loadPrivacyKey());
+       String decPasswd = strEncryptor.decrypt(str);
+       return decPasswd;
+    }
+Index: src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(revision 9842)
++++ src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(working copy)
+@@ -7,16 +7,20 @@
+ 
+ vessel_type=@vessel_type@
+ 
++parent_dir=..
++
+ # database settings
++database_dir=${parent_dir}/database/
+ datasource_driver=org.hsqldb.jdbcDriver
+-datasource_url=jdbc:hsqldb:file:../database/mvcs;
++datasource_url=jdbc:hsqldb:file:${database_dir}/mvcs;
+ datasource_username=SA
+ datasource_password=ENC(+ysiwXdSugpRbfKTm4pDRqVTI+Y7MgSVtTN8ZI+2hDw=)
+ env_privacy_name=APP_ENCRYPTION_PASSWORD
++database_scriptfile=mvcs.script
++database_propertiesfile=mvcs.properties
++database_logfile=mvcs.log
+ 
+ # from the ConfigConstants
+-#parent_dir=../../mvcs-sca
+-parent_dir=..
+ config_dir=${parent_dir}/configs/
+ mission_dir=${parent_dir}/missions/
+ config_path=mil/navy/lcs/mvcs/common/config/
+Index: src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseCorruptedException.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseCorruptedException.java	(revision 0)
++++ src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseCorruptedException.java	(working copy)
+@@ -0,0 +1,64 @@
++
++
++package mil.navy.lcs.mvcs.common.db;
++
++
++/**
++ *
++ */
++public class DatabaseCorruptedException extends Exception
++{
++
++   private static final long serialVersionUID = 26001L;
++
++
++   /**
++    * 
++    */
++   public DatabaseCorruptedException()
++   {
++      super();
++   }
++
++
++   /**
++    * @param message
++    * @see Exception.Exception() 
++    */
++   public DatabaseCorruptedException( String message)
++   {
++      super(message);
++   }
++
++
++   /**
++    * @param cause
++    */
++   public DatabaseCorruptedException( Throwable cause)
++   {
++      super(cause);
++   }
++
++
++   /**
++    * @param message
++    * @param cause
++    */
++   public DatabaseCorruptedException( String message, Throwable cause)
++   {
++      super(message, cause);
++   }
++
++
++   /**
++    * @param message
++    * @param cause
++    * @param enableSuppression
++    * @param writableStackTrace
++    */
++   public DatabaseCorruptedException( String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
++   {
++      super(message, cause, enableSuppression, writableStackTrace);
++   }
++
++}
+Index: src/main/test/mil/navy/lcs/mvcs/common/EncryptIt.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/EncryptIt.java	(revision 9842)
++++ src/main/test/mil/navy/lcs/mvcs/common/EncryptIt.java	(working copy)
+@@ -3,12 +3,14 @@
+ package mil.navy.lcs.mvcs.common;
+ 
+ 
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
+-
+ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+ import org.junit.Assert;
+ import org.junit.Test;
+ 
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.constants.AppConstants;
++import mil.navy.lcs.mvcs.common.constants.AppConstantsEnum;
++
+ public class EncryptIt
+ {
+    private static final String ALGORITHM = "PBEWithMD5AndDES";
+@@ -20,10 +22,10 @@
+    {
+       StandardPBEStringEncryptor passwordEncryptor = new StandardPBEStringEncryptor();
+       passwordEncryptor.setAlgorithm(ALGORITHM);
+-      passwordEncryptor.setPassword(MvcsConstants.privacyKey);
++      passwordEncryptor.setPassword(AppConstants.loadPrivacyKey());
+       String encPasswd = passwordEncryptor.encrypt(CREDENTIAL);
+       String decPasswd = passwordEncryptor.decrypt(encPasswd);
+-      System.out.println("Encryption Key:\t\t" + MvcsConstants.privacyKey);
++      System.out.println("Encryption Key:\t\t" + AppConstants.loadPrivacyKey());
+       System.out.println("User Password:\t\t" + CREDENTIAL);
+       System.out.println("Encrypted Password:\t" + encPasswd.replaceAll("\r\n", "\\\\r\\\\n"));
+       System.out.println("Decrypted Password:\t" + decPasswd);
+Index: src/main/resources/mil/navy/lcs/mvcs/common/application.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/application.properties	(revision 9842)
++++ src/main/resources/mil/navy/lcs/mvcs/common/application.properties	(working copy)
+@@ -1,6 +0,0 @@
+-datasource.driver=org.hsqldb.jdbcDriver
+-datasource.url=jdbc:hsqldb:file:../database/mvcs;
+-datasource.username=SA
+-datasource.password=ENC(+ysiwXdSugpRbfKTm4pDRqVTI+Y7MgSVtTN8ZI+2hDw=)
+-
+-env.privacy.name=APP_ENCRYPTION_PASSWORD

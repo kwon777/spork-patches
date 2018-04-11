@@ -1,0 +1,677 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-plugin-ips250
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(revision 9624)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(working copy)
+@@ -5,6 +5,7 @@
+ 
+ import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import mil.navy.lcs.mvcs.common.utils.LinuxSystemUtils;
+ import mil.navy.lcs.mvcs.ips250plugin.commands.IPS250Commands;
+ import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
+ import mil.navy.lcs.mvcs.ips250plugin.heartbeat.UnicastHbSender;
+@@ -58,9 +59,9 @@
+       {
+          // obtain the IP and port from configurations.
+          String ipFromConfig = ConfigManager.getInstance().getRadioSelected().getIpAddress();
+-         
++
+          // use IP if given
+-         if(ip!=null && ip.length() > 3)
++         if (ip != null && ip.length() > 3)
+             ipAddress = ip;
+          else if (ipFromConfig != null && ipFromConfig.length() > 1)
+             ipAddress = ipFromConfig;
+@@ -100,13 +101,6 @@
+ 
+ 
+    @Override
+-   public void setIPAddress(String ipAddress)
+-   {
+-      this.ipAddress = ipAddress;
+-   }
+-
+-
+-   @Override
+    public String getIPAddress()
+    {
+       return this.ipAddress;
+@@ -148,7 +142,7 @@
+    public boolean zeroize()
+    {
+       boolean zeroized = false;
+-      System.out.println("Attempting to call zeroize() from IPS250 Plugin. IP:" + this.ipAddress);
++      LoggingManager.getPrimaryLogger().warn("Attempting to call zeroize() from IPS250 Plugin. IP:" + this.ipAddress);
+       zeroized = encryptorCommands.zeroizeAllKeys(this.ipAddress);
+       return zeroized;
+    }
+@@ -158,7 +152,7 @@
+    public boolean sanitize()
+    {
+       boolean sanitized = false;
+-      System.out.println("Attempting to call sanitize() from IPS250 Plugin. IP:" + this.ipAddress);
++      LoggingManager.getPrimaryLogger().warn("Attempting to call sanitize() from IPS250 Plugin. IP:" + this.ipAddress);
+       sanitized = encryptorCommands.sanitizeDevice(this.ipAddress);
+       return sanitized;
+    }
+@@ -183,4 +177,14 @@
+       return keepAliveHeartbeatSender;
+    }
+ 
++
++   @Override
++   public boolean isReachable()
++   {
++      if (ipAddress != null)
++         return LinuxSystemUtils.ping(ipAddress);
++
++      return false;
++   }
++
+ }
+Index: src/test/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250PluginTest.java
+===================================================================
+--- src/test/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250PluginTest.java	(revision 9624)
++++ src/test/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250PluginTest.java	(working copy)
+@@ -40,19 +40,7 @@
+    {
+    }
+ 
+-
+    /**
+-    * Test method for {@link mil.navy.lcs.mvcs.ips250plugin.main.IPS250Plugin#getIPAddress()}.
+-    */
+-   @Test
+-   public void testGetIPAddress()
+-   {
+-      ips250Plugin.setIPAddress(ipAddress);
+-      Assert.assertEquals(ipAddress, ips250Plugin.getIPAddress());
+-   }
+-
+-
+-   /**
+     * Test method for {@link mil.navy.lcs.mvcs.ips250plugin.main.IPS250Plugin#hasIPAddress()}.
+     */
+    @Test
+#P mvcs-sca
+Index: src/main/test/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTest.java	(working copy)
+@@ -0,0 +1,91 @@
++
++
++package mil.navy.lcs.mvcs.sca.encryptor;
++
++
++import org.junit.After;
++import org.junit.AfterClass;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.model.HostModelInitializer;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++public class ScaEncryptorPluginManagerTest extends ScaTestCase
++{
++   protected ConfigManager cm;
++   protected ShipNode node;
++   protected ScaEncryptorPluginManager sep;
++
++
++   @BeforeClass
++   public static void setUpBeforeClass() throws Exception
++   {
++   }
++
++
++   @AfterClass
++   public static void tearDownAfterClass() throws Exception
++   {
++   }
++
++
++   @Before
++   public void setUp() throws Exception
++   {
++      cm = ConfigManager.getInstance();
++      ShipState.model = HostModelInitializer.createHostModel(cm.getShip(), cm.getListOfVehicles());
++      node = ShipState.model.ship;
++      sep = ScaEncryptorPluginManager.getInstance();
++   }
++
++
++   @After
++   public void tearDown() throws Exception
++   {
++   }
++
++
++   @Test
++   public void testGetEncryptorPluginString()
++   {
++      LinkModel losLink = node.getFirstLinkByCommsType(CommsType.LOS);
++      IEncryptorPlugin plugin = sep.getEncryptorPlugin(losLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in using the linkId of " + losLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++
++      LinkModel satcomLink = node.getFirstLinkByCommsType(CommsType.SAT);
++      plugin = sep.getEncryptorPlugin(satcomLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in using the linkId of " + satcomLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++   }
++
++
++   @Test
++   public void testGetEncryptorPluginRadioLink()
++   {
++      RadioLink losLink = (RadioLink) node.getFirstLinkByCommsType(CommsType.LOS);
++      IEncryptorPlugin plugin = sep.getEncryptorPlugin(losLink);
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in for RadioLink of " + losLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++
++      RadioLink satcomLink = (RadioLink) node.getFirstLinkByCommsType(CommsType.SAT);
++      plugin = sep.getEncryptorPlugin(satcomLink);
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in using the linkId of " + satcomLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++   }
++
++}
+Index: src/main/test/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTest.java	(working copy)
+@@ -0,0 +1,91 @@
++
++
++package mil.navy.lcs.mvcs.sca.encryptor;
++
++
++import org.junit.After;
++import org.junit.AfterClass;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.model.HostModelInitializer;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++public class ScaEncryptorPluginManagerTest extends ScaTestCase
++{
++   protected ConfigManager cm;
++   protected ShipNode node;
++   protected ScaEncryptorPluginManager sep;
++
++
++   @BeforeClass
++   public static void setUpBeforeClass() throws Exception
++   {
++   }
++
++
++   @AfterClass
++   public static void tearDownAfterClass() throws Exception
++   {
++   }
++
++
++   @Before
++   public void setUp() throws Exception
++   {
++      cm = ConfigManager.getInstance();
++      ShipState.model = HostModelInitializer.createHostModel(cm.getShip(), cm.getListOfVehicles());
++      node = ShipState.model.ship;
++      sep = ScaEncryptorPluginManager.getInstance();
++   }
++
++
++   @After
++   public void tearDown() throws Exception
++   {
++   }
++
++
++   @Test
++   public void testGetEncryptorPluginString()
++   {
++      LinkModel losLink = node.getFirstLinkByCommsType(CommsType.LOS);
++      IEncryptorPlugin plugin = sep.getEncryptorPlugin(losLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in using the linkId of " + losLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++
++      LinkModel satcomLink = node.getFirstLinkByCommsType(CommsType.SAT);
++      plugin = sep.getEncryptorPlugin(satcomLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in using the linkId of " + satcomLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++   }
++
++
++   @Test
++   public void testGetEncryptorPluginRadioLink()
++   {
++      RadioLink losLink = (RadioLink) node.getFirstLinkByCommsType(CommsType.LOS);
++      IEncryptorPlugin plugin = sep.getEncryptorPlugin(losLink);
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in for RadioLink of " + losLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++
++      RadioLink satcomLink = (RadioLink) node.getFirstLinkByCommsType(CommsType.SAT);
++      plugin = sep.getEncryptorPlugin(satcomLink);
++      Assert.assertNotNull("NULL: Could not find an encryptor plug-in using the linkId of " + satcomLink.getLinkId(), plugin);
++      if (plugin != null)
++         System.out.println("\nTESTCASE: pinging the red side IP " + plugin.getIPAddress() + "... Is reachable? " + plugin.isReachable() + "\n");
++   }
++
++}
+Index: src/main/test/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManagerTest.java	(working copy)
+@@ -0,0 +1,90 @@
++
++
++package mil.navy.lcs.mvcs.sca.radios;
++
++
++import org.junit.After;
++import org.junit.AfterClass;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.model.HostModelInitializer;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++public class ScaRadioPluginsManagerTest extends ScaTestCase
++{
++   protected ConfigManager cm;
++   protected ShipNode node;
++   protected ScaRadioPluginsManager srpm;
++
++
++   @BeforeClass
++   public static void setUpBeforeClass() throws Exception
++   {
++   }
++
++
++   @AfterClass
++   public static void tearDownAfterClass() throws Exception
++   {
++   }
++
++
++   @Before
++   public void setUp() throws Exception
++   {
++      cm = ConfigManager.getInstance();
++      ShipState.model = HostModelInitializer.createHostModel(cm.getShip(), cm.getListOfVehicles());
++      node = ShipState.model.ship;
++      srpm = ScaRadioPluginsManager.getInstance();
++   }
++
++
++   @After
++   public void tearDown() throws Exception
++   {
++   }
++
++
++   @Test
++   public void testGetRadioPluginByName()
++   {
++      LinkModel losLink = node.getFirstLinkByCommsType(CommsType.LOS);
++      IRadioPlugin losPlugin = srpm.getRadioPluginByName(losLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an radio plug-in using the linkId of " + losLink.getLinkId(), losPlugin);
++      if (losPlugin != null)
++      {
++         System.out.println("\nLOS Rim available? " + losPlugin.isRimAvailable());
++         System.out.println("LOS Radio available? " + losPlugin.isRadioAvailable());
++         System.out.println();
++      }
++
++      LinkModel othLink = node.getFirstLinkByCommsType(CommsType.OTH);
++      IRadioPlugin othPlugin = srpm.getRadioPluginByName(othLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an radio plug-in using the linkId of " + othLink.getLinkId(), othPlugin);
++      if (othPlugin != null)
++      {
++         System.out.println("\nOTH Rim available? " + othPlugin.isRimAvailable());
++         System.out.println("OTH Radio available? " + othPlugin.isRadioAvailable());
++         System.out.println();
++      }
++   }
++
++
++   @Test
++   public void testGetRadioPlugins()
++   {
++      int radios = node.getRadioLinks().size();
++      int radioPlugins = srpm.getRadioPlugins().size();
++      Assert.assertEquals("Radio and Plugin size is not equal! Radios=" + radios + " Plugins="+radioPlugins, radios, radioPlugins);
++   }
++
++}
+Index: src/main/test/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManagerTest.java	(working copy)
+@@ -0,0 +1,90 @@
++
++
++package mil.navy.lcs.mvcs.sca.radios;
++
++
++import org.junit.After;
++import org.junit.AfterClass;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.model.HostModelInitializer;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++public class ScaRadioPluginsManagerTest extends ScaTestCase
++{
++   protected ConfigManager cm;
++   protected ShipNode node;
++   protected ScaRadioPluginsManager srpm;
++
++
++   @BeforeClass
++   public static void setUpBeforeClass() throws Exception
++   {
++   }
++
++
++   @AfterClass
++   public static void tearDownAfterClass() throws Exception
++   {
++   }
++
++
++   @Before
++   public void setUp() throws Exception
++   {
++      cm = ConfigManager.getInstance();
++      ShipState.model = HostModelInitializer.createHostModel(cm.getShip(), cm.getListOfVehicles());
++      node = ShipState.model.ship;
++      srpm = ScaRadioPluginsManager.getInstance();
++   }
++
++
++   @After
++   public void tearDown() throws Exception
++   {
++   }
++
++
++   @Test
++   public void testGetRadioPluginByName()
++   {
++      LinkModel losLink = node.getFirstLinkByCommsType(CommsType.LOS);
++      IRadioPlugin losPlugin = srpm.getRadioPluginByName(losLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an radio plug-in using the linkId of " + losLink.getLinkId(), losPlugin);
++      if (losPlugin != null)
++      {
++         System.out.println("\nLOS Rim available? " + losPlugin.isRimAvailable());
++         System.out.println("LOS Radio available? " + losPlugin.isRadioAvailable());
++         System.out.println();
++      }
++
++      LinkModel othLink = node.getFirstLinkByCommsType(CommsType.OTH);
++      IRadioPlugin othPlugin = srpm.getRadioPluginByName(othLink.getLinkId());
++      Assert.assertNotNull("NULL: Could not find an radio plug-in using the linkId of " + othLink.getLinkId(), othPlugin);
++      if (othPlugin != null)
++      {
++         System.out.println("\nOTH Rim available? " + othPlugin.isRimAvailable());
++         System.out.println("OTH Radio available? " + othPlugin.isRadioAvailable());
++         System.out.println();
++      }
++   }
++
++
++   @Test
++   public void testGetRadioPlugins()
++   {
++      int radios = node.getRadioLinks().size();
++      int radioPlugins = srpm.getRadioPlugins().size();
++      Assert.assertEquals("Radio and Plugin size is not equal! Radios=" + radios + " Plugins="+radioPlugins, radios, radioPlugins);
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java	(revision 9624)
++++ src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java	(working copy)
+@@ -230,7 +230,7 @@
+ 
+ 
+    /** This method calls the start method of each plug-in */
+-   public void startPlugins()
++   private void startPlugins()
+    {
+       for (final String radioName : runtimePluginInstances.keySet())
+       {
+Index: src/main/developmentTests/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginTesting.java
+===================================================================
+--- src/main/developmentTests/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginTesting.java	(revision 9624)
++++ src/main/developmentTests/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginTesting.java	(working copy)
+@@ -1,103 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.sca.radios;
+-
+-
+-import java.beans.PropertyChangeEvent;
+-import java.beans.PropertyChangeListener;
+-
+-/**
+- * Class Description
+- * <p>
+- * Date Created: Sep 10, 2009
+- * <p>
+- * $LastChangedBy$
+- * $LastChangedDate$ $LastChangedRevision$
+- * 
+- * @author Wai Lee
+- * @version 1.0
+- */
+-public class ScaRadioPluginTesting implements PropertyChangeListener
+-{
+-
+-   ScaRadioPluginsManager scaRadioPluginsManager;
+-   // RadioProperties rp;
+-   // ScaLocalRadio slr;
+-   // ScaLocalNode testNode;
+-   private final String RADIO_NAME = "TestRadio1";
+-   String eventName = "", strOldValue = "", strNewValue = "";
+-   boolean boolOldValue = false, boolNewValue = false;
+-
+-
+-   /**
+-    * Method Description
+-    * 
+-    * @param args
+-    */
+-   public static void main(String[] args)
+-   {
+-      ScaRadioPluginTesting srp = new ScaRadioPluginTesting();
+-      srp.startPlugin();
+-
+-   }
+-
+-
+-   public void startPlugin()
+-   {
+-
+-      // rp = new RadioProperties(RADIO_NAME);
+-      // rp.addRadioPropertiesChangeEventListener(ScaRadioPluginsManager.getInstance());
+-
+-      // Create local radio and add it to a link collection
+-      // slr = new ScaLocalRadio(RADIO_NAME);
+-      // slr.setLinkType("VRC99");
+-      // slr.addPropertyChangeListener(this);
+-      // Hashtable<String, MvcsLink> links = new Hashtable<String, MvcsLink>();
+-      // links.put(RADIO_NAME, slr);
+-      //
+-      // // Create local node and add link to the node
+-      // testNode = new ScaLocalNode();
+-      // // testNode.setNodeId("TestNode1");
+-      // testNode.setLinks(links);
+-      //
+-      // // Adding node to the ScaMissionProfileManager
+-      // ScaNodeManager.getInstance().setLocalNode(testNode);
+-
+-      scaRadioPluginsManager = ScaRadioPluginsManager.getInstance();
+-      scaRadioPluginsManager.startPlugins();
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    * 
+-    * @param evt
+-    * @see java.beans.PropertyChangeListener#propertyChange(java.beans.PropertyChangeEvent)
+-    */
+-   @Override
+-   public void propertyChange(PropertyChangeEvent evt)
+-   {
+-
+-      // if (eventName.equalsIgnoreCase(ListenerValues.RADIO_EXITING_BIT) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_ENTERING_BIT) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_LOST_ALL_LINKS) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_SERIAL_PORT_DISCONNECTED) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_NOT_RESPONDING) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_SERIAL_PORT_DISCONNECTED) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_FAILED_SNMP_POLLING) ||
+-      // eventName.equalsIgnoreCase(ListenerValues.RADIO_RIM_CONNECTED))
+-      if (evt.getNewValue() instanceof Boolean)
+-      {
+-         boolNewValue = (Boolean) evt.getNewValue();
+-         boolOldValue = (Boolean) evt.getOldValue();
+-      }
+-      else
+-      {
+-         strNewValue = (String) evt.getNewValue();
+-         strOldValue = (String) evt.getOldValue();
+-      }
+-
+-
+-   }
+-
+-}
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(revision 9624)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(working copy)
+@@ -103,7 +103,7 @@
+ 
+    /**
+     * 
+-    * This function sends a SNMP query to the RIM to determine if the radio is available. It the
++    * This function sends a SNMP query to the RIM to determine if the radio is available. If the
+     * radio is available, the function returns true, false otherwise.
+     * 
+     * @return boolean True if Radio is available, false otherwise
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java	(revision 9624)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java	(working copy)
+@@ -206,7 +206,7 @@
+     * To instantiate radio plug-ins and store the radio name and the plug-in pair in the plug-in
+     * map.
+     */
+-   public void instantiatePlugins()
++   protected void instantiatePlugins()
+    {
+       Enumeration<String> e = radioNamesAndPluginClasses.keys();
+       String radioName = "";
+Index: src/main/java/mil/navy/lcs/mvcs/common/encryptor/interfaces/IEncryptorPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/encryptor/interfaces/IEncryptorPlugin.java	(revision 9624)
++++ src/main/java/mil/navy/lcs/mvcs/common/encryptor/interfaces/IEncryptorPlugin.java	(working copy)
+@@ -36,13 +36,6 @@
+ 
+    /**
+     * 
+-    * @param ipAddress
+-    */
+-   public void setIPAddress(String ipAddress);
+-
+-
+-   /**
+-    * 
+     * @return
+     */
+    public String getIPAddress();
+@@ -91,4 +84,12 @@
+     * @return true if successful.
+     */
+    public boolean setHeartbeatMonitoring(boolean enableMonitoring);
++
++
++   /**
++    * To check whether the red side IP address of this encryptor is reachable.
++    * 
++    * @return true if this 
++    */
++   public boolean isReachable();
+ }
+#P mvcs-plugin-rt1944
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944PluginWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944PluginWorker.java	(revision 9624)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944PluginWorker.java	(working copy)
+@@ -281,12 +281,6 @@
+    }
+ 
+ 
+-   public void setRadioResponding(boolean radioResponding)
+-   {
+-      this.radioResponding = radioResponding;
+-   }
+-
+-
+    public String[] getTimeSlotAssignment()
+    {
+       return null;

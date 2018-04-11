@@ -1,0 +1,1270 @@
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9894)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -4,8 +4,7 @@
+ <meta charset="UTF-8">
+ <title>Node Info</title>
+ 
+-<link id="colorCSS" rel=StyleSheet href="css/colors.css" type="text/css"
+-	media="all">
++<link id="colorCSS" rel=StyleSheet href="css/colors.css" type="text/css" media="all">
+ <link rel=StyleSheet href="css/theme.css" type="text/css" media="all">
+ <link rel=StyleSheet href="css/utils.css" type="text/css" media="all">
+ <link rel=StyleSheet href="css/boxModel.css" type="text/css" media="all">
+@@ -19,11 +18,9 @@
+ <script type="text/javascript" src="js/lib/jquery.getParams.js"></script>
+ <script type="text/javascript" src="js/lib/jquery.history.js"></script>
+ <!-- Add fancyBox -->
+-<link rel="stylesheet"
+-	href="js/lib/fancybox/sources/jquery.fancybox.css" type="text/css"
+-	media="screen" />
+-<script type="text/javascript"
+-	src="js/lib/fancybox/sources/jquery.fancybox.pack.js"></script>
++<link rel="stylesheet" href="js/lib/fancybox/sources/jquery.fancybox.css" type="text/css"
++  media="screen" />
++<script type="text/javascript" src="js/lib/fancybox/sources/jquery.fancybox.pack.js"></script>
+ 
+ 
+ <script type="text/javascript" src="js/userinfo.js"></script>
+@@ -38,619 +35,612 @@
+ </head>
+ <!-- Sets display: none to hide while Knockout is loading, then data-bind="visible: true" causes everything to show. This is to remove the flicker of divs and status when not fully loaded -->
+ <body>
+-	<div id="inactiveOverlay"></div>
+-	<div id="messageBox"></div>
++  <div id="inactiveOverlay"></div>
++  <div id="messageBox"></div>
+ 
+-<!-- MVCS 1426 RF Test Port -->
+-	<!-- hidden inline form -->
+-	<div class="hiddenForm" id="testSettings">
+-		<div id="testSettings_config_label"></div>
+-		<h2>RF Test Port</h2>
+-		<form action="" name="testConfigure">
+-			<!-- <input id="test_selection"	class="txt" /> -->
+-			<table id="rfTestTable">
+-			<tbody>
+-			<tr>
+-			<td>
+-			<label for="#test_selection_lnr">Test L&R</label>
+-			<input class="test_selection" id="test_selection_lnr"  type="radio" name="radioTest" value="TEST_LNR" checked/>
+-			
+-			</td>
+-			</tr>
+-			<tr>
+-			<td>
+-			<label for="#test_selection_main">Test Main</label>
+-			<input class="test_Selection" id="test_selection_main"  type="radio" name="radioTest" value="TEST_MAIN"/>
+-			</td>
+-			</tr>
+-			</tbody>
+-			</table>			
+-			<button type="submit" class="configureBtn"
+-				onclick="submitRfTest(event, true, document.getElementsByName('radioTest'));">Start</button>
+-			<button type="submit" class="configureBtn"
+-				onclick="submitRfTest(event, false,  document.getElementsByName('radioTest'));">Stop</button>
+-			<input type="button" value="Close" onclick="$.fancybox.close()" />
+-		</form>
+-	</div>
+-	
+-	<!-- hidden inline form -->
+-	<div class="hiddenForm" id="single_testSettings">
+-		<div id="oth_testSettings_config_label"></div>
+-		<h2>RF Test Port</h2>
+-		<form action="" name="testConfigure">		
+-			<button type="submit" class="configureBtn"
+-				onclick="submitSingleRfTest(event, true);">Start</button>
+-			<button type="submit" class="configureBtn"
+-				onclick="submitSingleRfTest(event, false);">Stop</button>
+-			<input type="button" value="Close" onclick="$.fancybox.close()" />
+-		</form>
+-	</div>
++  <!-- MVCS 1426 RF Test Port -->
++  <!-- hidden inline form -->
++  <div class="hiddenForm" id="testSettings">
++    <div id="testSettings_config_label"></div>
++    <h2>RF Test Port</h2>
++    <form action="" name="testConfigure">
++      <!-- <input id="test_selection"	class="txt" /> -->
++      <table id="rfTestTable">
++        <tbody>
++          <tr>
++            <td><label for="#test_selection_lnr">Test L&R</label> <input class="test_selection"
++              id="test_selection_lnr" type="radio" name="radioTest" value="TEST_LNR" checked /></td>
++          </tr>
++          <tr>
++            <td><label for="#test_selection_main">Test Main</label> <input
++              class="test_Selection" id="test_selection_main" type="radio" name="radioTest"
++              value="TEST_MAIN" /></td>
++          </tr>
++        </tbody>
++      </table>
++      <button type="submit" class="configureBtn"
++        onclick="submitRfTest(event, true, document.getElementsByName('radioTest'));">Start</button>
++      <button type="submit" class="configureBtn"
++        onclick="submitRfTest(event, false,  document.getElementsByName('radioTest'));">Stop</button>
++      <input type="button" value="Close" onclick="$.fancybox.close()" />
++    </form>
++  </div>
+ 
+-	<div class="bodyHeader hbox">
+-		<div>MVCS @app_version@</div>
+-		<div class="boxFlex1"></div>
+-		<div class="sessionManagement hbox">
+-			<div>Logged in as:</div>
+-			<div id="usernameBox"></div>
+-			<div id="userlevelBox"></div>
+-			<div id="userinfoSpacer">|</div>
+-			<a class="logoutLink" href="settings.html">Settings</a>
+-			<div id="userinfoSpacer">|</div>
+-			<a class="logoutLink" href="Logout">Logout</a>
+-		</div>
+-	</div>
++  <!-- hidden inline form -->
++  <div class="hiddenForm" id="single_testSettings">
++    <div id="oth_testSettings_config_label"></div>
++    <h2>RF Test Port</h2>
++    <form action="" name="testConfigure">
++      <button type="submit" class="configureBtn" onclick="submitSingleRfTest(event, true);">Start</button>
++      <button type="submit" class="configureBtn" onclick="submitSingleRfTest(event, false);">Stop</button>
++      <input type="button" value="Close" onclick="$.fancybox.close()" />
++    </form>
++  </div>
+ 
+-	<div class="bodyContent vbox">
+-		<div id="nodeNavContainer" class="horizontalNavContainer"
+-			style="display: none !important" data-bind="visible: true">
+-			<!-- ko foreach: nodes -->
+-			<button class="navButton nodeSelectionButton"
+-				data-bind="text: nodeName, attr: { 'nodeName': nodeName, 'nodeId' : nodeId }"
+-				onclick="selectNode(this);"></button>
+-			<!-- /ko -->
+-		</div>
++  <div class="bodyHeader hbox">
++    <div>MVCS @app_version@</div>
++    <div class="boxFlex1"></div>
++    <div class="sessionManagement hbox">
++      <div>Logged in as:</div>
++      <div id="usernameBox"></div>
++      <div id="userlevelBox"></div>
++      <div id="userinfoSpacer">|</div>
++      <a class="logoutLink" href="settings.html">Settings</a>
++      <div id="userinfoSpacer">|</div>
++      <a class="logoutLink" href="Logout">Logout</a>
++    </div>
++  </div>
+ 
+-		<div id="nodeInformation" class="vbox"
+-			style="display: none !important" data-bind="visible: true">
+-			<!-- MVCS1453 - Fix AutoManagement GUI Issue -->
+-			<div class="node content vbox"
+-				data-bind="attr: { id: nodeId, 'name': nodeName, 'data-state': state, 'data-vehicleType' : className }, css: { comms: comms, emcon: emcon, emconCapable: emconCapable, autoManagement: autoManagementValue }">
+-				<div class="nodeRunner hbox">
+-					<div class="node" data-bind="attr: { 'name': nodeName, id: nodeId }">
+-						<img data-bind="attr: { src: imgSrc } " />
+-					</div>
+-					<div class="vbox">
+-						<div class="nodeId" data-bind="text: nodeName"></div>
+-						<div class="dataItem hbox">
+-							<div class="dataLabel">Loaded Mission:</div>
+-							<div class="dataValue" data-bind="text: missionName"></div>
+-						</div>
+-					</div>
+-				</div>
++  <div class="bodyContent vbox">
++    <div id="nodeNavContainer" class="horizontalNavContainer" style="display: none !important"
++      data-bind="visible: true">
++      <!-- ko foreach: nodes -->
++      <button class="navButton nodeSelectionButton"
++        data-bind="text: nodeName, attr: { 'nodeName': nodeName, 'nodeId' : nodeId }"
++        onclick="selectNode(this);"></button>
++      <!-- /ko -->
++    </div>
+ 
+-				<div id="nodeInfoMain" class="hbox">
+-					<!-- MVCSSRS0806 -->
+-					<div id="leftMenu" class="vbox">
+-						<button class="navAll navButton viewButton"
+-							onclick="window.location = 'dash.html';">Dash</button>
+-						<button class="navButton viewButton" data-navId='summary'
+-							onclick="setSelectedView(this);" id="defaultNavView">Summary</button>
+-						<button class="navButton viewButton" data-navId='control'
+-							onclick="setSelectedView(this);">Control</button>
+-						<button class="navButton viewButton" data-navId='status'
+-							onclick="setSelectedView(this);">Status</button>
+-						<button class="navButton viewButton" data-navId='alerts'
+-							onclick="setSelectedView(this);">Alerts</button>
+-						<button class="navButton viewButton"
+-							onclick="window.location = 'tools.html';">Tools</button>
+-						<button class="navButton viewButton" data-navId='archivingTool'
+-							onClick="window.location = 'ArchiveTool.html?nodeId=' + nodeId;">Archiving Tool</button>
+-						<button class="navButton viewButton" data-navId='BIT'
+-							onClick="window.location = 'pmfl.html?nodeId=' + nodeId;">BIT Tool</button>
+-						<!--
++    <div id="nodeInformation" class="vbox" style="display: none !important"
++      data-bind="visible: true">
++      <!-- MVCS1453 - Fix AutoManagement GUI Issue -->
++      <div class="node content vbox"
++        data-bind="attr: { id: nodeId, 'name': nodeName, 'data-state': state, 'data-vehicleType' : className }, css: { comms: comms, emcon: emcon, emconCapable: emconCapable, autoManagement: autoManagementValue }">
++        <div class="nodeRunner hbox">
++          <div class="node" data-bind="attr: { 'name': nodeName, id: nodeId }">
++            <img data-bind="attr: { src: imgSrc } " />
++          </div>
++          <div class="vbox">
++            <div class="nodeId" data-bind="text: nodeName"></div>
++            <div class="dataItem hbox">
++              <div class="dataLabel">Loaded Mission:</div>
++              <div class="dataValue" data-bind="text: missionName"></div>
++            </div>
++          </div>
++        </div>
++
++        <div id="nodeInfoMain" class="hbox">
++          <!-- MVCSSRS0806 -->
++          <div id="leftMenu" class="vbox">
++            <button class="navAll navButton viewButton" onclick="window.location = 'dash.html';">Dash</button>
++            <button class="navButton viewButton" data-navId='summary'
++              onclick="setSelectedView(this);" id="defaultNavView">Summary</button>
++            <button class="navButton viewButton" data-navId='control'
++              onclick="setSelectedView(this);">Control</button>
++            <button class="navButton viewButton" data-navId='status'
++              onclick="setSelectedView(this);">Status</button>
++            <button class="navButton viewButton" data-navId='alerts'
++              onclick="setSelectedView(this);">Alerts</button>
++            <button class="navButton viewButton" onclick="window.location = 'tools.html';">Tools</button>
++            <button class="navButton viewButton" data-navId='archivingTool'
++              onClick="window.location = 'ArchiveTool.html?nodeId=' + nodeId;">Archiving
++              Tool</button>
++            <button class="navButton viewButton" data-navId='BIT'
++              onClick="window.location = 'pmfl.html?nodeId=' + nodeId;">BIT Tool</button>
++            <!--
+ 						<button class="navButton viewButton" data-navId='KEYING'
+ 							onClick="window.location = 'keyingTool.html?nodeId=' + nodeId;" >Keying Tool</button>
+ 						-->
+-					</div>
+-					<div id="nodeInactiveView">
+-					<!-- MVCS01433 Show Vehicle Inactive -->
+-						<button id="forceNodeActive"
+-							data-bind="click: requestNodeActive.bind($data)">Vehicle is Inactive, Force as Active</button>
+-					</div>
+-					<div id="nodeDataView" class="vbox">
+-						<!--  ko if: isShip -->
+-						<div id="summary">
+-							<div class="nodeInfoBox">
+-								<table class="nodeControlItemTable statusTable">
+-									<thead>
+-										<tr>
+-											<th>Item</th>
+-											<th>Status</th>
+-											<th></th>
+-										</tr>
+-									</thead>
+-									<tbody>
+-										<tr class="emcon status"
+-											data-bind="css: { 'good': emconInactive }">
+-											<td class="dataLabel">EMCON</td>
+-											<td><button class="request true"
+-													data-bind="click: requestEmcon.bind($data, 'false')">OFF</button>
+-											</td>
+-											<td>
+-												<button class="request false"
+-													data-bind="click: requestEmcon.bind($data, 'true')">ACTIVE
+-												</button>
+-											</td>
+-										</tr>
+-					
+-										<tr class="rfAllow status"
+-											data-bind="css: { 'good': transmitAllowed, disappear:!emconInactive()}">
+-											<td class="dataLabel">RF</td>
+-											<td><button class="request true"
+-													data-bind="click: requestTransmitAllow.bind($data, 'true')">Allowed</button>
+-											</td>
+-											<td>
+-												<button class="request false"
+-													data-bind="click: requestTransmitAllow.bind($data, 'false')">Not
+-													Allowed</button>
+-											</td>
+-										</tr>
+-									</tbody>
+-								</table>
+-							</div>
+-							<div class="nodeInfoBox">
+-								<table class="nodeControlItemTable statusTable">
+-									<thead>
+-										<tr>
+-											<th>Item</th>
+-											<th>Status</th>
+-										</tr>
+-									</thead>
+-									<tbody>
+-										<tr>
+-											<td class="dataLabel">SW Status</td>
+-											<td data-bind="text: softwareStatus">UNAVAILABLE</td>
+-										</tr>
+-										<tr>
+-											<td class="dataLabel">HW Status</td>
+-											<td data-bind="text: hardwareStatus">UNAVAILABLE</td>
+-										</tr>
+-										<tr>
+-											<td>&nbsp;</td>
+-											<td>&nbsp;</td>
+-										</tr>
+-										<tr>
+-											<td>&nbsp;</td>
+-											<td>&nbsp;</td>
+-										</tr>
+-									</tbody>
+-								</table>
+-							</div>
+-						</div>
+-						<!--  /ko -->
+-						<!--  ko ifnot: isShip -->
+-						<div id="summary">
+-							<div class="nodeInfoControlContainer">
+-								<div class="nodeInfoBox">
+-									<table class="nodeControlItemTable statusTable">
+-										<thead>
+-											<tr>
+-												<th>Item</th>
+-												<th>Status</th>
+-												<th></th>
+-											</tr>
+-										</thead>
+-										<tbody>
+-											<tr>
+-												<td class="dataLabel">Priority</td>
+-												<td data-bind="text: priority"></td>
+-												<td><select
+-													data-bind="options: priorities, value: requestedPriority, optionsCaption: priority">
+-												</select></td>
+-											</tr>
+-											<tr class="emconStatus">
+-												<td class="dataLabel">EMCON</td>
+-												<td class="emconText"
+-													data-bind="css: { 'emcon': emcon }, text: emconText"></td>
+-												<td class="emconTimer" data-bind="text: emconTimeRemaining"></td>
+-											</tr>
+-											<tr class="zeroized status"
+-												data-bind="css: { 'good': keyed }">
+-												<td class="dataLabel">Crypto Status</td>
+-												<td><div class="booleanTrueIsGoodFalseIsBad"
+-														data-bind="css: { 'booleanTrue' : keyed }, text: keyedText"></div>
+-												</td>
+-												<td>
+-													<button data-bind="click: requestZeroize.bind($data)">Zeroize</button>
+-												</td>
+-											</tr>
+-											<tr>
+-												<td class="dataLabel">Status</td>
+-												<td data-bind="text: state"></td>
+-												<td></td>
+-											</tr>
+-											<!--  MVCS1453 - Fix AutoManagement GUI Issue -->
+-											<tr class="managementMode status"
+-												data-bind="css: { 'good': autoManagementValue }">
+-												<td class="dataLabel">Management</td>
+-												<td>
+-													<button class="request true"
+-														data-bind="click: requestManagement.bind($data, 'true')">Automatic
+-													</button>
+-												</td>
+-												<td>
+-													<button class="request false"
+-														data-bind="click: requestManagement.bind($data, 'false')">Manual
+-													</button>
+-												</td>
+-											</tr>
+-											<tr class="commsAllowedMode status commsStuff"
+-												data-bind="css: { 'good': commsAllowed }">
+-												<td class="dataLabel">Communication</td>
+-												<td><button class="request true"
+-														data-bind="click: requestCommsAllowed.bind($data, 'true')">Allowed</button>
+-												</td>
+-												<td>
+-													<button class="request false"
+-														data-bind="click: requestCommsAllowed.bind($data, 'false')">Not
+-														Allowed</button>
+-												</td>
+-											</tr>
+-										</tbody>
+-									</table>
+-								</div>
+-								<div class="nodeInfoBox">
+-									<table class="nodeControlItemTable statusTable">
+-										<thead>
+-											<tr>
+-												<th>Item</th>
+-												<th>Status</th>
+-											</tr>
+-										</thead>
+-										<tbody>
+-											<tr>
+-												<!-- MVCS01372 - Linked text to Inhibit state of the node -->
+-												<td class="dataLabel">Inhibit Status</td>
+-												<!--  MVCS01442 - Changed color of inhibit switch status. -->
+-												<td  data-bind="text: inhibitedText, css: {statusGoodText: !isInhibited(), statusBadText: isInhibited()}" >UNKNOWN</td>
+-											</tr>
+-											<tr>
+-												<td class="dataLabel">Power Mode</td>
+-												<td data-bind="text: powerConservationMode">UNAVAILABLE</td>
+-											</tr>
+-											<tr>
+-												<td class="dataLabel">SW Status</td>
+-												<td data-bind="text: softwareStatus">UNAVAILABLE</td>
+-											</tr>
+-											<tr>
+-												<td class="dataLabel">HW Status</td>
+-												<td data-bind="text: hardwareStatus">UNAVAILABLE</td>
+-											</tr>
+-											<tr>
+-												<td>&nbsp;</td>
+-												<td>&nbsp;</td>
+-											</tr>
+-											<tr>
+-												<td>&nbsp;</td>
+-												<td>&nbsp;</td>
+-											</tr>
+-										</tbody>
+-									</table>
+-								</div>
+-							</div>
+-						</div>
+-						<!--  /ko -->
++          </div>
++          <div id="nodeInactiveView">
++            <!-- MVCS01433 Show Vehicle Inactive -->
++            <button id="forceNodeActive" data-bind="click: requestNodeActive.bind($data)">Vehicle
++              is Inactive, Force as Active</button>
++          </div>
++          <div id="nodeDataView" class="vbox">
++            <!--  ko if: isShip -->
++            <div id="summary">
++              <div class="nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <thead>
++                    <tr>
++                      <th>Item</th>
++                      <th>Status</th>
++                      <th></th>
++                    </tr>
++                  </thead>
++                  <tbody>
++                    <tr class="emcon status" data-bind="css: { 'good': emconInactive }">
++                      <td class="dataLabel">EMCON</td>
++                      <td><button class="request true"
++                          data-bind="click: requestEmcon.bind($data, 'false')">OFF</button></td>
++                      <td>
++                        <button class="request false"
++                          data-bind="click: requestEmcon.bind($data, 'true')">ACTIVE</button>
++                      </td>
++                    </tr>
+ 
+-						<div id="control">
+-							<!-- ko foreach: nodeLinks -->
+-							<div id="controlLinks">
+-								<div class="nodeLink"
+-									data-bind="attr: { 'data-linkType': commsType, 'data-status': status}">
+-									<div class="nodeLinkHeader">
+-										<div class="nodeLinkStatus">
+-											<div data-bind="text: commsType"></div>
+-											<div class="vehicleOnly linkStatus separator">-</div>
+-											<div class="vehicleOnly linkStatus" data-bind="text: status"></div>
+-										</div>
+-										<div class="vehicleOnly linkStatus nodeLinkQuality">
+-											<div class="linkQuality"
+-												data-bind="attr: { 'quality' : quality }">
+-												<div class="qualityBar"></div>
+-												<div class="qualityBar"></div>
+-												<div class="qualityBar"></div>
+-												<div class="qualityBar"></div>
+-											</div>
+-										</div>
+-										<div class="clear"></div>
+-									</div>
+-									<b data-bind="visible: $parents[0].transmitInactive">Transmit Status:<b data-bind="text: $parents[0].transmitAllowedText"></b></b>
++                    <tr class="rfAllow status"
++                      data-bind="css: { 'good': transmitAllowed, disappear:!emconInactive()}">
++                      <td class="dataLabel">RF</td>
++                      <td><button class="request true"
++                          data-bind="click: requestTransmitAllow.bind($data, 'true')">Allowed</button>
++                      </td>
++                      <td>
++                        <button class="request false"
++                          data-bind="click: requestTransmitAllow.bind($data, 'false')">Not
++                          Allowed</button>
++                      </td>
++                    </tr>
++                  </tbody>
++                </table>
++              </div>
++              <div class="nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <thead>
++                    <tr>
++                      <th>Item</th>
++                      <th>Status</th>
++                    </tr>
++                  </thead>
++                  <tbody>
++                    <tr>
++                      <td class="dataLabel">SW Status</td>
++                      <td data-bind="text: softwareStatus">UNAVAILABLE</td>
++                    </tr>
++                    <tr>
++                      <td class="dataLabel">HW Status</td>
++                      <td data-bind="text: hardwareStatus">UNAVAILABLE</td>
++                    </tr>
++                    <tr>
++                      <td>&nbsp;</td>
++                      <td>&nbsp;</td>
++                    </tr>
++                    <tr>
++                      <td>&nbsp;</td>
++                      <td>&nbsp;</td>
++                    </tr>
++                  </tbody>
++                </table>
++              </div>
++            </div>
++            <!--  /ko -->
++            <!--  ko ifnot: isShip -->
++            <div id="summary">
++              <div class="nodeInfoControlContainer">
++                <div class="nodeInfoBox">
++                  <table class="nodeControlItemTable statusTable">
++                    <thead>
++                      <tr>
++                        <th>Item</th>
++                        <th>Status</th>
++                        <th></th>
++                      </tr>
++                    </thead>
++                    <tbody>
++                      <tr>
++                        <td class="dataLabel">Priority</td>
++                        <td data-bind="text: priority"></td>
++                        <td><select
++                          data-bind="options: priorities, value: requestedPriority, optionsCaption: priority">
++                        </select></td>
++                      </tr>
++                      <tr class="emconStatus">
++                        <td class="dataLabel">EMCON</td>
++                        <td class="emconText" data-bind="css: { 'emcon': emcon }, text: emconText"></td>
++                        <td class="emconTimer" data-bind="text: emconTimeRemaining"></td>
++                      </tr>
++                      <tr class="zeroized status" data-bind="css: { 'good': keyed }">
++                        <td class="dataLabel">Crypto Status</td>
++                        <td><div class="booleanTrueIsGoodFalseIsBad"
++                            data-bind="css: { 'booleanTrue' : keyed }, text: keyedText"></div></td>
++                        <td>
++                          <button data-bind="click: requestZeroize.bind($data)">Zeroize</button>
++                        </td>
++                      </tr>
++                      <tr>
++                        <td class="dataLabel">Status</td>
++                        <td data-bind="text: state"></td>
++                        <td></td>
++                      </tr>
++                      <!--  MVCS1453 - Fix AutoManagement GUI Issue -->
++                      <tr class="managementMode status"
++                        data-bind="css: { 'good': autoManagementValue }">
++                        <td class="dataLabel">Management</td>
++                        <td>
++                          <button class="request true"
++                            data-bind="click: requestManagement.bind($data, 'true')">Automatic
++                          </button>
++                        </td>
++                        <td>
++                          <button class="request false"
++                            data-bind="click: requestManagement.bind($data, 'false')">Manual
++                          </button>
++                        </td>
++                      </tr>
++                      <tr class="commsAllowedMode status commsStuff"
++                        data-bind="css: { 'good': commsAllowed }">
++                        <td class="dataLabel">Communication</td>
++                        <td><button class="request true"
++                            data-bind="click: requestCommsAllowed.bind($data, 'true')">Allowed</button>
++                        </td>
++                        <td>
++                          <button class="request false"
++                            data-bind="click: requestCommsAllowed.bind($data, 'false')">Not
++                            Allowed</button>
++                        </td>
++                      </tr>
++                    </tbody>
++                  </table>
++                </div>
++                <div class="nodeInfoBox">
++                  <table class="nodeControlItemTable statusTable">
++                    <thead>
++                      <tr>
++                        <th>Item</th>
++                        <th>Status</th>
++                      </tr>
++                    </thead>
++                    <tbody>
++                      <tr>
++                        <!-- MVCS01372 - Linked text to Inhibit state of the node -->
++                        <td class="dataLabel">Inhibit Status</td>
++                        <!--  MVCS01442 - Changed color of inhibit switch status. -->
++                        <td
++                          data-bind="text: inhibitedText, css: {statusGoodText: !isInhibited(), statusBadText: isInhibited()}">UNKNOWN</td>
++                      </tr>
++                      <tr>
++                        <td class="dataLabel">Power Mode</td>
++                        <td data-bind="text: powerConservationMode">UNAVAILABLE</td>
++                      </tr>
++                      <tr>
++                        <td class="dataLabel">SW Status</td>
++                        <td data-bind="text: softwareStatus">UNAVAILABLE</td>
++                      </tr>
++                      <tr>
++                        <td class="dataLabel">HW Status</td>
++                        <td data-bind="text: hardwareStatus">UNAVAILABLE</td>
++                      </tr>
++                      <tr>
++                        <td>&nbsp;</td>
++                        <td>&nbsp;</td>
++                      </tr>
++                      <tr>
++                        <td>&nbsp;</td>
++                        <td>&nbsp;</td>
++                      </tr>
++                    </tbody>
++                  </table>
++                </div>
++              </div>
++            </div>
++            <!--  /ko -->
+ 
+-									<b data-bind="visible: $parents[0].isInhibited() && !$parents[0].isShip()">Inhibit Status:<b data-bind="text: $parents[0].isInhibited"></b></b>
+-									
+-									<div class="vehicleOnly nodeLinkRequests" data-bind="css: {'safeMode': $parents[0].transmitInactive}">
+-										<!-- MVCS01373 - Ability to abort -->
+-										<button class="linkButton abortButton"
+-											data-bind="click: requestLinkAction.bind($data, $parent, 'abort')">Abort</button>
+-											<!--  MVCS1597 No use button when link disconnected. -->
+-										<button class="linkButton"
+-											data-bind="click: requestLinkAction.bind($data, $parent, 'use'), visible: (status() == 'CONNECTED')">Use</button>
+-										<b data-bind="visible: commsType() == 'LOS' && $parent.className() != 'UissNode' "> 
+-										<a  class="linkButton rfTestportTestButton modalbox"
+-											href="#testSettings"
+-											data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
+-										</a>
+-										</b> 
+-                                        <!-- MVCS1898 RF test for USV only equipped one test port -->
+-                                        <b data-bind="visible: commsType() == 'LOS' && $parent.className() == 'UissNode' "> 
+-                                        <a  class="linkButton rfTestportTestButton modalbox"
+-                                          href="#single_testSettings"
+-                                          data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
+-                                        </a>
+-                                        </b> 
+-										<b data-bind="visible: commsType() == 'OTH'">
+-										<a 	class="linkButton rfTestportTestButton modalbox"
+-											href="#single_testSettings"
+-											data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button> </a>
+-										</b>
+-										<button class="linkButton disableButton"
+-											data-bind="click: requestLinkAction.bind($data, $parent, 'disable')">Disable</button>
+-									</div>
+-									<!-- MVCS01367 - Desensitize button in Automatic Mode-->
+-									<div class="clear automaticMode" data-bind="css: {'safeMode': $parents[0].transmitInactive}">
+-										<div class="powerItems">
+-											<!-- ko if: $data.powerItems -->
+-											<table class="powerTable">
+-												<tr>
+-													<td>Power</td>
+-												</tr>
+-												<!-- ko foreach: powerItems -->
+-												<tr>
+-													<td class="dataLabel" data-bind="text: displayName" />
+-													<!-- MVCS01374 - Desensitize button in automatic mode-->
+-													<td class="status" data-bind="css: { 'good': outputting}">
+-														<button class="request true"
+-															data-bind="click: requestPower.bind($data, $parents[1], 'true')">on</button>
+-														<button class="request false"
+-															data-bind="click: requestPower.bind($data, $parents[1], 'false')">off</button>
++            <div id="control">
++              <!-- ko foreach: nodeLinks -->
++              <div id="controlLinks">
++                <div class="nodeLink"
++                  data-bind="attr: { 'data-linkType': commsType, 'data-status': status, 'satcom-connectivity': (commsType()=='SAT' && quality()>0) }">
++                  <div class="nodeLinkHeader">
++                    <div class="nodeLinkStatus">
++                      <div data-bind="text: commsType"></div>
++                      <div class="vehicleOnly linkStatus separator">-</div>
++                      <div class="vehicleOnly linkStatus" data-bind="text: status"></div>
++                    </div>
++                    <!-- Display the quality bars for vehicle links or SAT -->                    
++                    <div class="nodeLinkQuality" data-bind="visible: (!$parent.isShip() || commsType()=='SAT')">
++                      <div class="linkQuality" data-bind="attr: { 'quality' : nearestTen(quality()) }">
++                        <div class="qualityBar"></div>
++                        <div class="qualityBar"></div>
++                        <div class="qualityBar"></div>
++                        <div class="qualityBar"></div>
++                      </div>
++                    </div>
++                    <div class="clear"></div>
++                  </div>
++                  <b data-bind="visible: $parents[0].transmitInactive">Transmit Status:<b
++                    data-bind="text: $parents[0].transmitAllowedText"></b>
++                  </b> <b data-bind="visible: $parents[0].isInhibited() && !$parents[0].isShip()">Inhibit
++                    Status:<b data-bind="text: $parents[0].isInhibited"></b>
++                  </b>
+ 
+-													</td>
+-													<td>
+-														<!-- MVCS01435 Display Fault Status --> 
+-														<b data-bind="visible: fault()" class="statusBadText">FAULT</b>
+-													</td>
+-												</tr>
+-												<!-- /ko -->
+-											</table>
+-											<!-- /ko -->
+-										</div>
+-										<div class="rfItems">
+-											<!-- ko if: $data.rfDevice -->
+-											<table class="rfTable inhibitMode">
+-												<tr>
+-													<td>RF Outputs</td>
+-												</tr>
+-												<!-- ko if: rfDevice.rfOutputs().length > 0 -->
+-												<!-- ko foreach: rfDevice.rfOutputs -->
+-												<tr>
+-												<!-- PCR MVCS01445 - Convert LNR to L&R -->
+-													<td class="dataLabel" data-bind="text: displayName" />
+-													<!--  PCR MVCS01482, remove off button for RF outputs -->
+-													<td class="status" data-bind="css: { 'good': outputting}">
+-														<button class="request true"
+-															data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'true'), css: { pressed: outputting, depressed:!outputting}">on</button>
+-														<button class="request false shipOnly"
+-															data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'false')">off</button>
+-                                                    </td>
+-												</tr>
+-                        						<!-- We only want to show these buttons if it the ship, and for the main link. -->
+-			                                    <!--  ko if: (displayName()=='MAIN' && $parents[1].isShip()) -->
+-                                                <tr>
+-                                                  <td class="othAntennaStatus" data-bind="css:{'overrideOnText': $parent.antennaOverride(), 'overrideOffText': !$parent.antennaOverride() }, text: $parent.antennaOverride()?' Manual ':'Automatic' " />
+-                                                  <td class="status">
+-                                                    <button class="overrideOnButton"
+-                                                      data-bind="visible: !$parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent,'true')">&nbsp; Manual &nbsp;</button>
+-                                                    <button class="overrideOffButton"
+-                                                      data-bind="visible: $parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent, 'false')">Automatic</button>
+-                                                  </td>
+-                                                </tr>
+-                                                <tr>
+-                                                  <td class="othAntennaStatus" data-bind="css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}, text: 'Antenna:  &nbsp;&nbsp;' + ampAntenna()" />
+-                                                  <td class="status">
+-                                                    <button class="shipOnly request"
+-                                                      data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='PORT', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'PORT')">PORT</button>
+-                                                    <button class="shipOnly request"
+-                                                      data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='STBD', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'STBD')">STBD</button>
+-                                                  </td>
+-                                                </tr>
+-                                                <!-- /ko -->
+-                                                <!-- end of if MAIN and Ship -->
+-                                                <!-- /ko -->
+-                                                <!-- end of foreach output-->
+-                                                <!-- /ko -->
+-                                                <!-- end of if output less than 0-->
+-                                                <!-- ko ifnot: rfDevice.rfOutputs().length > 0 -->
+-                                                <tr>
+-                                                  <td>NO RF ITEMS</td>
+-                                                </tr>
+-                                                <!-- /ko -->
+-                                            </table>
+-                                            <!-- /ko -->
+-                                            <!-- end of if $data.rfDevice -->
+-                                          </div>
+-										<div class="clear"></div>
+-									</div>
+-									<div class="clear"></div>
+-								</div>
+-							</div>
++                  <div class="vehicleOnly nodeLinkRequests"
++                    data-bind="css: {'safeMode': $parents[0].transmitInactive}">
++                    <!-- MVCS01373 - Ability to abort -->
++                    <button class="linkButton abortButton"
++                      data-bind="click: requestLinkAction.bind($data, $parent, 'abort')">Abort</button>
++                    <!--  MVCS1597 No use button when link disconnected. -->
++                    <button class="linkButton"
++                      data-bind="click: requestLinkAction.bind($data, $parent, 'use'), visible: (status() == 'CONNECTED')">Use</button>
++                    <b
++                      data-bind="visible: commsType() == 'LOS' && $parent.className() != 'UissNode' ">
++                      <a class="linkButton rfTestportTestButton modalbox" href="#testSettings"
++                      data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
++                    </a>
++                    </b>
++                    <!-- MVCS1898 RF test for USV only equipped one test port -->
++                    <b
++                      data-bind="visible: commsType() == 'LOS' && $parent.className() == 'UissNode' ">
++                      <a class="linkButton rfTestportTestButton modalbox"
++                      href="#single_testSettings"
++                      data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
++                    </a>
++                    </b> <b data-bind="visible: commsType() == 'OTH'"> <a
++                      class="linkButton rfTestportTestButton modalbox" href="#single_testSettings"
++                      data-bind="click: populateTestSettings.bind($data, $parent)"><button>Test</button>
++                    </a>
++                    </b>
++                    <button class="linkButton disableButton"
++                      data-bind="click: requestLinkAction.bind($data, $parent, 'disable')">Disable</button>
++                  </div>
++                  <!-- MVCS01367 - Desensitize button in Automatic Mode-->
++                  <div class="clear automaticMode"
++                    data-bind="css: {'safeMode': $parents[0].transmitInactive}">
++                    <div class="powerItems">
++                      <!-- ko if: $data.powerItems -->
++                      <table class="powerTable">
++                        <tr>
++                          <td>Power</td>
++                        </tr>
++                        <!-- ko foreach: powerItems -->
++                        <tr>
++                          <td class="dataLabel" data-bind="text: displayName" />
++                          <!-- MVCS01374 - Desensitize button in automatic mode-->
++                          <td class="status" data-bind="css: { 'good': outputting}">
++                            <button class="request true"
++                              data-bind="click: requestPower.bind($data, $parents[1], 'true')">on</button>
++                            <button class="request false"
++                              data-bind="click: requestPower.bind($data, $parents[1], 'false')">off</button>
+ 
+-							<!-- /ko -->
+-							<div class="nodeInfoBox">
+-								<table class="nodeControlItemTable statusTable">
+-									<tbody>
++                          </td>
++                          <td>
++                            <!-- MVCS01435 Display Fault Status --> <b data-bind="visible: fault()"
++                            class="statusBadText">FAULT</b>
++                          </td>
++                        </tr>
++                        <!-- /ko -->
++                      </table>
++                      <!-- /ko -->
++                    </div>
++                    <div class="rfItems">
++                      <!-- ko if: $data.rfDevice -->
++                      <table class="rfTable inhibitMode">
++                        <tr>
++                          <td>RF Outputs</td>
++                        </tr>
++                        <!-- ko if: rfDevice.rfOutputs().length > 0 -->
++                        <!-- ko foreach: rfDevice.rfOutputs -->
++                        <tr>
++                          <!-- PCR MVCS01445 - Convert LNR to L&R -->
++                          <td class="dataLabel" data-bind="text: displayName" />
++                          <!--  PCR MVCS01482, remove off button for RF outputs -->
++                          <td class="status" data-bind="css: { 'good': outputting}">
++                            <button class="request true"
++                              data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'true'), css: { pressed: outputting, depressed:!outputting}">on</button>
++                            <button class="request false shipOnly"
++                              data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'false')">off</button>
++                          </td>
++                        </tr>
++                        <!-- We only want to show these buttons if it the ship, and for the main link. -->
++                        <!--  ko if: (displayName()=='MAIN' && $parents[1].isShip()) -->
++                        <tr>
++                          <td class="othAntennaStatus"
++                            data-bind="css:{'overrideOnText': $parent.antennaOverride(), 'overrideOffText': !$parent.antennaOverride() }, text: $parent.antennaOverride()?' Manual ':'Automatic' " />
++                          <td class="status">
++                            <button class="overrideOnButton"
++                              data-bind="visible: !$parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent,'true')">&nbsp;
++                              Manual &nbsp;</button>
++                            <button class="overrideOffButton"
++                              data-bind="visible: $parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent, 'false')">Automatic</button>
++                          </td>
++                        </tr>
++                        <tr>
++                          <td class="othAntennaStatus"
++                            data-bind="css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}, text: 'Antenna:  &nbsp;&nbsp;' + ampAntenna()" />
++                          <td class="status">
++                            <button class="shipOnly request"
++                              data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='PORT', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'PORT')">PORT</button>
++                            <button class="shipOnly request"
++                              data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='STBD', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'STBD')">STBD</button>
++                          </td>
++                        </tr>
++                        <!-- /ko -->
++                        <!-- end of if MAIN and Ship -->
++                        <!-- /ko -->
++                        <!-- end of foreach output-->
++                        <!-- /ko -->
++                        <!-- end of if output less than 0-->
++                        <!-- ko ifnot: rfDevice.rfOutputs().length > 0 -->
++                        <tr>
++                          <td>NO RF ITEMS</td>
++                        </tr>
++                        <!-- /ko -->
++                      </table>
++                      <!-- /ko -->
++                      <!-- end of if $data.rfDevice -->
++                    </div>
++                    <div class="clear"></div>
++                  </div>
++                  <div class="clear"></div>
++                </div>
++              </div>
+ 
+-										<tr>
+-											<!-- MVCSSRS0023, MVCSSRS776,MVCSSRS777(Requirements)MVCS01367(PCR): Maintenance Button -->
+-											<td><button class="controlButton" id="maintenanceMode"
+-													data-bind="click: requestMaintenance.bind($data)">Maintenance Mode</button></td>
+-													<!--  MVCS001414 - Added Warm Shutdown ability -->
+-											<td><button class="controlButton"
+-													id="warmShutdownButton"
+-													data-bind="click: requestWarmShutdown.bind($data)">Warm
+-													Shutdown</button></td>
+-											<!-- MVCSSRS0079, MVCSSRS0075,Gui30,Gui31(Requirements)MVCS01368(PCR): Cold ShutDown Button -->
+-											<td><button class="controlButton"
+-													id="coldShutdownButton"
+-													data-bind="click: requestColdShutdown.bind($data)">Cold
+-													Shutdown</button></td>
+-										</tr>
+-									</tbody>
+-								</table>
+-							</div>
++              <!-- /ko -->
++              <div class="nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <tbody>
+ 
+-						</div>
++                    <tr>
++                      <!-- MVCSSRS0023, MVCSSRS776,MVCSSRS777(Requirements)MVCS01367(PCR): Maintenance Button -->
++                      <td><button class="controlButton" id="maintenanceMode"
++                          data-bind="click: requestMaintenance.bind($data)">Maintenance
++                          Mode</button></td>
++                      <!--  MVCS001414 - Added Warm Shutdown ability -->
++                      <td><button class="controlButton" id="warmShutdownButton"
++                          data-bind="click: requestWarmShutdown.bind($data)">Warm Shutdown</button></td>
++                      <!-- MVCSSRS0079, MVCSSRS0075,Gui30,Gui31(Requirements)MVCS01368(PCR): Cold ShutDown Button -->
++                      <td><button class="controlButton" id="coldShutdownButton"
++                          data-bind="click: requestColdShutdown.bind($data)">Cold Shutdown</button></td>
++                    </tr>
++                  </tbody>
++                </table>
++              </div>
+ 
+-						<div id="status">
+-						<!--  Comms Link Status Table -->							
+-							<div class="linkStatus nodeInfoBox">
+-								<table class="nodeControlItemTable statusTable">								
+-									<thead>
+-											<tr>
+-												<th>Link</th>
+-												<th></th>
+-												<th></th>
+-												<th>Status</th>																					
+-											</tr>
+-									</thead>														
+-									<!-- ko foreach: nodeLinks -->																											
+-									<tbody>
+-										<tr >											
+-											<td data-bind="text: commsType"></td>			
+-											<td></td>	
+-											<td></td>
+-											<td data-bind="text: status, css:{'statusDisconnected':status()=='DISCONNECTED','statusConnected':status()=='CONNECTED','statusActive':status()=='ACTIVE'}"></td>																	
+-										</tr>										
+-									</tbody>
+-									<!-- /ko -->																									
+-								</table>
+-							</div>
+-							<!--  Comms Power Output Status Table -->								
+-							<div class="powerStatus nodeInfoBox">							
+-								<table class="nodeControlItemTable statusTable">
+-									<thead>
+-											<tr>
+-												<th>Radio</th>
+-												<th>Power Item</th>
+-												<th></th>
+-												<th>Status</th>																						
+-											</tr>
+-									</thead>		
+-									<!-- ko foreach: nodeLinks -->	
+-									<!-- ko if: $data.powerItems -->											
+-									<!-- ko foreach: powerItems -->									
+-									<tbody>
+-										<tr >
+-											<td data-bind="text: $parents[0].commsType"></td>
+-											<td data-bind="text: displayName"></td>
+-											<td></td>
+-											<td data-bind="text: outputting() ? 'ON' : 'OFF', css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}"></td>										
+-										</tr>										 
+-									</tbody>
+-									<!-- /ko -->
+-									<!-- /ko -->
+-									<!-- /ko -->
+-								</table>							
+-							</div>
+-							<!--  Comms Rf Output Status Table -->
+-							<div class="rfStatus nodeInfoBox">							
+-								<table class="nodeControlItemTable statusTable">
+-									<thead>
+-										<tr>
+-											<th>Radio</th>
+-											<th>RF Output</th>
+-											<th></th>
+-											<th>Status</th>																				
+-										</tr>
+-									</thead>									
+-									<!-- ko foreach: nodeLinks -->		
+-									<!-- ko if: $data.rfDevice -->					
+-									<!-- ko with: rfDevice -->
+-									<!-- ko if: rfOutputs().length > 0 -->
+-									<!-- ko foreach: rfOutputs -->								
+-									<tbody>
+-										<tr >
+-											<td data-bind="text: $parents[1].commsType"></td>
+-											<td data-bind="text: displayName"></td>			
+-											<td></td>
+-											<td data-bind="text: outputting() ? 'ON' : 'OFF', css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}"></td>								
+-										</tr>										
+-									</tbody>
+-									<!-- /ko -->
+-									<!-- /ko -->
+-									<!-- /ko -->
+-									<!-- /ko -->			
+-									<!-- /ko -->								
+-								</table>								
+-							</div>
+-							<!--  Status Table for Filter Devices. -->
+-							<div class="rfStatus nodeInfoBox">
+-								<table class="nodeControlItemTable statusTable">
+-									<thead>
+-										<tr>
+-											<th>Filter Device</th>
+-											<th>Filter Status</th>
+-										</tr>
+-									</thead>
+-									<!--  This displays the filter information for the current node. -->
+-									<tbody>
+-										<tr>
+-											<td data-bind="text:$data.filterDevice.filterId"></td>
+-											<td data-bind="text:$data.filterDevice.status"></td>
+-										</tr>
+-									</tbody>
+-									<!--  End of the filter display -->
+-								</table>
+-							</div>
+-							<!--  End Table for Filter Devices. -->
+-						</div>
+-						<div id="alerts">
+-							<div class="alertsTableDiv">
+-								<div id="spacer"></div>								
+-								<div id="alertsTabs" class="tabs"></div>
++            </div>
+ 
+-								<form class="levels">
+-									<input id="High" type="radio" name="Level" class="levelFilter"
+-										value="HIGH" onchange="AlertTableInstance.filterOnLevel()" />
+-									<!--  -->
+-									<label for="High">High</label>
+-									<!--  -->
+-									<input id="Medium" type="radio" name="Level"
+-										class="levelFilter" value="MEDIUM|HIGH"
+-										onchange="AlertTableInstance.filterOnLevel()" />
+-									<!--  -->
+-									<label for="Medium">Medium</label>
+-									<!--  -->
+-									<input type="radio" name="Level" class="levelFilter"
+-										value="LOW|MEDIUM|HIGH"
+-										onchange="AlertTableInstance.filterOnLevel()" checked />
+-									<!--  -->
+-									<label for="Low">Low</label>
+-								</form>
++            <div id="status">
++              <!--  Comms Link Status Table -->
++              <div class="linkStatus nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <thead>
++                    <tr>
++                      <th>Link</th>
++                      <th></th>
++                      <th></th>
++                      <th>Status</th>
++                    </tr>
++                  </thead>
++                  <!-- ko foreach: nodeLinks -->
++                  <tbody>
++                    <tr>
++                      <td data-bind="text: commsType"></td>
++                      <td></td>
++                      <td></td>
++                      <td
++                        data-bind="text: status, css:{'statusDisconnected':status()=='DISCONNECTED','statusConnected':status()=='CONNECTED','statusActive':status()=='ACTIVE'}"></td>
++                    </tr>
++                  </tbody>
++                  <!-- /ko -->
++                </table>
++              </div>
++              <!--  Comms Power Output Status Table -->
++              <div class="powerStatus nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <thead>
++                    <tr>
++                      <th>Radio</th>
++                      <th>Power Item</th>
++                      <th></th>
++                      <th>Status</th>
++                    </tr>
++                  </thead>
++                  <!-- ko foreach: nodeLinks -->
++                  <!-- ko if: $data.powerItems -->
++                  <!-- ko foreach: powerItems -->
++                  <tbody>
++                    <tr>
++                      <td data-bind="text: $parents[0].commsType"></td>
++                      <td data-bind="text: displayName"></td>
++                      <td></td>
++                      <td
++                        data-bind="text: outputting() ? 'ON' : 'OFF', css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}"></td>
++                    </tr>
++                  </tbody>
++                  <!-- /ko -->
++                  <!-- /ko -->
++                  <!-- /ko -->
++                </table>
++              </div>
++              <!--  Comms Rf Output Status Table -->
++              <div class="rfStatus nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <thead>
++                    <tr>
++                      <th>Radio</th>
++                      <th>RF Output</th>
++                      <th></th>
++                      <th>Status</th>
++                    </tr>
++                  </thead>
++                  <!-- ko foreach: nodeLinks -->
++                  <!-- ko if: $data.rfDevice -->
++                  <!-- ko with: rfDevice -->
++                  <!-- ko if: rfOutputs().length > 0 -->
++                  <!-- ko foreach: rfOutputs -->
++                  <tbody>
++                    <tr>
++                      <td data-bind="text: $parents[1].commsType"></td>
++                      <td data-bind="text: displayName"></td>
++                      <td></td>
++                      <td
++                        data-bind="text: outputting() ? 'ON' : 'OFF', css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}"></td>
++                    </tr>
++                  </tbody>
++                  <!-- /ko -->
++                  <!-- /ko -->
++                  <!-- /ko -->
++                  <!-- /ko -->
++                  <!-- /ko -->
++                </table>
++              </div>
++              <!--  Status Table for Filter Devices. -->
++              <div class="rfStatus nodeInfoBox">
++                <table class="nodeControlItemTable statusTable">
++                  <thead>
++                    <tr>
++                      <th>Filter Device</th>
++                      <th>Filter Status</th>
++                    </tr>
++                  </thead>
++                  <!--  This displays the filter information for the current node. -->
++                  <tbody>
++                    <tr>
++                      <td data-bind="text:$data.filterDevice.filterId"></td>
++                      <td data-bind="text:$data.filterDevice.status"></td>
++                    </tr>
++                  </tbody>
++                  <!--  End of the filter display -->
++                </table>
++              </div>
++              <!--  End Table for Filter Devices. -->
++            </div>
++            <div id="alerts">
++              <div class="alertsTableDiv">
++                <div id="spacer"></div>
++                <div id="alertsTabs" class="tabs"></div>
+ 
+-								<table id="alertsTable">
+-									<tr id="atheader">
+-										<th class="Date">Date</th>
+-										<th class="Node">Node</th>
+-										<th class="AlertMessage">AlertMessage</th>
+-										<th class="Category">Category</th>
+-										<th class="Level">Level</th>
+-									</tr>
+-								</table>
+-							</div>
+-						</div>
+-					</div>
+-				</div>
+-			</div>
+-		</div>
+-	</div>
++                <form class="levels">
++                  <input id="High" type="radio" name="Level" class="levelFilter" value="HIGH"
++                    onchange="AlertTableInstance.filterOnLevel()" />
++                  <!--  -->
++                  <label for="High">High</label>
++                  <!--  -->
++                  <input id="Medium" type="radio" name="Level" class="levelFilter"
++                    value="MEDIUM|HIGH" onchange="AlertTableInstance.filterOnLevel()" />
++                  <!--  -->
++                  <label for="Medium">Medium</label>
++                  <!--  -->
++                  <input type="radio" name="Level" class="levelFilter" value="LOW|MEDIUM|HIGH"
++                    onchange="AlertTableInstance.filterOnLevel()" checked />
++                  <!--  -->
++                  <label for="Low">Low</label>
++                </form>
++
++                <table id="alertsTable">
++                  <tr id="atheader">
++                    <th class="Date">Date</th>
++                    <th class="Node">Node</th>
++                    <th class="AlertMessage">AlertMessage</th>
++                    <th class="Category">Category</th>
++                    <th class="Level">Level</th>
++                  </tr>
++                </table>
++              </div>
++            </div>
++          </div>
++        </div>
++      </div>
++    </div>
++  </div>
+ </body>
+ </html>
+\ No newline at end of file
+Index: WebContent/css/colors-background.css
+===================================================================
+--- WebContent/css/colors-background.css	(revision 9894)
++++ WebContent/css/colors-background.css	(working copy)
+@@ -104,6 +104,10 @@
+ 	background-color: rgb(45, 50, 140);
+ }
+ 
++.nodeLink[satcom-connectivity="true"] .nodeLinkHeader {
++	background-color: rgb(45, 50, 140);
++}
++
+ .statusActive{
+ 	color: rgb(16, 128, 8);
+ }
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9894)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -18,6 +18,10 @@
+ var radioTestLinkId;
+ var radioTestNodeId;
+ 
++var nearestTen = function(number){
++	return Math.round(number/10)*10;
++};
++
+ var navMapping = {
+ 	'nodes' : {
+ 		key : function(data) {

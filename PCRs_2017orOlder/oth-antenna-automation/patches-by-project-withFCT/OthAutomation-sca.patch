@@ -1,0 +1,771 @@
+Index: configs/mission-mapping.xml
+===================================================================
+--- configs/mission-mapping.xml	(revision 9549)
++++ configs/mission-mapping.xml	(working copy)
+@@ -367,6 +367,10 @@
+ 			collection="arraylist">
+ 			<bind-xml name="channel" />
+ 		</field>
++		<field name="antennaCoverages" type="mil.navy.lcs.mvcs.common.config.model.AntennaCoverage"
++			collection="arraylist">
++			<bind-xml name="antennaCoverage" />
++		</field>
+ 	</class>
+ 	<class name="mil.navy.lcs.mvcs.common.config.model.Channel">
+ 		<map-to xml="channel" />
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9549)
++++ configs/mission.xsd	(working copy)
+@@ -218,6 +218,7 @@
+                <xs:element name="snmpAgentPortNumber" type="inttype" minOccurs="1"
+                   maxOccurs="1" />
+                <xs:element name="launchRadio" type="booleantype" minOccurs="0" maxOccurs="1" />
++               <xs:element name="antennaCoverage" type="antennaCoverageType" minOccurs="0" maxOccurs="unbounded" />
+             </xs:sequence>
+          </xs:extension>
+       </xs:complexContent>
+@@ -325,6 +326,12 @@
+       <xs:attribute name="id" type="inttype" />
+    </xs:complexType>
+ 
++   <xs:complexType name="antennaCoverageType">
++      <xs:attribute name="side" type="stringtype" />
++      <xs:attribute name="forward" type="inttype" />
++      <xs:attribute name="aft" type="inttype" />
++   </xs:complexType>
++
+    <xs:complexType name="circuitbreakertype">
+       <xs:sequence>
+          <xs:element name="id" type="stringtype" minOccurs="1" maxOccurs="1">
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9549)
++++ missions/default-mission.xml	(working copy)
+@@ -101,6 +101,9 @@
+          <heartbeatWindowSize>300</heartbeatWindowSize>
+          <snmpAgentIpAddress>172.20.10.2</snmpAgentIpAddress>
+          <snmpAgentPortNumber>5161</snmpAgentPortNumber>
++         <!-- a whole number from 0 to 359 degree of a circle  -->
++		 <antennaCoverage side="stbd" forward="0" aft="179" />
++		 <antennaCoverage side="port" forward="359" aft="180" />
+       </radio>
+       <radio>
+          <id>rt1988-0</id>
+Index: src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(revision 9549)
++++ src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(working copy)
+@@ -344,4 +344,15 @@
+          throw new RuntimeException(e);
+       }
+    }
++
++
++   @Override
++   public void requestOthAntennaOverride(String linkId, boolean manual) throws RemoteException
++   {
++      logger.info("OTH Antenna Override: {} = {}", new Object[] { linkId, manual });
++
++      ShipNodeHandler handler = ShipState.shipHandler;
++      handler.requestOthAntennaMode(linkId, manual);
++
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(revision 9549)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(working copy)
+@@ -12,8 +12,12 @@
+ import mil.navy.lcs.mvcs.common.config.model.MatrixSwitch;
+ import mil.navy.lcs.mvcs.common.config.model.OthAmpController;
+ import mil.navy.lcs.mvcs.common.config.model.Power;
++import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
+ import mil.navy.lcs.mvcs.sca.filter.ScaFilterDeviceHandler;
+ import mil.navy.lcs.mvcs.sca.power.MideasternTcpComms;
+@@ -21,6 +25,7 @@
+ import mil.navy.lcs.mvcs.sca.power.PowerDeviceHandler_28VMidEastern;
+ import mil.navy.lcs.mvcs.sca.rf.NorthStarTcpComms;
+ import mil.navy.lcs.mvcs.sca.rf.NorthStarTestComms;
++import mil.navy.lcs.mvcs.sca.rf.OTHAntennaAutomation;
+ import mil.navy.lcs.mvcs.sca.rf.PRC117RadioSwitchHandler;
+ import mil.navy.lcs.mvcs.sca.rf.RfDeviceHandler_NorthStarMatrixSwitch;
+ import mil.navy.lcs.mvcs.sca.safety.ScaSafetyManager;
+@@ -77,7 +82,6 @@
+          handler.setRfHandler(new RfDeviceHandler_NorthStarMatrixSwitch(new NorthStarTcpComms(rfConfig.getSerialPort())));
+       }
+ 
+-
+       // Sets the Amplifier to use for the ship.
+       // Retrieve the OTH settings from the configuration file
+       OthAmpController othAmp = ConfigManager.getInstance().getShip().getOthAmpController();
+@@ -89,7 +93,7 @@
+       // Create FilterDevice to be used by the ship
+ 
+       // Populate Filter device with it's settings
+-      CrossDomain haf = ConfigManager.getInstance().getShip().getCrossDomain();
++      CrossDomain haf = config.getCrossDomain();
+       FilterDevice filterDevices = node.getFilterDevice();
+       filterDevices.setFilterId(haf.getName());
+       filterDevices.setIpAddress(haf.getIpAddress());
+@@ -102,6 +106,13 @@
+       ScaSafetyManager safetyManager = new ScaSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);
+ 
++      // initialize OTH antenna automation thread. Can ship have more than one PRC117? POSSIBLE
++      for (LinkModel link : node.getLinksByLinkType(MvcsLinkType.PRC117F))
++      {
++         logger.info("Initializing OTH antenna automation for {}", link.getLinkId());
++         handler.othAntennaAutomation.put((RadioLink) link, new OTHAntennaAutomation((RadioLink) link, (Radio) config.getLinkFromList(link.getLinkId())));
++      }
++
+       return handler;
+    }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(revision 9549)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(working copy)
+@@ -4,6 +4,7 @@
+ 
+ 
+ import java.util.Comparator;
++import java.util.HashMap;
+ import java.util.List;
+ import java.util.SortedMap;
+ import java.util.TreeMap;
+@@ -10,6 +11,13 @@
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.google.common.base.Predicate;
++import com.google.common.collect.FluentIterable;
++import com.google.common.collect.ImmutableList;
++
+ import mil.navy.lcs.mvcs.common.handler.IMvcsNodeHandler;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+@@ -39,14 +47,8 @@
+ import mil.navy.lcs.mvcs.sca.main.ShipMain;
+ import mil.navy.lcs.mvcs.sca.main.ShipState;
+ import mil.navy.lcs.mvcs.sca.radios.ScaRadioPluginsManager;
++import mil.navy.lcs.mvcs.sca.rf.OTHAntennaAutomation;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import com.google.common.base.Predicate;
+-import com.google.common.collect.FluentIterable;
+-import com.google.common.collect.ImmutableList;
+-
+ /**
+  * This class is responsible to handle requests for MVCS ship node.
+  * <p>
+@@ -161,7 +163,9 @@
+ 
+    private IFilterDeviceHandler filterDeviceHandler;
+ 
++   protected HashMap<RadioLink, OTHAntennaAutomation> othAntennaAutomation = new HashMap<RadioLink, OTHAntennaAutomation>();
+ 
++
+    public ShipNodeHandler( ShipNode node)
+    {
+       this.node = node;
+@@ -638,10 +642,10 @@
+    /**
+     * To request that the change the OTH Amplifier to the desired Antenna choice.
+     * 
+-    * @param linkId
+-    * @param rfOutputType
+-    * @param antennaId
+-    * @param active
++    * @param linkId - The link ID
++    * @param rfOutputType - The RF output type
++    * @param antennaId - The antenna ID
++    * @param active - Activate the output
+     */
+    public void requestOthAmpAntenna(String linkId, RFOutputType rfOutputType, String antennaId, boolean active)
+    {
+@@ -655,14 +659,40 @@
+       // Ship must be set to a valid RF Device and Output.
+       if (device != null && output != null)
+       {
+-         if (othAmplifierHandler.setCurrentAntenna(Antenna.valueOf(antennaId)))
+-         {
+-            // If the current was correctly set on the Amplifier update the node.
+-            othAmplifierHandler.updateOutput(device);
+-         }
++         // change antenna then update the device.
++         othAmplifierHandler.setCurrentAntenna(device, Antenna.valueOf(antennaId));
+       }
+ 
+    }
+ 
+ 
+-}// end of class
++   /**
++    * 
++    * To change antenna override mode.
++    * 
++    * @param linkId - the radio link ID
++    * @param manual - true for manual, false for automatic
++    */
++   public void requestOthAntennaMode(String linkId, boolean manual)
++   {
++      RadioLink radioLink = (RadioLink) node.getLink(linkId);
++      if (radioLink != null)
++      {
++         radioLink.setAntennaOverride(manual);
++      }
++      logger.debug("{} OTH antenna override mode is now set to " + (manual ? "manual" : "automatic"));
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @return
++    */
++   public HashMap<RadioLink, OTHAntennaAutomation> getOthAntennaAutomation()
++   {
++      return this.othAntennaAutomation;
++   }
++
++
++}// end of class
+\ No newline at end of file
+Index: src/main/java/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomation.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomation.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomation.java	(working copy)
+@@ -0,0 +1,350 @@
++
++
++package mil.navy.lcs.mvcs.sca.rf;
++
++
++import java.beans.PropertyChangeEvent;
++import java.beans.PropertyChangeListener;
++import java.util.concurrent.TimeUnit;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import mil.navy.lcs.mvcs.common.config.model.AntennaCoverage;
++import mil.navy.lcs.mvcs.common.config.model.Radio;
++import mil.navy.lcs.mvcs.common.link.utils.Dates;
++import mil.navy.lcs.mvcs.iface.app.MvcsThreads;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.RmmvNode;
++import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
++import mil.navy.lcs.mvcs.iface.rf.Antenna;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.model.HostModelInitializer;
++
++/**
++ * This class is responsible for automating antenna selection between PORT or STARBOARD of host side
++ * OTH (PRC117) radio.
++ * <p>
++ * Date Created: Jul 5, 2016
++ * <p>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
++ * $LastChangedRevision$
++ *
++ * @author Dan
++ * @version 1.0
++ */
++public class OTHAntennaAutomation implements Runnable, PropertyChangeListener
++{
++
++   private static final Logger logger = LoggerFactory.getLogger(OTHAntennaAutomation.class);
++
++   /** The RMMV with the highest priority. RMMV is only vehicle that has PRC117 radio. */
++   private VehicleNode othOwnerVehicle = null;
++
++   /** The OTH radio object */
++   private RadioLink radioLink;
++
++   /**
++    * To denote the port side antenna coverage points (where x, 0 <= x < 360) forward [at index 0]
++    * and aft [at index 1]
++    */
++   int[] port_antenna_coverage_points = new int[2];
++
++   /**
++    * To denote the starboard side antenna coverage points (where x, 0 <= x < 360) forward [at index
++    * 0] and aft [at index 1]
++    */
++   int[] starboard_antenna_coverage_points = new int[2];
++
++   /** To denote the last time antenna changed due to LOC-recovery function */
++   long lastTimeAntennaSwitchedDueToLOCR = -1;
++
++   /**
++    * To denote the time (seconds) to stay with one side antenna during LOC-recovery. Defaults to
++    * 600 seconds.
++    */
++   static int timeToStayWithAntennaDuringLOCR = 600; // 10 minutes
++
++   /** Denotes whether LOC recovery function is on. Defaults to off (false). */
++   static boolean LOC_RECOVERY_ON = false;
++
++   /** The antenna automation interval in milliseconds. Defaults to 20 seconds */
++   static long AUTOMATION_INTERVAL = 20;
++
++
++   public OTHAntennaAutomation( RadioLink radioLink, Radio radio)
++   {
++      this.radioLink = radioLink;
++
++      // retrieve coverage angles for both antennas from configurations
++      // forward points must be in top half circle (271 - 89 degrees)
++      // aft points must be in bottom half circle (91 - 269 degrees)
++      int port_forward_point = 0; // defaults to 0 degree
++      int port_aft_point = 180; // defaults to 180 degree
++      int starboard_forward_point = 0; // defaults to 0 degree
++      int starboard_aft_point = 180; // defaults to 180 degree
++      if (radio.getId().equalsIgnoreCase(radioLink.getLinkId()))
++      {
++         for (AntennaCoverage coverage : radio.getAntennaCoverages())
++         {
++            Antenna antenna = Antenna.getAntenna(coverage.getSide());
++            if (antenna != null && antenna == Antenna.PORT)
++            {
++               port_forward_point = coverage.getForward();
++               port_aft_point = coverage.getAft();
++            }
++            else if (antenna != null && antenna == Antenna.STBD)
++            {
++               starboard_forward_point = coverage.getForward();
++               starboard_aft_point = coverage.getAft();
++            }
++         }
++      }
++
++      // define coverage points for forward & aft of both antennas. value must be 0<= and <360
++      // forward points must be in top half circle (271 - 89 degrees)
++      // aft points must be in bottom half circle (91 - 269 degrees)
++
++      // use 0 degree if port forward point isn't in the top half circle
++      port_antenna_coverage_points[0] = isWithinTopHalfCircle(port_forward_point) ? port_forward_point : 0;
++
++      // use 180 degree if starboard forward point isn't in the top half circle
++      starboard_antenna_coverage_points[0] = isWithinTopHalfCircle(starboard_forward_point) ? starboard_forward_point : 0;
++
++      // use 180 degree if starboard aft point isn't in the bottom half circle
++      starboard_antenna_coverage_points[1] = isWithinBottomHalfCircle(starboard_aft_point) ? starboard_aft_point : 180;
++
++      // use 180 degree if port aft point isn't in the bottom half circle
++      port_antenna_coverage_points[1] = isWithinBottomHalfCircle(port_aft_point) ? port_aft_point : 180;
++
++      // Initialize a thread to run periodically
++      MvcsThreads.scheduledPool.scheduleAtFixedRate(this, 0, AUTOMATION_INTERVAL, TimeUnit.SECONDS);
++   }
++
++
++   /**
++    * Gets the owner vehicle of OTH radio. The vehicle must be hosting an OTH radio.
++    * 
++    * @return
++    */
++   public VehicleNode getOthOwnerVehicle()
++   {
++      return this.othOwnerVehicle;
++   }
++
++
++   @Override
++   public void run()
++   {
++      Thread.currentThread().setName("MVCS-OthAntennaAutomation");
++
++      logger.debug(radioLink.getLinkId() + ":OTH antenna automation is running in every {} seconds.", AUTOMATION_INTERVAL);
++
++      // antenna selection: NA, PORT, STARBOARD
++      Antenna antennaSelection = Antenna.NA;
++
++      // find the OTH owner vehicle. The highest priority RMMV
++      for (VehicleNode vehicle : HostModelInitializer.sortMvcsNodeByPriority(ShipState.model.getVehicles().values()))
++      {
++         if (vehicle instanceof RmmvNode)
++         {
++            othOwnerVehicle = vehicle;
++            break;
++         }
++      }
++
++      // OTH owner vehicle does not exist
++      if (othOwnerVehicle == null)
++      {
++         logger.debug("OTH-Antenna-Automation: RMMV not found.");
++         return;
++      } // end of if othOwner vehicle found
++
++      // The vehicle must be deployed
++      if (!othOwnerVehicle.isDeployed())
++      {
++         logger.debug("OTH-Antenna-Automation: Vehicle {} is not deployed", othOwnerVehicle.getVehicleName());
++         return;
++      } // end of if vehicle deployed
++
++      // check whether GPS has updated
++      boolean gpsUpdated = (System.currentTimeMillis() - othOwnerVehicle.getGpsAge()) < (AUTOMATION_INTERVAL * 1000);
++      logger.debug("OTH-Antenna-Automation: {}'s GPS has last updated on " + Dates.getSimpleDateFormat(othOwnerVehicle.getGpsAge()), othOwnerVehicle.getNodeName());
++
++      // GPS updated
++      if (gpsUpdated)
++      {
++         // reset the LOCR antenna switch time
++         lastTimeAntennaSwitchedDueToLOCR = -1;
++
++         // retrieve heading of vehicle
++         double heading = othOwnerVehicle.getHeading();
++
++         // vehicle's position is in overlapping zone
++         if (isWithinStarboardRange(heading) && isWithinPortRange(heading))
++         {
++            // continue with no change
++            return;
++         }
++         // vehicle is in starboard range only
++         else if (isWithinStarboardRange(heading) && !isWithinPortRange(heading))
++         {
++            // use starboard antenna
++            antennaSelection = Antenna.STBD;
++         }
++         // vehicle is in port range only
++         else if (!isWithinStarboardRange(heading) && isWithinPortRange(heading))
++         {
++            // use port antenna
++            antennaSelection = Antenna.PORT;
++         }
++         // vehicle is in no coverage zone
++         else
++         {
++            // send alert or log
++            logger.debug("OTH-Antenna-Automation: Vehicle is in no coverage zone.");
++            return;
++         }
++      }
++      // GPS not updated
++      else
++      {
++         // vehicle has COMMs
++         if (othOwnerVehicle.isComms())
++         {
++            // reset the LOCR antenna switch time
++            lastTimeAntennaSwitchedDueToLOCR = -1;
++
++            // send a log
++            logger.debug("OTH-Antenna-Automation: GPS not updated but {} still has COMMS.", othOwnerVehicle.getNodeName());
++         }
++         // vehicle does not have COMMs
++         else
++         {
++            // LOCR switch time hasn't been initialized
++            if (lastTimeAntennaSwitchedDueToLOCR < 0)
++               // initialize the LOCR antenna switch time
++               lastTimeAntennaSwitchedDueToLOCR = System.currentTimeMillis();
++
++            // Time to switch to other antenna (LOC-recovery)
++            if ((timeToStayWithAntennaDuringLOCR * 1000) < System.currentTimeMillis() - lastTimeAntennaSwitchedDueToLOCR)
++            {
++               // update the time stamp
++               lastTimeAntennaSwitchedDueToLOCR = System.currentTimeMillis();
++
++               logger.debug("OTH-Antenna-Automation: Time has reached for switching antenna due to LOC. RECOVERY " + (LOC_RECOVERY_ON ? "ON" : "OFF"));
++
++               // LOC recover is on
++               if (LOC_RECOVERY_ON)
++               {
++                  // use other side antenna
++                  Antenna current = ShipState.shipHandler.getOthAmplifierHandler().getCurrentAntenna();
++                  logger.debug("OTH-Antenna-Automation: {} has no COMMS; current OTH antenna is on " + current, othOwnerVehicle.getNodeName());
++                  antennaSelection = (current == Antenna.PORT) ? Antenna.STBD : Antenna.PORT;
++               }
++            }
++         }
++      } // end of GPS not updated
++
++      // antenna selected
++      if (antennaSelection != Antenna.NA)
++      {
++         // Manual override mode
++         if (radioLink.isAntennaOverride())
++         {
++            // send log
++            logger.debug("OTH-Antenna-Automation: Automated chioce is {} but it is in manual override mode.", antennaSelection);
++            // continue to next iteration
++            return;
++         }
++
++         // send a command if automatic mode
++         logger.info("OTH-Antenna-Automation: Selecting {} antenna.", antennaSelection);
++         ShipState.shipHandler.getOthAmplifierHandler().setCurrentAntenna(radioLink.getRFDevice(), antennaSelection);
++
++      } // end of if antenna selected
++
++   }// end of run
++
++
++   /**
++    * 
++    * To check the given point is within the starboard antenna range.
++    * 
++    * @param p the point. point must be within 0 and less than 360 degree
++    * @return true if the point is within the starboard antenna range.
++    */
++   private boolean isWithinStarboardRange(double p)
++   {
++      // points must be two. all values must be within 0 and less than 360 degree
++      if (starboard_antenna_coverage_points.length != 2 && (p < 0 || p >= 360))
++         return false;
++
++      // the point must be between forward coverage point and aft coverage point
++      return (p >= starboard_antenna_coverage_points[0] && p <= starboard_antenna_coverage_points[1]);
++   }
++
++
++   /**
++    * 
++    * To check the given point is within the port antenna range.
++    * 
++    * @param p the point. point must be within 0 and less than 360 degree
++    * @return true if the point is within the port antenna range.
++    */
++   private boolean isWithinPortRange(double p)
++   {
++      // points must be two. all values must be within 0 and less than 360 degree
++      if (port_antenna_coverage_points.length == 2 && (p < 0 || p > 360))
++         return false;
++
++      // the point must be between forward coverage point and aft coverage point
++      return (p <= port_antenna_coverage_points[0] && p >= port_antenna_coverage_points[1]);
++   }
++
++
++   @Override
++   public void propertyChange(PropertyChangeEvent evt)
++   {
++      // TODO override mode changed
++      // TODO suspend thread or command to change antenna position
++
++      // TODO vehicle priority changed
++      // TODO suspend thread or command to change antenna position for previous priority vehicle
++   }
++
++
++   /**
++    * To check whether the point is in the top half circle (between 270 and 90 degrees). Return
++    * false if the point is at 270 or at 90 degree.
++    * 
++    * @param point - the point to check
++    * @return True if the point is between 270 and 90 degree of a circle.
++    */
++   public static boolean isWithinTopHalfCircle(int point)
++   {
++      // between 270 and 360 degree OR from 0 to less than 90 degree
++      if (point > 270 && point < 360 || point >= 0 && point < 90)
++         return true;
++
++      return false;
++   }
++
++
++   /**
++    * To check whether the point is in the bottom half circle (between 90 and 270 degrees). Return
++    * false if the point is at 90 degree or at 270 degree.
++    * 
++    * @param point - the point to check
++    * @return true if the point is between 90 and 270 degree of a circle.
++    */
++   public static boolean isWithinBottomHalfCircle(int point)
++   {
++      // between 90 to 270 degree
++      if (point > 90 && point < 270)
++         return true;
++
++      return false;
++   }
++}
+Index: src/main/java/mil/navy/lcs/mvcs/sca/rf/PRC117RadioSwitchHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/rf/PRC117RadioSwitchHandler.java	(revision 9549)
++++ src/main/java/mil/navy/lcs/mvcs/sca/rf/PRC117RadioSwitchHandler.java	(working copy)
+@@ -66,7 +66,7 @@
+ 
+ 
+    @Override
+-   public boolean setCurrentAntenna(Antenna selectedAntenna)
++   public boolean setCurrentAntenna(RFDevice device, Antenna selectedAntenna)
+    {
+       boolean result = false;
+       switch (selectedAntenna)
+@@ -83,6 +83,11 @@
+             logger.info("Invalid Amp Setting was requested.");
+             break;
+       }
++
++      // update the device
++      if (result)
++         updateOutputAntenna(device, selectedAntenna);
++
+       return result;
+ 
+    }
+@@ -111,11 +116,17 @@
+    }
+ 
+ 
+-   @Override
+-   public void updateOutput(RFDevice device)
++   /**
++    * 
++    * To update the device object with newly changed antenna position.
++    * 
++    * @param device - The RF device
++    * @param selectedAntenna - The newly selected antenna
++    */
++   private void updateOutputAntenna(RFDevice device, Antenna selectedAntenna)
+    {
+       RFOutput output = device.getRfOutput(RFOutputType.MAIN);
+-      output.setAmpAntenna(getCurrentAntenna());
++      output.setAmpAntenna(selectedAntenna);
+    }
+ 
+ 
+@@ -124,7 +135,7 @@
+    {
+       if (devices.hasRfOutput(RFOutputType.MAIN))
+       {
+-         updateOutput(devices);
++         updateOutputAntenna(devices, getCurrentAntenna());
+       }
+       // Current no way to tell if this was updated correctly
+       return true;
+Index: src/main/test/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomationTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomationTest.java	(nonexistent)
++++ src/main/test/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomationTest.java	(working copy)
+@@ -0,0 +1,111 @@
++
++
++package mil.navy.lcs.mvcs.sca.rf;
++
++
++import org.junit.After;
++import org.junit.AfterClass;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.Radio;
++import mil.navy.lcs.mvcs.common.config.model.Ship;
++import mil.navy.lcs.mvcs.common.model.ShipNodeBuilder;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
++import mil.navy.lcs.mvcs.sca.node.handler.ShipNodeHandler;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++/**
++ * Class Description
++ * <p>
++ * Date Created: Jul 15, 2016
++ * <p>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
++ * $LastChangedRevision$
++ *
++ * @author Dan
++ * @version 1.0
++ */
++public class OTHAntennaAutomationTest extends ScaTestCase
++{
++
++   private ConfigManager cm;
++   private Ship ship;
++   private ShipNodeHandler nodeHandler;
++   private ShipNode node;
++   private LinkModel link;
++   private OTHAntennaAutomation automation;
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @BeforeClass
++   public static void setUpBeforeClass() throws Exception
++   {
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @AfterClass
++   public static void tearDownAfterClass() throws Exception
++   {
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @Before
++   public void setUp() throws Exception
++   {
++      cm = ConfigManager.getInstance();
++      ship = cm.getShip();
++      node = new ShipNodeBuilder(ship).build();
++      node.setTransmitAllowed(false);
++      node.setEmcon(false);
++
++      link = node.getFirstLinkByLinkType(MvcsLinkType.PRC117F);
++      nodeHandler = new ShipNodeHandler(node);
++      automation = new OTHAntennaAutomation((RadioLink) link, (Radio) ship.getLinkFromList(link.getLinkId()));
++      nodeHandler.getOthAntennaAutomation().put((RadioLink) link, automation);
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @After
++   public void tearDown() throws Exception
++   {
++   }
++
++
++   /**
++    * Test method for
++    * {@link mil.navy.lcs.mvcs.sca.rf.OTHAntennaAutomation#OTHAntennaAutomation(RadioLink, Radio)} .
++    */
++   @Test
++   public void testOTHAntennaAutomation()
++   {
++      Assert.assertNotNull(automation);
++   }
++
++}

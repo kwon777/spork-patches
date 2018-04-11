@@ -1,0 +1,12 @@
+Index: src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java	(revision 9806)
++++ src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java	(working copy)
+@@ -121,6 +121,7 @@
+    SLEEP_MODE_CHANGED("The sleep mode has changed to %s", LOW, OTHER), //
+    SLEEP_NORMAL_RADIO_IN_USE("Cannot set sleep normal since higher priority vehicle, %s, is using the P2P radio", MEDIUM, OTHER), //
+    SLEEP_WHILE_EMCON("Cannot set sleep state while ship is in EMCON", MEDIUM, OTHER), //
++   UPS_CONNECTION_SUCCESSFUL("Successfully connected to UPS device via serial port %s", MEDIUM, POWER), //
+    UPS_POWER_RESTORED("UPS AC power restored, aborting shutdown", MEDIUM, POWER), //
+    UPS_REMAINING_TIME("UPS AC power disrupted, %s minutes until shutdown", HIGH, POWER), //
+    UPS_SHUTODWN("Shutting down due to extended power loss", HIGH, POWER), //

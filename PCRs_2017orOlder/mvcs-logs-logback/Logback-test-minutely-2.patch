@@ -1,0 +1,88 @@
+Index: src/main/resources/logback.xml
+===================================================================
+--- src/main/resources/logback.xml	(revision 0)
++++ src/main/resources/logback.xml	(working copy)
+@@ -0,0 +1,82 @@
++<configuration>
++	<property name="LOG_HOME" value="/var/log/mvcs" />
++	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
++		<encoder>
++			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
++			</pattern>
++		</encoder>
++	</appender>
++	<appender name="PRIMARY"
++		class="ch.qos.logback.core.rolling.RollingFileAppender">
++		<file>${LOG_HOME}/primary.log</file>
++		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
++			<!-- daily rollover -->
++			<fileNamePattern>${LOG_HOME}/primary.%d{yyyy-MM-dd_HH-mm}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
++		</rollingPolicy>
++	    <filter class="ch.qos.logback.classic.filter.LevelFilter">
++            <level>TRACE</level>
++            <onMatch>DENY</onMatch>
++            <onMismatch>ACCEPT</onMismatch>
++        </filter>
++		<encoder>
++			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
++			</pattern>
++		</encoder>
++	</appender>
++	<appender name="ERROR"
++		class="ch.qos.logback.core.rolling.RollingFileAppender">
++		<file>${LOG_HOME}/error.log</file>
++		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
++			<!-- daily rollover -->
++			<fileNamePattern>${LOG_HOME}/error.%d{yyyy-MM-dd_HH-mm}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
++		</rollingPolicy>
++		<encoder>
++			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
++			</pattern>
++		</encoder>
++	</appender>
++	<appender name="ACTION"
++		class="ch.qos.logback.core.rolling.RollingFileAppender">
++		<file>${LOG_HOME}/action.log</file>
++		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
++			<!-- daily rollover -->
++			<fileNamePattern>${LOG_HOME}/action.%d{yyyy-MM-dd_HH-mm}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
++		</rollingPolicy>
++		<encoder>
++			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
++			</pattern>
++		</encoder>
++	</appender>
++	<appender name="TRACE"
++		class="ch.qos.logback.core.rolling.RollingFileAppender">
++		<file>${LOG_HOME}/trace.log</file>
++		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
++			<!-- daily rollover -->
++			<fileNamePattern>${LOG_HOME}/trace.%d{yyyy-MM-dd_HH-mm}.log</fileNamePattern>
++			<maxHistory>2</maxHistory>
++		</rollingPolicy>
++		<encoder>
++			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
++			</pattern>
++		</encoder>
++	</appender>
++	<logger name="primary">
++		<appender-ref ref="PRIMARY" />
++	</logger>
++	<logger name="systError">
++		<appender-ref ref="ERROR" />
++	</logger>
++	<logger name="usrAction">
++		<appender-ref ref="ACTION" />
++	</logger>
++	<logger name="mil.navy" level="trace">
++		<appender-ref ref="PRIMARY" />
++		<appender-ref ref="TRACE" />
++	</logger>
++	<root level="debug">
++		<appender-ref ref="STDOUT" />
++	</root>
++</configuration>
+\ No newline at end of file

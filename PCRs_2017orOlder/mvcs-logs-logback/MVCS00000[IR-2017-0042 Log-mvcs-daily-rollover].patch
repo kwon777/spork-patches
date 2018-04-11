@@ -1,0 +1,129 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/resources/logback.xml
+===================================================================
+--- src/main/resources/logback.xml	(revision 9583)
++++ src/main/resources/logback.xml	(working copy)
+@@ -1,4 +1,5 @@
+ <configuration>
++	<property name="LOG_HOME" value="/var/log/mvcs" />
+ 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+@@ -7,11 +8,12 @@
+ 	</appender>
+ 	<appender name="PRIMARY"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/primary.log</file>
++		<file>${LOG_HOME}/primary.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>${LOG_HOME}/primary.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<cleanHistoryOnStart>true</cleanHistoryOnStart>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 	    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+             <level>TRACE</level>
+@@ -25,11 +27,12 @@
+ 	</appender>
+ 	<appender name="ERROR"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/error.log</file>
++		<file>${LOG_HOME}/error.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>${LOG_HOME}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<cleanHistoryOnStart>true</cleanHistoryOnStart>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+@@ -38,11 +41,12 @@
+ 	</appender>
+ 	<appender name="ACTION"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/actions.log</file>
++		<file>${LOG_HOME}/action.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>${LOG_HOME}/action.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<cleanHistoryOnStart>true</cleanHistoryOnStart>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+@@ -51,11 +55,12 @@
+ 	</appender>
+ 	<appender name="TRACE"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/trace.log</file>
++		<file>${LOG_HOME}/trace.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<fileNamePattern>${LOG_HOME}/trace.%d{yyyy-MM-dd}.log</fileNamePattern>
+ 			<maxHistory>2</maxHistory>
++			<cleanHistoryOnStart>true</cleanHistoryOnStart>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+#P mvcs-rim-prc117f
+Index: src/main/resources/logback.xml
+===================================================================
+--- src/main/resources/logback.xml	(revision 9580)
++++ src/main/resources/logback.xml	(working copy)
+@@ -1,4 +1,5 @@
+ <configuration>
++	<property name="LOG_HOME" value="/var/log/mvcs" />
+ 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+@@ -7,11 +8,11 @@
+ 	</appender>
+ 	<appender name="PRIMARY"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/PRC117.log</file>
++		<file>${LOG_HOME}/PRC117_primary.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>${LOG_HOME}/PRC117_primary.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 	    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+             <level>TRACE</level>
+@@ -25,24 +26,11 @@
+ 	</appender>
+ 	<appender name="ERROR"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/PRC117.log</file>
++		<file>${LOG_HOME}/PRC117_error.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
+-		</rollingPolicy>
+-		<encoder>
+-			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+-			</pattern>
+-		</encoder>
+-	</appender>
+-	<appender name="TRACE"
+-		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/PRC117.log</file>
+-		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+-			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>2</maxHistory>
++			<fileNamePattern>${LOG_HOME}/PRC117_error.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n

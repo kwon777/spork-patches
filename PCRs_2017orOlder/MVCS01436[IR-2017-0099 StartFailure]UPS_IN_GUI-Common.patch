@@ -1,0 +1,51 @@
+Index: src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java	(revision 9873)
++++ src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java	(working copy)
+@@ -1,46 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.sca.powerUps;
+-
+-
+-import org.junit.Before;
+-import org.junit.Test;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import junit.framework.Assert;
+-import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
+-
+-/**
+- * @author Dan
+- *
+- */
+-public class UpsManagerTest extends ScaTestCase
+-{
+-
+-   private UpsManager upsManager = null;
+-   private static Logger logger = LoggerFactory.getLogger(UpsManagerTest.class);
+-   private String upsInput = "ALAM?C占�\n\r\n\rUTILITY OFF         OK\n\rINV OFF             OK\n\rLOW BATTERY         OK\n\rLOGIC FAULT         OK\n\rUPS OVERLOAD        OK\n\rUPS OVERTEMPERATURE OK\n\r>\n\r>";
+-
+-
+-   @Before
+-   public void setUp() throws Exception
+-   {
+-      upsManager = UpsManager.getInstance();
+-   }
+-
+-
+-   @Test
+-   public void testProcessUpsData()
+-   {
+-      logger.info(upsInput);
+-      upsManager.processUpsStatus(upsInput);
+-      UpsHardwareData upsData = upsManager.getUpsHardwareData();
+-      Assert.assertTrue("Battery status is not OK", upsData.isBatteryStatusOk());
+-      Assert.assertTrue("Utility power is not OK", upsData.isUtilityPowerOk());
+-      Assert.assertTrue("Inverter status is not OK", upsData.isInverterStatusOk());
+-      Assert.assertTrue("Logic status is not OK", upsData.isLogicStatusOk());
+-      Assert.assertTrue("Temperature is not OK", upsData.isUpsTemperatureOk());
+-      Assert.assertTrue("Overload status is not OK", upsData.isUpsOverloadOk());
+-   }
+-}

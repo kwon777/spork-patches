@@ -1,0 +1,68 @@
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java	(working copy)
+@@ -19,7 +19,6 @@
+ import com.ireasoning.protocol.snmp.SnmpVarBind;
+ import com.ireasoning.protocol.snmp.SnmpVarBindList;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.plugins.mcg101.configuration.ConfigStore;
+ import mil.navy.lcs.mvcs.plugins.mcg101.configuration.ConfigurationManager;
+ 
+@@ -66,7 +65,7 @@
+       try
+       {
+          ConfigStore config = ConfigurationManager.getInstance().getConfigStore();
+-         logger.debug("Found CONFIG: "+ config.toString());
++         logger.debug("Found CONFIG: " + config.toString());
+          readString = config.getSnmpRead();
+          writeString = config.getSnmpWrite();
+          try
+@@ -303,7 +302,7 @@
+       try
+       {
+          session = new SnmpSession(_host, _port, readString, writeString, _version);
+-         session.setTimeout(10000); // sets timeout to be 5 seconds
++         session.setTimeout(5000); // sets timeout to be 5 seconds
+          session.setRetries(0); // no retry after timeout
+ 
+          if (_version == SnmpConst.SNMPV3)
+@@ -316,23 +315,20 @@
+ 
+          return stuff;
+       }
+-      catch (TimeoutException e)
++      catch (TimeoutException toe)
+       {
+          snmpError = true;
+          errorString = "SNMP request timed out";
+-         return stuff;
+       }
+-      catch (IOException e)
++      catch (IOException ioe)
+       {
+          errorString = "SNMP IO error";
+          snmpError = true;
+-         return stuff;
+       }
+       catch (Exception e)
+       {
+          snmpError = true;
+          errorString = "SNMP MIB parse error";
+-         return stuff;
+       }
+       finally
+       {
+@@ -339,6 +335,11 @@
+          if (session != null)
+             session.close();
+       }
++
++      if (snmpError)
++         logger.debug("SNMP operation has failed: " + errorString);
++
++      return stuff;
+    }
+ 
+ 

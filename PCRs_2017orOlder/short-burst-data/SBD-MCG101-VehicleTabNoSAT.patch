@@ -1,0 +1,33 @@
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9674)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -319,7 +319,8 @@
+ 
+             <div id="control">
+               <!-- ko foreach: nodeLinks -->
+-              <div id="controlLinks">
++              <!-- do not display the SAT of UUV -->
++              <div id="controlLinks" data-bind="visible: !($parent.className()=='UuvNode' && commsType()=='SAT')">
+                 <div class="nodeLink"
+                   data-bind="attr: { 'data-linkType': commsType, 'data-status': status, 'has-quality': quality()>0 }">
+                   <div class="nodeLinkHeader"}">
+@@ -497,7 +498,8 @@
+                     </tr>
+                   </thead>
+                   <!-- ko foreach: nodeLinks -->
+-                  <tbody>
++                  <!-- do not display the SAT of UUV -->
++                  <tbody data-bind="visible: !($parent.className()=='UuvNode' && commsType()=='SAT')">
+                     <tr>
+                       <td data-bind="text: commsType"></td>
+                       <td></td>
+@@ -521,7 +523,7 @@
+                     </tr>
+                   </thead>
+                   <!-- ko foreach: nodeLinks -->
+-                  <!-- ko if: $data.powerItems -->
++                  <!-- ko if: !($parent.className()=='UuvNode' && commsType()=='SAT') && $data.powerItems -->
+                   <!-- ko foreach: powerItems -->
+                   <tbody>
+                     <tr>

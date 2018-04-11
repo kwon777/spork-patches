@@ -1,0 +1,37 @@
+Index: WebContent/js/Strings.js
+===================================================================
+--- WebContent/js/Strings.js	(revision 9577)
++++ WebContent/js/Strings.js	(working copy)
+@@ -6,7 +6,8 @@
+ var Strings = {
+ 	startupMessage: "MVCS is starting up... ",
+ 	backendNotStarted: "MVCS software is not running.  To restart the MVCS software, please restart the SCA.",
+-	
++
++	confirmSelectingLoad: "May lose comms. Select the LOAD?",
+ 	confirmCommDisabled: "MVCS will not allow communication to this vehicle. Proceed?",
+ 	confirmManual: "MVCS will not make any link switching descisions for the vehicle. Improper user action may lead to a loss of comms to the vehicle. Proceed?",
+ 	confirmEmconSet: "Are you sure you want to start EMCON?",
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9577)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -247,10 +247,15 @@
+ };
+ 
+ var requestRF = function(device, node, on, output) {
+-
+-	//alert(node.nodeId()+" " + link.rfDevice.name() + " ");
++	
++	// Upon selecting LOAD, notify LOC warning
++	if(output.outputType() == "LOAD" && on=="true" && !confirm(Strings.confirmSelectingLoad))
++	{
++		return;
++	}
++	
+ 	//PCR MVCS01394 - Confirmation Box for disabling links.
+-	if(on == "false" && !confirm(Strings.confirmDisableRFPath))
++	if(output.outputType() != "LOAD" && on == "false" && !confirm(Strings.confirmDisableRFPath))
+ 	{
+ 		return;
+ 	}

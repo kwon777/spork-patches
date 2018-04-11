@@ -1,0 +1,233 @@
+Index: build/build.xml
+===================================================================
+--- build/build.xml	(revision 9894)
++++ build/build.xml	(working copy)
+@@ -32,19 +32,19 @@
+ 	<property name="troubleshooting.tool.dir.name" value="troubleshooting" />
+ 	<property name="credential.tool.name" value="mvcs-credential-tool" />
+ 	<property name="credential.tool.dir.name" value="credentials" />
+-	<property name="haf100-loader.tool.dir.name" value="haf100-loader" />
++	<!--property name="haf100-loader.tool.dir.name" value="haf100-loader" /-->
+ 
+ 	<property name="scripts.name" value="mvcs-scripts" />
+ 
+ 	<property name="install.package.name" value="InstallPackage" />
+ 	<property name="webapp.dir" value="/var/lib/tomcat6/webapps/" />
+-    
+-    <property name="scripts.dir" value="${basedir}/${common.name}/build" />
+ 
++	<property name="scripts.dir" value="${basedir}/${common.name}/build" />
++
+ 	<import file="${scripts.dir}/build-global.xml" />
+ 
+-    <property name="webcontent.dir" value="${build.dir}/app/${gui.name}/WebContent" />
+-    
++	<property name="webcontent.dir" value="${build.dir}/app/${gui.name}/WebContent" />
++
+ 	<property name="mvcs.classpath.addition" value="../plugins/${plugin.mcg101.dir.name}/bin/${plugin.mcg101.dir.name}.jar ../plugins/${plugin.scu.dir.name}/bin/${plugin.scu.dir.name}.jar ../plugins/${plugin.rt1944.dir.name}/bin/${plugin.rt1944.dir.name}.jar ../plugins/${plugin.ips250.dir.name}/bin/${plugin.ips250.dir.name}.jar ../plugins/${plugin.prc117.dir.name}/bin/${plugin.prc117.dir.name}.jar ../plugins/${plugin.kg175.dir.name}/bin/${plugin.kg175.dir.name}.jar ../rims/${rim.scu.dir.name}/bin/${rim.scu.dir.name}.jar ../rims/${rim.prc117.dir.name}/bin/${rim.prc117.dir.name}.jar" />
+ 	<!-- ../tools/${mission.builder.dir.name}/bin/${mission.builder.dir.name}.jar" />-->
+ 
+@@ -76,7 +76,7 @@
+ 		<!--<echo message="Using the classpathref: ${manifest.classpath}" />-->
+ 		<javac srcdir="${java.dir}" destdir="${compile.dest.dir}" classpathref="${libraries}" failonerror="${failOnError}" nowarn="${nowarn}" debug="true" includeantruntime="false">
+ 			<compilerarg value="-Xlint:unchecked" />
+-			</javac>
++		</javac>
+ 	</target>
+ 
+ 	<target name="compile.rim">
+@@ -83,9 +83,9 @@
+ 		<property name="compile.dest.dir" value="${build.dir}/app/classes" />
+ 		<echo message="Compiling source to: ${compile.dest.dir}" />
+ 		<!--<echo message="Using the classpathref: ${manifest.classpath}" />-->
+-		<javac srcdir="${java.dir}" destdir="${compile.dest.dir}" classpathref="libraries.and.classes" failonerror="${failOnError}" nowarn="${nowarn}" debug="true"  includeantruntime="false">
++		<javac srcdir="${java.dir}" destdir="${compile.dest.dir}" classpathref="libraries.and.classes" failonerror="${failOnError}" nowarn="${nowarn}" debug="true" includeantruntime="false">
+ 			<compilerarg value="-Xlint:unchecked" />
+-						</javac>
++		</javac>
+ 	</target>
+ 
+ 	<target name="compile.tests" depends="compile">
+@@ -217,7 +217,7 @@
+ 	<target name="build.vehicle.missions">
+ 		<mkdir dir="${scripts.dir}/classes" />
+ 		<!--<delete dir="${build.dir}/app/missions" includes="default-mission.xml" />-->
+-		<javac srcdir="${source.build}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" includeantruntime="false" />
++		<javac srcdir="${source.build.dir}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" includeantruntime="false" />
+ 
+ 		<java classname="${transform.class}" classpathref="build.classpath" fork="true">
+ 			<arg value="${sca.mission}" />
+@@ -347,7 +347,7 @@
+ 		<!-- Common Tools -->
+ 		<antcall target="compile.and.build.snmp.browser" />
+ 		<antcall target="compile.and.build.trouble.tool" />
+-		<antcall target="compile.and.build.haf100-loader.tool" />
++		<!--antcall target="compile.and.build.haf100-loader.tool" /-->
+ 	</target>
+ 
+ 	<target name="build.mvcs.vca" description="Builds the MVCS VCA" depends="clean">
+@@ -366,7 +366,7 @@
+ 		</antcall>
+ 
+ 		<antcall target="compile.and.build.mcg101.plugin" />
+-		
++
+ 		<antcall target="compile.and.build.rt1944.plugin" />
+ 
+ 		<antcall target="compile.and.build.prc117.plugin" />
+@@ -373,7 +373,7 @@
+ 		<antcall target="compile.and.build.prc117.rim">
+ 			<param name="vessel" value="${vca.vessel}" />
+ 		</antcall>
+-		
++
+ 		<!-- Set Version in index.html -->
+ 		<antcall target="replace.index.properties" />
+ 
+@@ -383,14 +383,14 @@
+ 		<antcall target="compile.and.build.snmp.browser" />
+ 		<antcall target="compile.and.build.trouble.tool" />
+ 		<antcall target="compile.and.build.credential.tool" />
+-		<antcall target="compile.and.build.haf100-loader.tool" />
++		<!--antcall target="compile.and.build.haf100-loader.tool" /-->
+ 
+ 	</target>
+ 
+-	<target name="compile.and.build.haf100-loader.tool" description="Builds the HAF-100 Loader Tool">
++	<!--target name="compile.and.build.haf100-loader.tool" description="Builds the HAF-100 Loader Tool">
+ 		<mkdir dir="haf100-loader-build" />
+-		<ant dir="haf100-loader-build" antfile="../haf100-loader/build.xml" target="build.haf100-loader"/>
+-	</target>
++		<ant dir="haf100-loader-build" antfile="../haf100-loader/build.xml" target="build.haf100-loader" />
++	</target-->
+ 
+ 	<target name="copy.installation.scripts" description="Copy installation scripts to distribution directory and move the update script and archive inside directory">
+ 		<property name="install.dir" value="${dist.dir}/${install.package.name}" />
+@@ -435,10 +435,10 @@
+ 				<exclude name=".svn" />
+ 			</fileset>
+ 		</copy>
+-        
+-        <!-- Set Version in html files (PMFL/Bit & Freq. Tool) -->
++
++		<!-- Set Version in html files (PMFL/Bit & Freq. Tool) -->
+ 		<antcall target="replace.webcontent.properties" />
+-        
++
+ 	</target>
+ 
+ 	<target name="archive.project.source" description="Copy all projects for turnover to Configurmation Management">
+@@ -471,13 +471,10 @@
+ 	<target name="archive.mvcs">
+ 		<property name="dist" value="${app.path}" />
+ 
+-		<property name="tar.name" 
+-                          value="${app.name}-${project.name}-${TODAY}.tar"/>
++		<property name="tar.name" value="${app.name}-${project.name}-${TODAY}.tar" />
+ 
+ 		<tar destfile="${dist.dir}/${tar.name}">
+-			<tarfileset dir="${build.dir}/app" 
+-                                    prefix="${app.path}/" 
+-                                    mode="700">
++			<tarfileset dir="${build.dir}/app" prefix="${app.path}/" mode="700">
+ 				<include name="*.sh" />
+ 				<exclude name="comparedb.sh" />
+ 				<exclude name="startDatabaseGUI.sh" />
+@@ -603,20 +600,20 @@
+ 
+ 			<tarfileset dir="${build.dir}/app/so" prefix="/usr/java/latest/lib/i386">
+ 				<include name="**" />
+-            </tarfileset>
+-            
+-		<tarfileset dir="${build.dir}/app/so" prefix="/usr/lib">
+-			<include name="libLinuxSerialParallel.so" />
+-	    	</tarfileset>
++			</tarfileset>
+ 
+-			
+-		<tarfileset dir="${build.dir}/tools/${haf100-loader.tool.dir.name}" prefix="/opt/mvcs/tools/${haf100-loader.tool.dir.name}" mode="755" group="mvcsuser">
+-			<include name="**" />
+-		</tarfileset>
++			<tarfileset dir="${build.dir}/app/so" prefix="/usr/lib">
++				<include name="libLinuxSerialParallel.so" />
++			</tarfileset>
+ 
+-		<tarfileset dir="${build.dir}/tools/${troubleshooting.tool.dir.name}/bin" prefix="/opt/mvcs/tools/${troubleshooting.tool.dir.name}/bin">
+-			<include name="**" />
+-		</tarfileset>
++
++			<!--tarfileset dir="${build.dir}/tools/${haf100-loader.tool.dir.name}" prefix="/opt/mvcs/tools/${haf100-loader.tool.dir.name}" mode="755" group="mvcsuser">
++				<include name="**" />
++			</tarfileset-->
++
++			<tarfileset dir="${build.dir}/tools/${troubleshooting.tool.dir.name}/bin" prefix="/opt/mvcs/tools/${troubleshooting.tool.dir.name}/bin">
++				<include name="**" />
++			</tarfileset>
+ 			<tarfileset dir="${troubleshooting.tool.name}/lib" prefix="/opt/mvcs/tools/${troubleshooting.tool.dir.name}/lib">
+ 				<include name="*.jar" />
+ 			</tarfileset>
+@@ -879,8 +876,8 @@
+ 			<fileset dir="${plugin.mcg101.name}/configs" includes="**" />
+ 		</copy>
+ 	</target>
+-	
+ 
++
+ 	<target name="compile.and.build.rt1944.plugin">
+ 		<property name="rt1944.build.path" value="${build.dir}/plugins/${plugin.rt1944.dir.name}" />
+ 		<!-- Create necessary directories for the RT-1944 Plugin project -->
+@@ -1167,13 +1164,23 @@
+ 
+ 		<mkdir dir="${scripts.dir}/classes" />
+ 		<property name="checksum.path" value="${temp.dir}/dist/InstallPackage/" />
+-		<javac srcdir="${source.build}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" failonerror="false" includeantruntime="false" />
++		<javac srcdir="${source.build.dir}" destdir="${scripts.dir}/classes" classpathref="build.classpath" debug="on" failonerror="false" includeantruntime="false" />
+ 		<java classname="${checksum.class}" classpathref="build.classpath" fork="true">
++			<arg value="false" />
++			<arg value="generate" />
++			<arg value="${checksums.file.path}" />
+ 			<arg value="${checksum.path}" />
+-			<arg value="${checksums.path}" />
+-			<arg value="false" />
+ 		</java>
+ 
++		<!-- Build CHECKSUM JAR -->
++		<antcall target="jar">
++			<param name="jar.app.name" value="mvcs-checksum" />
++			<param name="jar.main.class" value="${checksum.class}" />
++			<param name="jar.build.dir" value="${scripts.dir}/classes" />
++			<param name="jar.manifest.classpath" value="${build.classpath}" />
++			<param name="jar.path" value="${dist.dir}/mvcs-checksum.jar" />
++		</antcall>
++
+ 		<delete dir="${scripts.dir}/classes" />
+ 	</target>
+ 
+@@ -1312,21 +1319,21 @@
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+ 	</target>
+-    
+-    
+-    <target name="replace.webcontent.properties">
++
++
++	<target name="replace.webcontent.properties">
+ 		<replace file="${webcontent.dir}/nodeInfo.html">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+-        <replace file="${webcontent.dir}/tools.html">
++		<replace file="${webcontent.dir}/tools.html">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+-        <replace file="${webcontent.dir}/Content/Header.html">
++		<replace file="${webcontent.dir}/Content/Header.html">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />
+ 		</replace>
+ 	</target>
+-    
+ 
++
+ 	<target name="replace.constants.properties">
+ 		<replace file="${application.constants.path}">
+ 			<replacefilter token="@${app.version.key}@" value="${app.version}" />

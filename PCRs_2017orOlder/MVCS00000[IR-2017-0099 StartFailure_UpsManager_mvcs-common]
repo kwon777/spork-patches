@@ -1,0 +1,99 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(revision 9806)
++++ src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(working copy)
+@@ -24,7 +24,7 @@
+ {
+    private static final int COMM_WORKAROUND_TIME_MS = 10;
+ 
+-   private CommPortIdentifier portId;
++   private CommPortIdentifier portIdentifier;
+    private String portOwner;
+    private InputStream inputStream;
+    private SerialPort serialPort = null;
+@@ -54,27 +54,27 @@
+       boolean portFound = false;
+       while (portList.hasMoreElements())
+       {
+-         portId = (CommPortIdentifier) portList.nextElement();
++         portIdentifier = (CommPortIdentifier) portList.nextElement();
++         LoggingManager.getPrimaryLogger().info("CommPort {} found type is {}", portIdentifier.getName(), portIdentifier.getPortType());
+ 
+          // Get the serial port from the list of ports
+-         if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL && portId.getName().equals(commPort))
++         if (portIdentifier.getPortType() == CommPortIdentifier.PORT_SERIAL && portIdentifier.getName().equalsIgnoreCase(commPort))
+          {
+             portFound = true;
+             break;
+          }
+-
+       }
+ 
+       if (!portFound)
+       {
+-         LoggingManager.getSystemErrorLogger().error("Cannot find serial port " + commPort);
++         LoggingManager.getPrimaryLogger().error("Cannot find serial port " + commPort);
+          throw new Exception("Serial Port not found: " + commPort);
+       }
+ 
+       try
+       {
+-         serialPort = (SerialPort) portId.open(newPortOwner, 3000);
+-         portOwner = portId.getCurrentOwner();
++         serialPort = (SerialPort) portIdentifier.open(newPortOwner, 3000);
++         portOwner = portIdentifier.getCurrentOwner();
+ 
+          serialPort.addEventListener(this);
+ 
+@@ -120,7 +120,7 @@
+          if (serialPort != null)
+             serialPort.close();
+ 
+-         LoggingManager.getSystemErrorLogger().error("Error opening serial port:\n", e);
++         LoggingManager.getPrimaryLogger().error("Error opening serial port: " + e.getMessage());
+ 
+          throw e;
+       }
+@@ -128,15 +128,6 @@
+ 
+ 
+    /**
+-    * Same as other constructor. Kept for compatibility with existing code.
+-    */
+-   public SerialComms( String commPort, int baudRate) throws Exception
+-   {
+-      this(commPort, baudRate, "");
+-   }
+-
+-
+-   /**
+     * Determines the serial event type. If type is DATA_AVAILABLE, this method waits
+     * <i>gatherTime</i> second(s), reads the input stream into the read buffer, then calls
+     * fireSerialReceivedData to notify listeners of the incoming string.
+@@ -178,7 +169,7 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getSystemErrorLogger().error("SerialPortEvent.DATA_AVAILABLE exception", e);
++            LoggingManager.getPrimaryLogger().error("SerialPortEvent.DATA_AVAILABLE exception", e);
+          }
+ 
+       }
+@@ -213,7 +204,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getSystemErrorLogger().error("serial write Error ", e);
++         LoggingManager.getPrimaryLogger().error("serial write Error ", e);
+       }
+ 
+       return results;
+@@ -252,7 +243,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getSystemErrorLogger().error("serial write Error ", e);
++         LoggingManager.getPrimaryLogger().error("serial write Error ", e);
+       }
+ 
+       return results;

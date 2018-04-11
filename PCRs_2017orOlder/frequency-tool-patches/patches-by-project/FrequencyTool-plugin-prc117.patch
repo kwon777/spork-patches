@@ -1,0 +1,183 @@
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/prc117/PRC117Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/prc117/PRC117Plugin.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/prc117/PRC117Plugin.java	(working copy)
+@@ -39,9 +39,6 @@
+    /** The logger. */
+    private static final Logger logger = LoggingManager.getPrimaryLogger();
+ 
+-   // /** EMCON thread. */
+-   // private EmconThread emconThread;
+-
+    /** EMCON thread. */
+    private EmconThreadSnmpSafe emconThreadSnmpSafe;
+ 
+@@ -362,7 +359,16 @@
+    @Override
+    public boolean setRadioFrequency(String newRadioFreq)
+    {
+-      // Not changeable.
++      try
++      {
++         logger.info("changing radio frequency to " + newRadioFreq);
++         snmpOp.snmpSet(ConstantValues.CURRENTFREQUENCY, newRadioFreq, ipAddress, port);
++         return true;
++      }
++      catch (Exception e)
++      {
++         logger.error("Error: ", e);
++      }
+       return false;
+    }
+ 
+@@ -495,26 +501,26 @@
+             this.vehiclesThatAllowedCommsTo.add(ConfigManager.getInstance().getVehicle().getId());
+          }
+ 
+-         this.uploadChannelMaps(this.getChannelMapsForAllowedVehicles());
++         // upload frequency maps to RIM
++         this.uploadFreqeuncyMaps(this.getFrequencyMapsForAllowedVehicles());
+       }
+       catch (Exception e)
+       {
+          logger.error("Error starting the plug-in: ", e);
+-         logger.error("Error starting the plug-in: ", e);
+       }
+    }
+ 
+ 
+    /**
+-    * To get the channel map configurations for allowed vehicles. e.g.
+-    * "vehicleId/loopback/netId/freq,vehicleId/loopsback/netId/freq".
++    * To get the frequency map configurations for allowed vehicles. e.g.
++    * "frequency/loopbackIf/vehicleId,frequency/loopbackIf/vehicleId".
+     * 
+-    * @return - the channel map configurations in string format. e.g.
+-    *         "vehicleId/loopback/netId/freq,vehicleId/loopsback/netId/freq".
++    * @return - the frequency map configurations in string format. e.g.
++    *         "frequency/loopbackIf/vehicleId,frequency/loopbackIf/vehicleId".
+     */
+-   private String getChannelMapsForAllowedVehicles()
++   private String getFrequencyMapsForAllowedVehicles()
+    {
+-      String chSetString = "";
++      String frequencyMaps = "";
+ 
+       try
+       {
+@@ -524,7 +530,7 @@
+             for (Vehicle vehicleConfig : ConfigManager.getInstance().getListOfVehicles())
+             {
+                if (this.vehiclesThatAllowedCommsTo.contains(vehicleConfig.getId()))
+-                  chSetString += constructChannelMapString(vehicleConfig);
++                  frequencyMaps += constructFrequencyMapString(vehicleConfig);
+             }
+          }
+ 
+@@ -532,45 +538,45 @@
+          else
+          {
+             if (this.vehiclesThatAllowedCommsTo.contains(ConfigManager.getInstance().getVehicle().getId()))
+-               chSetString += constructChannelMapString(ConfigManager.getInstance().getVehicle());
++               frequencyMaps += constructFrequencyMapString(ConfigManager.getInstance().getVehicle());
+          }
+       }
+       catch (Exception e)
+       {
+          logger.error("Error from configurations: ", e);
+-         logger.error("Error from configurations: ", e);
+       }
+ 
+       // remove the ending delimiter ","
+-      if (chSetString.endsWith(","))
+-         chSetString = chSetString.substring(0, chSetString.length() - 1);
++      if (frequencyMaps.endsWith(","))
++         frequencyMaps = frequencyMaps.substring(0, frequencyMaps.length() - 1);
+ 
+-      return chSetString;
++      return frequencyMaps;
+    }
+ 
+ 
+    /**
+-    * To construct channel map string. Each channel map ends with the delimiter ","
++    * To construct frequency map string from the vehicle. Each frequency map ends with the delimiter
++    * ","
+     * 
+     * @param vehicleConfig - the vehicle configuration
+-    * @return channel map string.
++    * @return frequency map string.
+     */
+-   public static String constructChannelMapString(Vehicle vehicleConfig)
++   public static String constructFrequencyMapString(Vehicle vehicleConfig)
+    {
+       try
+       {
+-         String channelSetString = "";
++         String frequencyMaps = "";
+          for (Radio radioConfig : vehicleConfig.getListOfRadios())
+          {
+             for (Channel channel : radioConfig.getListOfChannels())
+             {
+-               // added vId/loopback/netId/freq
+-               channelSetString += vehicleConfig.getId() + "/" + radioConfig.getLoopback() + "/" + channel.getId() + "/" + channel.getFrequency();
++               // added frequency/loopbackIf/vehicleId
++               frequencyMaps += channel.getFrequency() + "/" + radioConfig.getLoopback() + "/" + vehicleConfig.getId();
+                // add the delimiter ","
+-               channelSetString += ",";
++               frequencyMaps += ",";
+             }
+          }
+-         return channelSetString;
++         return frequencyMaps;
+       }
+       catch (Exception e)
+       {
+@@ -672,8 +678,8 @@
+ 
+          if (needToUploadChannelMap)
+          {
+-            // upload new channel map if and only if vehicle has added or removed.
+-            return this.uploadChannelMaps(this.getChannelMapsForAllowedVehicles());
++            // upload new frequency map if and only if vehicle has added or removed.
++            return this.uploadFreqeuncyMaps(this.getFrequencyMapsForAllowedVehicles());
+          }
+ 
+          return true;
+@@ -687,18 +693,18 @@
+ 
+ 
+    /**
+-    * To upload channel map configurations to the radio.
++    * To upload frequency map configurations to the radio.
+     * 
+-    * @param channelMaps - the channel map configurations for all vehicles. e.g
+-    *           "vehicleId/loopback/netId/freq,vehicleId/loopsback/netId/freq".
++    * @param frequencyMaps - the frequency map configurations for all vehicles. e.g
++    *           "frequency/loopbackIf/vehicleId,frequency/loopbackIf/vehicleId".
+     * @return true if successful.
+     */
+-   private boolean uploadChannelMaps(String channelMaps)
++   private boolean uploadFreqeuncyMaps(String frequencyMaps)
+    {
+       try
+       {
+-         logger.info("uploading chMap configuration: " + channelMaps.toString());
+-         snmpOp.snmpSet(ConstantValues.CHANNELMAPCONFIGURATION, channelMaps, ipAddress, port);
++         logger.info("uploading frequency map configuration: " + frequencyMaps.toString());
++         snmpOp.snmpSet(ConstantValues.CHANNELMAPCONFIGURATION, frequencyMaps, ipAddress, port);
+          this.everSentChannelMapsToRim = true;
+          return true;
+       }
+@@ -910,9 +916,9 @@
+                   logger.error("There was a problem while running EMCON thread in the PRC117 plugin.", e);
+                }
+ 
+-            }// end of while(not quit and not moveOn)
++            } // end of while(not quit and not moveOn)
+ 
+-         }// end of while (not quit)
++         } // end of while (not quit)
+ 
+       }
+ 

@@ -1,0 +1,12 @@
+Index: WebContent/css/dash.css
+===================================================================
+--- WebContent/css/dash.css	(revision 9779)
++++ WebContent/css/dash.css	(working copy)
+@@ -16,6 +16,7 @@
+ 	border-style: solid;
+ 	border-radius: .3em;
+ 	cursor: pointer !important;
++	float: inline-start;
+ }
+ 
+ .node > * {

@@ -1,0 +1,369 @@
+Index: configs/rlmRules.sca.xml
+===================================================================
+--- configs/rlmRules.sca.xml	(revision 9779)
++++ configs/rlmRules.sca.xml	(working copy)
+@@ -363,7 +363,7 @@
+ 		</rule-process>
+ 	</rlm-rules>
+ 	<rlm-rules>
+-		<rule-name> VehicleDistanceIncreasesToLosRangeOfConnectedPath
++		<rule-name> VehicleDistanceIncreasesToMaxLosRangeOfConnectedPath
+ 		</rule-name>
+ 		<rule-pertains-to>Vehicle</rule-pertains-to>
+ 		<primary-condition>
+@@ -397,7 +397,7 @@
+ 			</process-params>
+ 			<process-object-class-def> mil.navy.lcs.mvcs.sca.link.ScaRuleResult
+ 			</process-object-class-def>
+-			<process-method> vehicleDistanceIncreasesToLosRangeOfConnectedPath
++			<process-method> vehicleDistanceIncreasesToMaxLosRangeOfConnectedPath
+ 			</process-method>
+ 		</rule-process>
+ 	</rlm-rules>
+Index: src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java	(working copy)
+@@ -211,7 +211,7 @@
+       public void process(Message message)
+       {
+          LinkSwitchMessage msg = (LinkSwitchMessage) message;
+-
++         LoggingManager.getPrimaryLogger().info("Link Switch has requested from MVCS vehicle:" + node.getNodeId() + " link:" + msg.getLinkId());
+          ShipState.getVehicleNodeHandler(node.getNodeId()).requestSwitchToLink(msg.getLinkId());
+       }
+    };
+Index: src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java	(working copy)
+@@ -1107,6 +1107,67 @@
+ 
+ 
+    /**
++    * To use the given link of vehicle by promoting the link in the routers. The link must be
++    * connected at the time of request and the vehicle must be in manual switch-over mode. At any
++    * given time, only one of this operation is allowed per vehicle (must wait for the current is
++    * complete before switching again).
++    * 
++    * @param vehicleId - the vehicle ID
++    * @param newLink - the link to switch to
++    */
++   public synchronized void useConnectedLinkOfVehicle(String vehicleId, String newLink)
++   {
++      LoggingManager.getPrimaryLogger().info("Use the link has requested for " + newLink + " of " + vehicleId);
++
++      VehicleNode vehicle = ShipState.model.getVehicle(vehicleId);
++
++      LinkModel requestedLink = vehicle.getLink(newLink);
++
++      // link must be connected at the time of request.
++      if (!requestedLink.isConnected())
++      {
++         LoggingManager.getPrimaryLogger().info("Link:{} is not currently connected. Can't reprioritize links!", newLink);
++         return;
++      }
++
++      // the new link is radio not LAN.
++      if (requestedLink.commsType != CommsType.LAN)
++      {
++         // find corresponding local radio
++         String scaRadioName = ScaLinkManager.findMatchingShipboardLink(vehicleId, newLink);
++
++         ScaRadioController radioController = ScaLinkManager.getInstance().getRadioControllers().get(scaRadioName);
++
++         // if point-to-point radio, check see if other vehicle is using the path.
++         if (requestedLink.mvcsLinkType.pointToPoint)
++         {
++            // radio can't be taken from other vehicle.
++            if (!ScaLinkManager.releaseP2PConnectionIfOwnedByLowerPriorityVehicle(vehicleId, newLink))
++            {
++               AlertsManager.getInstance().addAlert(vehicleId, AlertType.LINK_P2P_CANNOT_TAKE_RADIO, scaRadioName);
++               return;
++            }
++
++            // establish ownership of remote radio
++            radioController.initializeConnectionToVehicleRadio(vehicleId, newLink);
++
++         } // end of if (point-to-point)
++
++      } // not LAN
++
++      // set link change status flag
++      vehicle.setLinkChangeStatus(LinkChangeStatus.PENDING);
++
++      // update the active link request
++      vehicle.setVehicleLinkRequested(requestedLink);
++
++      // send command to the vehicle
++      ShipState.getVehicleNodeHandler(vehicleId).getMessageQueue().add(new LinkSwitchMessage(newLink));
++
++   }// end of method
++
++
++   /**
+     * To prepare link switch of vehicle to given link. The vehicle must be in manual switch-over
+     * mode. At any given time, only one switching operation is allowed per vehicle (must wait for
+     * the current switching is complete before switching again).
+@@ -1697,7 +1758,6 @@
+                {
+                   LoggingManager.getPrimaryLogger().warn("Vehicle {}'s activeLink: {} is now the same as host's activeLink: {}", new String[] { vehicle.getNodeId(), linkFromVehicle.getLinkId(), linkToVehicle.getLinkId() });
+                   AlertsManager.getInstance().addAlert(vehicle.getNodeId(), AlertType.LINK_SYNCED_TRUE, linkFromVehicle.getLinkId(), linkToVehicle.getLinkId());
+-
+                }
+ 
+             }
+Index: src/main/java/mil/navy/lcs/mvcs/sca/link/ScaRuleResult.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/link/ScaRuleResult.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/link/ScaRuleResult.java	(working copy)
+@@ -432,9 +432,9 @@
+ 
+ 
+    /**
+-    * To execute when vehicle's distance increases to the boundary of the LOS range of a path. The
+-    * given path must be a connected path. SCA will attempt to establish connection with the highest
+-    * priority radio of the vehicle that is capable of doing OTH.
++    * To execute when vehicle's distance increases to the boundary of the MAX LOS range of a path.
++    * The given path must be a connected path. SCA will attempt to establish connection with the
++    * highest priority radio of the vehicle that is capable of doing OTH.
+     * 
+     * @param vehicleId - The vehicle ID
+     * @param pathName - The name of path on the vehicle
+@@ -441,7 +441,7 @@
+     * @param message - The message
+     * @param messagePriority - The priority of message
+     */
+-   public void vehicleDistanceIncreasesToLosRangeOfConnectedPath(String vehicleId, String pathName, String message, String messagePriority)
++   public void vehicleDistanceIncreasesToMaxLosRangeOfConnectedPath(String vehicleId, String pathName, String message, String messagePriority)
+    {
+       VehicleNode vehicleNode = ShipState.model.getVehicle(vehicleId);
+ 
+@@ -473,11 +473,11 @@
+             // switch to an OTH path
+             if (othRadioId != null)
+             {
+-               LoggingManager.getPrimaryLogger().info("The path is out of LOS range, system will try to connect over an OTH radio {}.", othRadioId);
++               LoggingManager.getPrimaryLogger().info("The vehicle is going out of MAX LOS range, system will try to connect over an OTH radio {}.", othRadioId);
+                ScaLinkManager.getInstance().prepareLinkSwitchOfVehicle(vehicleId, othRadioId);
+             }
+             else
+-               LoggingManager.getPrimaryLogger().error("The path is out of LOS range but system could not find any OTH radio.");
++               LoggingManager.getPrimaryLogger().error("The vehicle is going out of MAX LOS range but system could not find any OTH radio.");
+ 
+          }
+          catch (Exception ex)
+Index: src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(working copy)
+@@ -183,7 +183,7 @@
+       switch (linkAction)
+       {
+          case USE:
+-            handler.requestSwitchToLink(linkId);
++            handler.requestUseConnectedLink(linkId);
+             break;
+          case DISABLE:
+             handler.requestDisconnectLink(linkId);
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java	(working copy)
+@@ -316,7 +316,34 @@
+    }
+ 
+ 
++
+    /**
++    * To request use the given link as the primary link of vehicle.
++    * 
++    * @param linkId - the link ID
++    */
++   public void requestUseConnectedLink(final String linkId)
++   {
++      // Ensure the vehicle is in manual switch-over mode
++      if (node.isAutoManagement())
++      {
++         logger.warn("Vehicle " + node.getNodeId() + " is in Auto Switch mode. We cannot perform manual path re-prioritization in this mode.");
++      }
++      else
++      {
++         // Spawn off in a thread
++         new Thread("MVCS-" + this.getClass().getSimpleName() + "-requestUseLink")
++         {
++            public void run()
++            {
++               // prepare local radio for link switch
++               ScaLinkManager.getInstance().useConnectedLinkOfVehicle(node.getNodeId(), linkId);
++            }
++         }.start();
++      }
++   }
++
++   /**
+     * To request change of vehicle power conservation mode
+     * 
+     * @param powerMode - new vehicle power mode
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/SnmpParameterParser.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/SnmpParameterParser.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/SnmpParameterParser.java	(working copy)
+@@ -1,120 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.sca.snmp.agent.workers;
+-
+-
+-import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+-
+-/**
+- * Class Description
+- * <p>
+- * Date Created: Sep 30, 2009
+- * <p>
+- * $LastChangedBy$
+- * $LastChangedDate$ $LastChangedRevision$
+- * 
+- * @author Wai Lee
+- * @version 1.0
+- */
+-/*
+- * ************************************************************************************* File
+- * history *************************************************************************************
+- * 
+- * August 5th, 2010 - Added the values fields, so that more values can be extracted for the parsed
+- * string.
+- */
+-public class SnmpParameterParser
+-{
+-
+-   private boolean hasError = false;
+-   private String statusMessage = "";
+-   private String transactionId = "";
+-   private String value = "";
+-   private String[] values = null;
+-
+-
+-   public SnmpParameterParser( String functionName, String snmpString)
+-   {
+-      if (snmpString == null || snmpString.equals(""))
+-      {
+-         statusMessage = "Received error for parameter for set " + functionName + ".  Parameter is null.";
+-         hasError = true;
+-      }
+-      else
+-      {
+-         String[] temp = snmpString.split(ConstantValues.SNMP_COMMAND_DELIMITER);
+-         if (temp.length == 2)
+-         {
+-            value = temp[0];
+-            transactionId = temp[1];
+-         }
+-         else
+-         {
+-            setValues(temp);
+-            value = snmpString;
+-         }
+-      }
+-   }
+-
+-
+-   public String getStatusMessage()
+-   {
+-      return statusMessage;
+-   }
+-
+-
+-   public String getTransactionId()
+-   {
+-      return transactionId;
+-   }
+-
+-
+-   public String getValue()
+-   {
+-      return value;
+-   }
+-
+-
+-   public String[] getValues()
+-   {
+-      return values;
+-   }
+-
+-
+-   public boolean hasError()
+-   {
+-      return this.hasError;
+-   }
+-
+-
+-   public void setHasError(boolean hasError)
+-   {
+-      this.hasError = hasError;
+-   }
+-
+-
+-   public void setStatusMessage(String statusMessage)
+-   {
+-      this.statusMessage = statusMessage;
+-   }
+-
+-
+-   public void setTransactionId(String transactionId)
+-   {
+-      this.transactionId = transactionId;
+-   }
+-
+-
+-   public void setValue(String value)
+-   {
+-      this.value = value;
+-   }
+-
+-
+-   public void setValues(String[] values)
+-   {
+-      this.values = values;
+-   }
+-
+-
+-}
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/VehicleTableWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/VehicleTableWorker.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/VehicleTableWorker.java	(working copy)
+@@ -1190,15 +1190,12 @@
+     */
+    public void setVehicleRequestLinkChange(String vehicleId, String linkNameValue)
+    {
+-      SnmpParameterParser spp = new SnmpParameterParser("createVehicleRequestLinkChange", linkNameValue);
+-      if (spp.hasError())
++      if (linkNameValue == null || linkNameValue.equalsIgnoreCase(""))
+       {
+-         logger.error(spp.getStatusMessage());
++         logger.error("Link name can't be null for link change request!");
+          return;
+       }
+ 
+-      String radioName = spp.getValue();
+-
+       MvcsNode node = ShipState.model.getNode(vehicleId);
+       if (!(node instanceof VehicleNode))
+          return;
+@@ -1205,12 +1202,12 @@
+ 
+       VehicleNode vehicle = (VehicleNode) node;
+       VehicleNodeHandler handler = ShipState.getVehicleNodeHandler(vehicleId);
+-      LinkModel link = vehicle.getLink(radioName);
++      LinkModel link = vehicle.getLink(linkNameValue);
+ 
+       // Can also be requested by the display name such as LOS, OTH.
+       if (link == null)
+       {
+-         CommsType type = CommsType.fromDisplayName(radioName.trim());
++         CommsType type = CommsType.fromDisplayName(linkNameValue.trim());
+          link = vehicle.getFirstLinkByCommsType(type);
+       }
+ 

@@ -1,0 +1,56 @@
+Index: WebContent/js/Strings.js
+===================================================================
+--- WebContent/js/Strings.js	(revision 9944)
++++ WebContent/js/Strings.js	(working copy)
+@@ -19,6 +19,7 @@
+ 	confirmBit: "Are you sure you want to request BIT Tool report?",
+ 	confirmBitExit: "Are you sure you want to cancel?",
+ 	confirmPowerOff: "May lose comms. Power off?",
++	confirmPowerOffAlreadyShowingOff: "Power is already showing OFF. Proceed to power off?",
+ 	confirmLinkDisconnect: "Restablishing a disconnected link may take several minutes. Proceed?",
+ 	confirmZeroize: "Confirm zeroization of vehicle",
+ 	confirmZeroizeOffboard: "The vehicle is currently offboard. Type 'zeroize' to confirm zeroization.",
+@@ -30,6 +31,7 @@
+ 	confirmEnableRF: "Are you sure you want to allow RF transmit. This will enable all shipboard radios and over the air rf paths.",
+ 	confirmDisableRF: "Are you sure you want to disable RF transmit.",
+ 	confirmDisableRFPath: "May lose comms. Disable Link?",
++	confirmDisableRFPathAlreadyShowingDisabled: "Link is already showing DISABLED. Proceed to disable Link?",
+ 	confirmFrequencyChange: "May lose comms. Change frequency to ",
+ 	confirmAntennaOverride: "Are you sure you want to manually select antenna?",
+ 
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9944)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -236,8 +236,14 @@
+ };
+ 
+ var requestPower = function(node, on, output) {
+-	if (on == 'false' && !confirm(Strings.confirmPowerOff))
++	
++	// device is already showing off and try to turn off again
++	if (on == 'false' && output.outputting() == false && !confirm(Strings.confirmPowerOffAlreadyShowingOff))
+ 		return;
++		
++	// Confirm trying to turn off device
++	if (on == 'false' && output.outputting() && !confirm(Strings.confirmPowerOff))
++		return;
+ 
+ 	$.ajax({
+ 		url : 'PowerRequest',
+@@ -259,9 +265,13 @@
+ 	}
+ 	
+ 	//PCR MVCS01394 - Confirmation Box for disabling links.
+-	if(output.outputType() != "LOAD" && on == "false" && !confirm(Strings.confirmDisableRFPath))
++	if(output.outputType() != "LOAD" && on == "false")
+ 	{
+-		return;
++		// device is already showing off and try to turn off again
++		if (output.outputting() == false && !confirm(Strings.confirmDisableRFPathAlreadyShowingDisabled))
++			return;
++		if(output.outputting() && !confirm(Strings.confirmDisableRFPath))
++			return;
+ 	}
+ 
+ 	$.ajax({

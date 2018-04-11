@@ -1,0 +1,13 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(revision 9928)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(working copy)
+@@ -901,7 +901,7 @@
+             requestRfUnchecked(losLink.getLinkId(), RFOutputType.TEST, true);
+             boolean rfDigitalIO = rfDevice.isOutputting(RFOutputType.TEST);
+             bitResult.rfSwitchStatus = rfDigitalIO;
+-            if (rfDigitalIO)
++            if (!rfDigitalIO)
+             {
+                logger.info("BIT could not change RF output to {}", RFOutputType.TEST.displayText);
+             }

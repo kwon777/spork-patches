@@ -1,0 +1,44 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(revision 9928)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(working copy)
+@@ -7,6 +7,7 @@
+ import java.text.SimpleDateFormat;
+ import java.util.ArrayList;
+ import java.util.Date;
++import java.util.LinkedList;
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
+ 
+@@ -877,7 +878,21 @@
+                {
+                   logger.error("Error: ", ex);
+                }
+-               
++
++               try
++               {
++                  LinkedList<String> ppkeys = (LinkedList<String>) plugin.getPreplacedKeyInfo();
++                  logger.info("Encryptor[{} key info: size={}]", plugin.getIPAddress(), ppkeys.size());
++                  for (int i = 0; i < ppkeys.size(); i++)
++                  {
++                     logger.info(ppkeys.get(i));
++                  }
++               }
++               catch (Exception ex)
++               {
++                  logger.error("Error: ", ex);
++               }
++
+                ips.redIp = plugin.getIPAddress();
+                ips.reachable = plugin.isReachable();
+                bitResult.ips250s.add(ips);
+@@ -901,7 +916,7 @@
+             requestRfUnchecked(losLink.getLinkId(), RFOutputType.TEST, true);
+             boolean rfDigitalIO = rfDevice.isOutputting(RFOutputType.TEST);
+             bitResult.rfSwitchStatus = rfDigitalIO;
+-            if (rfDigitalIO)
++            if (!rfDigitalIO)
+             {
+                logger.info("BIT could not change RF output to {}", RFOutputType.TEST.displayText);
+             }

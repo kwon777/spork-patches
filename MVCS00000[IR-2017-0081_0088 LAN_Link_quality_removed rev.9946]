@@ -1,0 +1,15 @@
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9946)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -341,8 +341,8 @@
+                       <div class="vehicleOnly linkStatus separator">-</div>
+                       <div class="vehicleOnly linkStatus" data-bind="text: status"></div>
+                     </div>
+-                    <!-- Display the quality bars for vehicle links or SAT -->                    
+-                    <div class="nodeLinkQuality" data-bind="visible: (!$parent.isShip() || commsType()=='SAT')">
++                    <!-- Display the quality bars for only vehicle radio links or SAT links -->                    
++                    <div class="nodeLinkQuality" data-bind="visible: ((!$parent.isShip() && commsType()!='LAN') || commsType()=='SAT')">
+                       <div class="linkQuality" data-bind="attr: { 'quality' : nearestTen(quality()) }">
+                         <div class="qualityBar"></div>
+                         <div class="qualityBar"></div>

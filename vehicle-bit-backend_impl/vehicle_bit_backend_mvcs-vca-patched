@@ -1,0 +1,481 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/cnc/NodeCommandProcessor.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/cnc/NodeCommandProcessor.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/vca/cnc/NodeCommandProcessor.java	(working copy)
+@@ -7,6 +7,7 @@
+ import org.slf4j.LoggerFactory;
+ 
+ import mil.navy.lcs.mvcs.common.messages.AlertMessage;
++import mil.navy.lcs.mvcs.common.messages.BitMessage;
+ import mil.navy.lcs.mvcs.common.messages.EmconMessage;
+ import mil.navy.lcs.mvcs.common.messages.HeartbeatOnOffMessage;
+ import mil.navy.lcs.mvcs.common.messages.LinkConfigureMessage;
+@@ -272,7 +273,18 @@
+       }
+    };
+ 
++   private final IMessageProcessor bitMessageProcessor = new IMessageProcessor()
++   {
++      @Override
++      public void process(Message message)
++      {
++         BitMessage bm = (BitMessage) message;
++         if (bm.isActivate())
++            vehicleHandler.requestBitStart();
++      }
++   };
+ 
++
+    /**
+     * To start the command processor to handle in-comming commands.
+     * 
+@@ -319,6 +331,7 @@
+       mr.register(LinkSwitchAbortMessage.class, linkSwitchAbortProcessor);
+       mr.register(NearShipMessage.class, nearShipProcessor);
+       mr.register(LinkConfigureMessage.class, linkConfigureProcessor);
++      mr.register(BitMessage.class, bitMessageProcessor);
+ 
+       // IMPORTANT: set TRUE on ready to process packets.
+       // Allows packet receiver to start acknowledging on incoming packets.
+Index: src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(working copy)
+@@ -3,9 +3,6 @@
+ package mil.navy.lcs.mvcs.vca.encryptor;
+ 
+ 
+-import javax.swing.JOptionPane;
+-
+-
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -21,7 +18,8 @@
+ import mil.navy.lcs.mvcs.vca.main.VehicleState;
+ 
+ /**
+- * This class is responsible of handling requests to zeroize and sanitize.
++ * This class is responsible of handling requests zeroizing, sanitizing, and polling status of
++ * encryption devices.
+  * 
+  * <p>
+  * $LastChangedBy$ <br>
+@@ -33,7 +31,7 @@
+ public class VcaEncryptorPluginManager extends EncryptorPluginManager
+ {
+    private static final Logger logger = LoggerFactory.getLogger(VcaEncryptorPluginManager.class);
+-   
++
+    /** Variable used to hold an instance of this object */
+    private static VcaEncryptorPluginManager instance = null;
+ 
+@@ -52,6 +50,7 @@
+       // list of valid encryptor plug-ins from configuration
+       loadListOfEncryptorPlugins();
+       instantiatePlugins(VehicleState.model.node.getRadioLinks());
++      // start polling keyed status of encryptors then update the node with keyed status.
+    }
+ 
+ 
+@@ -126,7 +125,7 @@
+       {
+          try
+          {
+-            if(plugin.zeroize())
++            if (plugin.zeroize())
+                LoggingManager.getPrimaryLogger().info("Successfully commanded the plugin for zeroizing keys.");
+             else
+                LoggingManager.getPrimaryLogger().info("Failed to command the plugin for zeroizing keys.");
+@@ -140,25 +139,31 @@
+       VehicleState.model.node.setKeyed(false);
+       VcaMain.shutdown(ExitAction.COLD_SHUTDOWN);
+    }
+-   
+-   public void isKeyed() 
++
++
++   /**
++    * To check encryption devices are loaded with keys.
++    * 
++    * @return true if all of the sub-encryptors are keyed.
++    */
++   public boolean isAllKeyed()
+    {
+-      logger.info("VcaEncryptorPluginManager isKeyed");
+-      boolean keyResult;
+-//      for (IEncryptorPlugin plugin : runtimeEncryptorPlugins.values())
+-//      {
+-//         try
+-//         {
+-//            keyResult = plugin.isKeyed();
+-//            logger.info("Keying tool test checking if CIK is loaded " + keyResult);
+-//            JOptionPane.showMessageDialog(null, "Keying tool test checking if CIK is loaded " + keyResult);
+-//         }
+-//         catch (Exception ex)
+-//         {
+-//            LoggingManager.getPrimaryLogger().error("Error: ", ex);
+-//         }
+-//      }
+-      
++      logger.debug("VcaEncryptorPluginManager checking keyed status of all encryptors...");
++      boolean keyResult = true; // defaults to true if there is no encryptor.
++      for (IEncryptorPlugin plugin : runtimeEncryptorPlugins.values())
++      {
++         try
++         {
++            boolean keyed = plugin.isKeyed(); // polling keyed status from encryptor
++            logger.info("Encryptor[{}] CIK loaded? {} ", plugin.getEncryptorName(), keyed);
++            keyResult &= keyed; // accumulate results
++         }
++         catch (Exception ex)
++         {
++            LoggingManager.getPrimaryLogger().error("Error: ", ex);
++         }
++      }
++      return keyResult;
+    }
+ 
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(working copy)
+@@ -5,6 +5,7 @@
+ 
+ import java.io.IOException;
+ import java.text.SimpleDateFormat;
++import java.util.ArrayList;
+ import java.util.Date;
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
+@@ -12,8 +13,10 @@
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
++import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
+ import mil.navy.lcs.mvcs.common.handler.IMvcsNodeHandler;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import mil.navy.lcs.mvcs.common.messages.BitResultMessage;
++import mil.navy.lcs.mvcs.common.messages.BitResultMessage.Ips250Status;
+ import mil.navy.lcs.mvcs.common.messages.RadioConfigureMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.net.receiver.MessageReceiver;
+@@ -22,10 +25,13 @@
+ import mil.navy.lcs.mvcs.iface.app.ExitAction;
+ import mil.navy.lcs.mvcs.iface.app.MvcsThreads;
+ import mil.navy.lcs.mvcs.iface.filter.IFilterDeviceHandler;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.ConstantValues.LinkSwitchAck;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.PowerConservation;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.SleepState;
++import mil.navy.lcs.mvcs.iface.model.node.UuvNode;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+ import mil.navy.lcs.mvcs.iface.power.IPowerDeviceHandler;
+ import mil.navy.lcs.mvcs.iface.power.PowerDevice;
+@@ -495,7 +501,7 @@
+          }
+ 
+       // invalid sleep state
+-      LoggingManager.getPrimaryLogger().error("There was an error setting vehicle sleep state to " + sleepState + ".  " + sleepState + " is an invalid state.");
++      logger.error("There was an error setting vehicle sleep state to " + sleepState + ".  " + sleepState + " is an invalid state.");
+    }
+ 
+ 
+@@ -579,7 +585,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Invalid value {} for linkSwitchAck.", ack);
++         logger.error("Invalid value {} for linkSwitchAck.", ack);
+       }
+    }
+ 
+@@ -597,7 +603,7 @@
+       else if (deployStatus.equalsIgnoreCase(ConstantValues.VehicleInWater.NotInWater.name()))
+          node.setDeployed(false);
+       else
+-         LoggingManager.getPrimaryLogger().error("Invalid value {} to change deploy status.", deployStatus);
++         logger.error("Invalid value {} to change deploy status.", deployStatus);
+ 
+    }
+ 
+@@ -667,7 +673,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error connecting radio  " + radioId + ":", e);
++         logger.error("Error connecting radio  " + radioId + ":", e);
+       }
+ 
+    }// end of method
+@@ -700,7 +706,7 @@
+          // invalid input
+          else
+          {
+-            LoggingManager.getPrimaryLogger().error("Can't change radio power mode, invalid radio power mode " + powerMode);
++            logger.error("Can't change radio power mode, invalid radio power mode " + powerMode);
+             return;
+          }
+ 
+@@ -710,7 +716,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Problem with SNMP set ", e);
++         logger.error("Problem with SNMP set ", e);
+       }
+ 
+    }
+@@ -766,8 +772,7 @@
+ 
+ 
+    /**
+-    * requestScaSyslogArchive
+-    * Section A: Date stamping archiving.
++    * requestScaSyslogArchive Section A: Date stamping archiving.
+     * 
+     * Section B: Instantiate the archive tool.
+     * 
+@@ -777,13 +782,13 @@
+    public void requestScaSyslogArchive()
+    {
+       // Section A
+-      //String pattern = "MM_dd_yyyy_HHmmss";
++      // String pattern = "MM_dd_yyyy_HHmmss";
+       String month = "MM";
+       String day = "dd";
+       String year = "yyyy";
+       String hour = "HH";
+       String minute = "mm";
+-      
++
+       SimpleDateFormat formatMonth = new SimpleDateFormat(month);
+       SimpleDateFormat formatDay = new SimpleDateFormat(day);
+       SimpleDateFormat formatYear = new SimpleDateFormat(year);
+@@ -794,7 +799,7 @@
+       String linOutYear = formatYear.format(new Date());
+       String linOutHour = formatHour.format(new Date());
+       String linOutMinute = formatMinute.format(new Date());
+-      
++
+       // Update nodes
+       node.setArchiveToolDateStampMonth(linOutMonth);
+       node.setArchiveToolDateStampDay(linOutDay);
+@@ -801,33 +806,34 @@
+       node.setArchiveToolDateStampYear(linOutYear);
+       node.setArchiveToolDateStampHour(linOutHour);
+       node.setArchiveToolDateStampMinute(linOutMinute);
+-     
++
+       // Section B
+       VcaSyslogArchiver arch = new VcaSyslogArchiver();
+       arch.run();
+-      
+-      node.setArchiveToolFileCount( arch.countFilesInDirectory());
++
++      node.setArchiveToolFileCount(arch.countFilesInDirectory());
+       node.setArchiveToolSpaceAvailable(arch.spaceAvailable());
+-       
++
+    }
+-   
++
++
+    public void requestScaSysCleanlogArchive()
+    {
+-       VcaSyslogArchiver arch = new VcaSyslogArchiver();
+-       try
+-       {
+-           arch.moveFilesToDirectory();
+-           // Set status values back to default
+-           node.setArchiveToolFileCount( 0 );
+-           node.setArchiveToolSpaceAvailable( 100 );
+-       }
+-       catch (IOException e)
+-       {
+-        e.printStackTrace();
+-       }
+-   
++      VcaSyslogArchiver arch = new VcaSyslogArchiver();
++      try
++      {
++         arch.moveFilesToDirectory();
++         // Set status values back to default
++         node.setArchiveToolFileCount(0);
++         node.setArchiveToolSpaceAvailable(100);
++      }
++      catch (IOException e)
++      {
++         e.printStackTrace();
++      }
++
+    }
+-  
++
+    // END Archiving Tool Section
+ 
+ 
+@@ -836,4 +842,109 @@
+       return powerHandler;
+    }
+ 
++
++   @Override
++   public void requestBitStart()
++   {
++      logger.debug("Got request to initialize vehicle BIT process.");
++
++      // Exclude BIT of UUV type vehicle
++      if (node instanceof UuvNode)
++         return;
++
++      // Run in a thread since it can take few minutes to complete
++      MvcsThreads.pool.submit(new Runnable()
++      {
++         @Override
++         public void run()
++         {
++            // execute BIT
++
++            // BIT result message
++            BitResultMessage bitResult = new BitResultMessage(node.getNodeId());
++
++            // Encryptor(s)
++            for (IEncryptorPlugin plugin : VcaEncryptorPluginManager.getInstance().getRuntimeEncryptorPlugins().values())
++            {
++               Ips250Status ips = new Ips250Status();
++               try
++               {
++                  boolean keyed = plugin.isKeyed(); // polling keyed status from encryptor
++                  logger.info("Encryptor[{}] CIK loaded? {} ", plugin.getIPAddress(), keyed);
++                  ips.keyed = keyed;
++               }
++               catch (Exception ex)
++               {
++                  logger.error("Error: ", ex);
++               }
++               
++               ips.redIp = plugin.getIPAddress();
++               ips.reachable = plugin.isReachable();
++               bitResult.ips250s.add(ips);
++            }
++
++            // HAF-100
++            if (filterDeviceHandler != null)
++            {
++               filterDeviceHandler.getStatus(node.getFilterDevice());
++               bitResult.haf100Status = node.getFilterDevice().getStatus();
++            }
++
++            // Radio(s)
++            LinkModel losLink = node.getFirstLinkByCommsType(CommsType.LOS);
++            IRadioPlugin radioPlugin = VcaRadioPluginsManager.getInstance().getRadioPluginByName(losLink.getLinkId());
++            bitResult.losRadioFrequency = radioPlugin.getRadioFrequency();
++
++            // RF switch
++            RFDevice rfDevice = node.getRfDevice(losLink.getLinkId());
++            // toggle ON the TEST port to confirm operation
++            requestRfUnchecked(losLink.getLinkId(), RFOutputType.TEST, true);
++            boolean rfDigitalIO = rfDevice.isOutputting(RFOutputType.TEST);
++            bitResult.rfSwitchStatus = rfDigitalIO;
++            if (rfDigitalIO)
++            {
++               logger.info("BIT could not change RF output to {}", RFOutputType.TEST.displayText);
++            }
++
++            // Power status: no silver bullet to get status other than relying on PowerOutput model.
++            boolean powerDigitalIO = true;
++            ArrayList<PowerOutput> poweredStatus = new ArrayList<PowerOutput>();
++            for (PowerDevice powerDevice : node.getPowerDevices().values())
++            {
++               for (PowerOutput powerOutput : powerDevice.getOutputs().values())
++               {
++                  // try toggle ON the power of all outputs to confirm operation
++                  requestPowerUnchecked(powerOutput.outputId, true);
++                  // output is not turned ON
++                  if (!powerOutput.isOutputting())
++                  {
++                     logger.info("BIT could not power ON the device[{}]", powerOutput.outputId);
++                     powerDigitalIO &= false;
++                  }
++                  // add status
++                  poweredStatus.add(powerOutput);
++               }
++            }
++            bitResult.powerModuleStatus = powerDigitalIO;
++
++            // logging for testing purpose
++            logger.info("BIT result is created for node {} ", bitResult.getNodeId());
++            logger.info("HAF100: " + bitResult.haf100Status);
++            logger.info("LOS Freq: " + bitResult.losRadioFrequency);
++            logger.info("RF Switch: " + bitResult.rfSwitchStatus);
++            logger.info("Power Module: " + bitResult.powerModuleStatus);
++            for (int i = 0; i < bitResult.ips250s.size(); i++)
++            {
++               Ips250Status ips = bitResult.ips250s.get(i);
++               logger.info("IPS IP: " + ips.redIp);
++               logger.info("Reachable: " + ips.reachable);
++               logger.info("Keyed: " + ips.keyed);
++            }
++
++            // send bit result message back to the host for display purpose.
++            messageQueue.add(bitResult);
++         }
++      });
++   }
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RmmvHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RmmvHandlerBuilder.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RmmvHandlerBuilder.java	(working copy)
+@@ -67,11 +67,10 @@
+       if (rfConfig.isTesting())
+          handler.setRfHandler(new RfDeviceHandler_Rmmv(new MockDigitalIO(), new MockRadioSwitchHandler()));
+       else
+-         // RT1944 radio has two outputs and they are used for different antennas (Main and
+-         // Alternate).
++         // RT1944 radio has two outputs and they are used for different antennas (Main, Alt).
+          handler.setRfHandler(new RfDeviceHandler_Rmmv(new JniRmmvDigitalIO(), new Rt1944RadioSwitchHandler()));
+ 
+-      // Create FilterDevice to be used by the ship
++      // Create FilterDevice to be used
+       CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
+       StringBuilder snmpSetting = new StringBuilder();
+       snmpSetting.append(userPass.getUserName()).append(":").append(userPass.getPassword());
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/UissHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/UissHandlerBuilder.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/UissHandlerBuilder.java	(working copy)
+@@ -5,11 +5,14 @@
+ 
+ import java.net.SocketException;
+ 
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.CredentialSimple;
+ import mil.navy.lcs.mvcs.common.config.model.MatrixSwitch;
+ import mil.navy.lcs.mvcs.common.config.model.Power;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+ import mil.navy.lcs.mvcs.vca.dio.JniDigitalIO;
+ import mil.navy.lcs.mvcs.vca.dio.MockDigitalIO;
++import mil.navy.lcs.mvcs.vca.filter.VcaFilterDeviceHandler;
+ import mil.navy.lcs.mvcs.vca.power.PowerDeviceHandler_Uiss;
+ import mil.navy.lcs.mvcs.vca.rf.MockRadioSwitchHandler;
+ import mil.navy.lcs.mvcs.vca.rf.RfDeviceHandler_Uiss;
+@@ -65,6 +68,13 @@
+          handler.setRfHandler(new RfDeviceHandler_Uiss(new MockDigitalIO(), new MockRadioSwitchHandler()));
+       else
+          handler.setRfHandler(new RfDeviceHandler_Uiss(new JniDigitalIO(), new Rt1944RadioSwitchHandler()));
++      
++      // Create FilterDevice to be used
++      CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
++      StringBuilder snmpSetting = new StringBuilder();
++      snmpSetting.append(userPass.getUserName()).append(":").append(userPass.getPassword());
++      if (!rfConfig.isTesting())
++         handler.setFilterDeviceHandler(new VcaFilterDeviceHandler(node, snmpSetting.toString()));
+ 
+       UissSafetyManager safetyManager = new UissSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);

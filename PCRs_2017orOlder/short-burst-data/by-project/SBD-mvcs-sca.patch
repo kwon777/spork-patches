@@ -1,0 +1,693 @@
+Index: configs/mission-mapping.xml
+===================================================================
+--- configs/mission-mapping.xml	(revision 9607)
++++ configs/mission-mapping.xml	(working copy)
+@@ -38,9 +38,9 @@
+ 		<field name="id" type="string">
+ 			<bind-xml name="id" node="element" />
+ 		</field>
+-      <field name="name" type="string">
+-         <bind-xml name="name" node="element" />
+-      </field>
++		<field name="name" type="string">
++			<bind-xml name="name" node="element" />
++		</field>
+ 		<field name="typeId" type="string">
+ 			<bind-xml name="typeId" node="element" />
+ 		</field>
+@@ -92,12 +92,12 @@
+ 		<field name="gpsOffset" type="integer">
+ 			<bind-xml name="gpsOffset" node="element" />
+ 		</field>
+-      <field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
+-         <bind-xml name="crossDomain" node="element" />
+-      </field>
+-      <field name="othAmpController" type="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
+-         <bind-xml name="othAmpController" node="element" />
+-      </field>
++		<field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
++			<bind-xml name="crossDomain" node="element" />
++		</field>
++		<field name="othAmpController" type="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
++			<bind-xml name="othAmpController" node="element" />
++		</field>
+ 		<field name="sps" type="mil.navy.lcs.mvcs.common.config.model.Sps">
+ 			<bind-xml name="sps" node="element" />
+ 		</field>
+@@ -107,8 +107,7 @@
+ 		<field name="lanBypass" type="mil.navy.lcs.mvcs.common.config.model.LanBypass">
+ 			<bind-xml name="lanBypass" node="element" />
+ 		</field>
+-		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio"
+-			collection="arraylist">
++		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio" collection="arraylist">
+ 			<bind-xml name="radio" node="element" />
+ 		</field>
+ 		<field name="listOfMatrixSwitches" type="mil.navy.lcs.mvcs.common.config.model.MatrixSwitch"
+@@ -133,8 +132,7 @@
+ 		<field name="security" type="mil.navy.lcs.mvcs.common.config.model.Security">
+ 			<bind-xml name="security" node="element" />
+ 		</field>
+-		<field name="snmpAgentTest"
+-			type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
++		<field name="snmpAgentTest" type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
+ 			<bind-xml name="snmpAgentTest" node="element" />
+ 		</field>
+ 	</class>
+@@ -180,9 +178,9 @@
+ 		<field name="depthLimit" type="double">
+ 			<bind-xml name="depthLimit" node="element" />
+ 		</field>
+-      <field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
+-         <bind-xml name="crossDomain" node="element" />
+-      </field>
++		<field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
++			<bind-xml name="crossDomain" node="element" />
++		</field>
+ 		<field name="router" type="mil.navy.lcs.mvcs.common.config.model.Router">
+ 			<bind-xml name="router" node="element" />
+ 		</field>
+@@ -189,8 +187,7 @@
+ 		<field name="lanBypass" type="mil.navy.lcs.mvcs.common.config.model.LanBypass">
+ 			<bind-xml name="lanBypass" node="element" />
+ 		</field>
+-		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio"
+-			collection="arraylist">
++		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio" collection="arraylist">
+ 			<bind-xml name="radio" />
+ 		</field>
+ 		<field name="listOfMatrixSwitches" type="mil.navy.lcs.mvcs.common.config.model.MatrixSwitch"
+@@ -204,8 +201,7 @@
+ 			collection="arraylist">
+ 			<bind-xml name="acl" />
+ 		</field>
+-		<field name="snmpAgentTest"
+-			type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
++		<field name="snmpAgentTest" type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
+ 			<bind-xml name="snmpAgentTest" node="element" />
+ 		</field>
+ 	</class>
+@@ -229,8 +225,7 @@
+ 		<field name="ipAddress" type="string">
+ 			<bind-xml name="ipAddress" node="element" />
+ 		</field>
+-		<field name="connectionType"
+-			type="mil.navy.lcs.mvcs.common.config.model.ConnectionType">
++		<field name="connectionType" type="mil.navy.lcs.mvcs.common.config.model.ConnectionType">
+ 			<bind-xml name="connectionType" node="element" />
+ 		</field>
+ 		<field name="connectionPort" type="integer">
+@@ -300,6 +295,9 @@
+ 		<field name="encrypterTypeId" type="string">
+ 			<bind-xml name="encrypterTypeId" node="element" />
+ 		</field>
++		<field name="encrypterRedIp" type="string">
++			<bind-xml name="encrypterRedIp" node="element" />
++		</field>
+ 		<field name="ampId" type="string">
+ 			<bind-xml name="ampId" node="element" />
+ 		</field>
+@@ -434,8 +432,7 @@
+ 		<field name="reverseLogicAdapter" type="boolean">
+ 			<bind-xml name="reverseLogicAdapter" node="element" />
+ 		</field>
+-		<field name="listOfCircuitBreakers"
+-			type="mil.navy.lcs.mvcs.common.config.model.CircuitBreaker"
++		<field name="listOfCircuitBreakers" type="mil.navy.lcs.mvcs.common.config.model.CircuitBreaker"
+ 			collection="arraylist">
+ 			<bind-xml name="circuitBreaker" node="element" />
+ 		</field>
+@@ -599,22 +596,22 @@
+ 			<bind-xml name="testing" node="element" />
+ 		</field>
+ 	</class>
+-   <class name="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
+-      <map-to xml="crossDomain" />
+-      <field name="name" type="string">
+-         <bind-xml name="name" node="element" />
+-      </field>
+-      <field name="ipAddress" type="string">
+-         <bind-xml name="ipAddress" node="element" />
+-      </field>
+-   </class>
+-   <class name="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
+-      <map-to xml="othAmpController" />
+-      <field name="ipAddress" type="string">
+-         <bind-xml name="ipAddress" node="element" />
+-      </field>
+-      <field name="port" type="int">
+-         <bind-xml name="port" node="element" />
+-      </field>
+-   </class>
++	<class name="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
++		<map-to xml="crossDomain" />
++		<field name="name" type="string">
++			<bind-xml name="name" node="element" />
++		</field>
++		<field name="ipAddress" type="string">
++			<bind-xml name="ipAddress" node="element" />
++		</field>
++	</class>
++	<class name="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
++		<map-to xml="othAmpController" />
++		<field name="ipAddress" type="string">
++			<bind-xml name="ipAddress" node="element" />
++		</field>
++		<field name="port" type="int">
++			<bind-xml name="port" node="element" />
++		</field>
++	</class>
+ </mapping>
+\ No newline at end of file
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9607)
++++ configs/mission.xsd	(working copy)
+@@ -173,8 +173,8 @@
+       <xs:complexContent>
+          <xs:extension base="linkType">
+             <xs:sequence>
+-               <xs:element name="encrypterTypeId" type="stringtype" minOccurs="0"
+-                  maxOccurs="1" />
++               <xs:element name="encrypterTypeId" type="stringtype" minOccurs="0" maxOccurs="1" />
++               <xs:element name="encrypterRedIp" type="stringtype" minOccurs="0" maxOccurs="1" />
+                <xs:element name="ampId" type="stringtype" minOccurs="0" maxOccurs="1" />
+                <xs:element name="secondaryAmpId" type="stringtype" minOccurs="0"
+                   maxOccurs="1" />
+@@ -648,6 +648,7 @@
+          <xs:enumeration value="Iridium SCU" />
+          <xs:enumeration value="LAN Bypass" />
+          <xs:enumeration value="RT-1988" />
++         <xs:enumeration value="MCG-101" />
+       </xs:restriction>
+    </xs:simpleType>
+ 
+@@ -676,6 +677,7 @@
+          <xs:enumeration value="Matrix Switch" />
+          <xs:enumeration value="KIV-7M Encryptor" />
+          <xs:enumeration value="RT-1988" />
++         <xs:enumeration value="MCG-101" />
+          <xs:enumeration value="UNUSED" />
+       </xs:restriction>
+    </xs:simpleType>
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9607)
++++ missions/default-mission.xml	(working copy)
+@@ -77,6 +77,7 @@
+          <networkId>1</networkId>
+          <configurable>true</configurable>
+          <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.10.10</encrypterRedIp>
+          <ampId>rt1944Amp-00</ampId>
+          <secondaryAmpId>rt1944Amp-01</secondaryAmpId>
+          <sleepRadio>false</sleepRadio>
+@@ -106,18 +107,19 @@
+ 		 <antennaCoverage side="port" forward="359" aft="180" />
+       </radio>
+       <radio>
+-         <id>rt1988-0</id>
+-         <typeId>iridium</typeId>
+-         <linkType>RT-1988</linkType>
++         <id>SATCOM-0</id>
++         <typeId>mcg101</typeId>
++         <linkType>MCG-101</linkType>
+          <networkId>1</networkId>
+          <configurable>false</configurable>
+-         <encrypterTypeId>kiv7</encrypterTypeId>
++         <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.10.18</encrypterRedIp>
+          <telephoneNum>00881693630409</telephoneNum>
+          <sleepRadio>false</sleepRadio>
+          <heartbeatFrequency>10</heartbeatFrequency>
+          <heartbeatWindowSize>300</heartbeatWindowSize>
+-         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+-         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
++         <snmpAgentIpAddress>172.20.10.3</snmpAgentIpAddress>
++         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+       </radio>
+       <matrixSwitch>
+          <id>ms-00</id>
+@@ -169,9 +171,9 @@
+             <safetyCheck>false</safetyCheck>
+          </circuitBreaker>
+          <circuitBreaker>
+-            <id>rt1988-0</id>
++            <id>SATCOM-0</id>
+             <devNumber>7</devNumber>
+-            <devName>RT-1988</devName>
++            <devName>MCG-101</devName>
+             <safetyCheck>true</safetyCheck>
+          </circuitBreaker>
+       </power>
+@@ -746,13 +748,14 @@
+       </lanBypass>
+       <radio>
+          <id>SATCOM</id>
+-         <typeId>rt1988</typeId>
+-         <linkType>RT-1988</linkType>
++         <typeId>mcg101</typeId>
++         <linkType>MCG-101</linkType>
+          <linkNumber>3</linkNumber>
+          <priority>3</priority>
+          <networkId>1</networkId>
+          <configurable>false</configurable>
+-         <encrypterTypeId>kiv7</encrypterTypeId>
++         <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.15.18</encrypterRedIp>
+          <telephoneNum>00881693630409</telephoneNum>
+          <sleepRadio>false</sleepRadio>
+          <heartbeatFrequency>30</heartbeatFrequency>
+@@ -764,8 +767,8 @@
+          <lrRange>50</lrRange><!-- in nautical miles -->
+          <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+          <slaTimeout>10</slaTimeout>
+-         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+-         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
++         <snmpAgentIpAddress>172.20.15.3</snmpAgentIpAddress>
++         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+       </radio>
+       <matrixSwitch>
+          <id>ms-50</id>
+@@ -789,7 +792,7 @@
+          <circuitBreaker>
+             <id>SATCOM</id>
+             <devNumber>1</devNumber>
+-            <devName>RT-1988</devName>
++            <devName>MCG-101</devName>
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+@@ -838,13 +841,14 @@
+       </lanBypass>
+       <radio>
+          <id>SATCOM</id>
+-         <typeId>rt1988</typeId>
+-         <linkType>RT-1988</linkType>
++         <typeId>mcg101</typeId>
++         <linkType>MCG-101</linkType>
+          <linkNumber>3</linkNumber>
+          <priority>3</priority>
+          <networkId>1</networkId>
+          <configurable>false</configurable>
+-         <encrypterTypeId>kiv7</encrypterTypeId>
++         <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.16.18</encrypterRedIp>
+          <telephoneNum>00881693630409</telephoneNum>
+          <sleepRadio>false</sleepRadio>
+          <heartbeatFrequency>30</heartbeatFrequency>
+@@ -856,8 +860,8 @@
+          <lrRange>50</lrRange><!-- in nautical miles -->
+          <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+          <slaTimeout>10</slaTimeout>
+-         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+-         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
++         <snmpAgentIpAddress>172.20.16.3</snmpAgentIpAddress>
++         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+       </radio>
+       <matrixSwitch>
+          <id>ms-60</id>
+@@ -881,7 +885,7 @@
+          <circuitBreaker>
+             <id>SATCOM</id>
+             <devNumber>1</devNumber>
+-            <devName>RT-1988</devName>
++            <devName>MCG-101</devName>
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+Index: src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java	(working copy)
+@@ -47,7 +47,7 @@
+ 
+ 
+    /**
+-    * Method used to get the instance of this object.
++    * used to get the instance of this object.
+     * 
+     * @return ScaEncrytorPluginManager The instance of this object.
+     */
+@@ -73,7 +73,7 @@
+    {
+       getListOfEncryptorPlugins();
+ 
+-      instantiatePlugins();
++      instantiatePlugins(ShipState.model.ship.getRadioLinks());
+ 
+       // Adding event listener to vehicles for zeroized
+       for (VehicleNode vehicleNode : ShipState.model.getVehicles().values())
+@@ -119,13 +119,6 @@
+    }
+ 
+ 
+-   @Override
+-   public void sanitizeAllEncryptors()
+-   {
+-
+-   }
+-
+-
+    /**
+     * Method Description This method allows the timer, used in setState(), to return back for
+     * clearing out the request in the associated hash tables.
+@@ -142,16 +135,9 @@
+ 
+ 
+    @Override
+-   public void wipeAllEncryptors()
+-   {
+-      // TODO Add Logic to send command to VCA to zeroize all encryptors.
+-   }
+-
+-
+-   @Override
+    public void zeroizeAllEncryptors()
+    {
+-      // TODO Add Logic to send command to VCA to zeroize all vehicle-side encryptors.
++      // no need to zeroize in the shipboard side. If implement later, update the ship model.
+    }
+ 
+ 
+@@ -158,7 +144,7 @@
+    /**
+     * To get the list of encryptor plug-ins that are associated with ship's radio.
+     */
+-   private void getListOfEncryptorPlugins()
++   protected void getListOfEncryptorPlugins()
+    {
+       try
+       {
+@@ -165,15 +151,17 @@
+          // Get the list of radios from the Configuration Manager.
+          for (Radio radio : ConfigManager.getInstance().getShip().getListOfRadios())
+          {
+-            // every encryptor should be associated with a radio.
++            // an encryptor can be associated with one or more radios.
+             Encrypter encryptor = radio.getEncrypterCharacteristics();
+             if (encryptor != null)
+             {
+                // add its name and class to the collection.
+-               System.out.print("Adding: " + encryptor.getTypeName() + " of type: " + encryptor.getPlugin() + " to hashtable\n");
+-               addEncryptorPluginNameAndClass(encryptor.getTypeName(), encryptor.getPlugin());
++               LoggingManager.getPrimaryLogger().info("Adding encryption type:" + encryptor.getTypeName() + " plug-in:" + encryptor.getPlugin() + " to a map.");
++               encryptorPluginClassNames.put(encryptor.getTypeName(), encryptor.getPlugin());
+             }
+          }
++
++
+       }
+       catch (ConfigException ce)
+       {
+Index: src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTimerWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTimerWorker.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManagerTimerWorker.java	(working copy)
+@@ -1,53 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.sca.encryptor;
+-
+-
+-/*
+- * ***** File History *****
+- * 
+- * May 4, 2011 - Initial creation. Added timer for SNMP Trap response from vehicle
+- * 
+- * July 31, 2015 - This class seems not referenced anywhere. Perhaps, remove this class.
+- */
+-
+-public class ScaEncryptorPluginManagerTimerWorker extends java.util.TimerTask
+-{
+-   long m_time = 0;
+-   String m_transactionId = "";
+-
+-
+-   /**
+-    * Constructor Description This class allows for a timer to check to make sure that the snmp
+-    * message has been received.
+-    * 
+-    * @param duration
+-    * @param transactionId
+-    */
+-   public ScaEncryptorPluginManagerTimerWorker( long duration, String transactionId)
+-   {
+-      m_time = duration + System.currentTimeMillis();
+-      m_transactionId = transactionId;
+-   }
+-
+-
+-   /**
+-    * Method Description run method..
+-    */
+-   public void run()
+-   {
+-      if (m_time <= System.currentTimeMillis())
+-      {
+-         try
+-         {
+-            this.cancel();
+-            ScaEncryptorPluginManager.getInstance().timerCallback(m_transactionId);
+-         }
+-         catch (java.lang.RuntimeException ex)
+-         {
+-            throw ex;
+-         }
+-      }
+-   }
+-
+-}
+Index: src/main/java/mil/navy/lcs/mvcs/sca/model/HostModelInitializer.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/model/HostModelInitializer.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/model/HostModelInitializer.java	(working copy)
+@@ -51,6 +51,7 @@
+     */
+    public static ShipModel createHostModel(final Ship configShip, final List<Vehicle> configVehicles)
+    {
++      // identify vehicle types
+       String rmvType = HardwareConstants.getConstant(HardwareConstantsEnum.RMV);
+       String uissType = HardwareConstants.getConstant(HardwareConstantsEnum.USV);
+       String uuvType = HardwareConstants.getConstant(HardwareConstantsEnum.UUV);
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java	(working copy)
+@@ -16,7 +16,6 @@
+ import com.google.common.collect.Lists;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+ import mil.navy.lcs.mvcs.common.messages.NearShipMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.net.MvcsNetworkConstants;
+@@ -29,7 +28,6 @@
+ import mil.navy.lcs.mvcs.common.net.udp.UdpPacketSender;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertsManager;
+-import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsNode;
+@@ -117,24 +115,6 @@
+          }
+       }
+ 
+-      // Populate Filter device with it's settings
+-      CrossDomain haf = ConfigManager.getInstance().getVehicleFromList(node.getNodeId()).getCrossDomain();
+-
+-      if (haf != null)
+-      {
+-         logger.debug("Found: " + haf.getName());
+-         logger.debug("Found: " + haf.getIpAddress());
+-
+-         FilterDevice filterDevices = node.getFilterDevice();
+-         filterDevices.setFilterId(haf.getName());
+-         filterDevices.setIpAddress(haf.getIpAddress());
+-         node.setFilterDevice(filterDevices);
+-      }
+-      else
+-      {
+-         logger.debug("haf was found to be null!");
+-      }
+-
+    }// end of constructor
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(working copy)
+@@ -8,13 +8,11 @@
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.CredentialSimple;
+-import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+ import mil.navy.lcs.mvcs.common.config.model.MatrixSwitch;
+ import mil.navy.lcs.mvcs.common.config.model.OthAmpController;
+ import mil.navy.lcs.mvcs.common.config.model.Power;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+-import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+@@ -98,19 +96,14 @@
+       {
+          handler.setOthAmplifierHandler(new PRC117RadioSwitchHandler(new NorthStarTcpComms(ampAddress.toString())));
+       }
+-      // Create FilterDevice to be used by the ship
+ 
+-      // Populate Filter device with it's settings
+-      CrossDomain haf = config.getCrossDomain();
+-      FilterDevice filterDevices = node.getFilterDevice();
+-      filterDevices.setFilterId(haf.getName());
+-      filterDevices.setIpAddress(haf.getIpAddress());
+-      node.setFilterDevice(filterDevices);
+-      CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
+-      StringBuilder snmpSetting = new StringBuilder();
+-      snmpSetting.append(userPass.getUserName()).append(":").append(userPass.getPassword());
++      // Create a handler for filter device in the ship
+       if (!rfConfig.isTesting())
+-         handler.setFilterDeviceHandler(new ScaFilterDeviceHandler(node, snmpSetting.toString()));
++      {
++         CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
++         String hafCredential = userPass.getUserName() + ":" + userPass.getPassword();
++         handler.setFilterDeviceHandler(new ScaFilterDeviceHandler(node, hafCredential));
++      }
+ 
+       ScaSafetyManager safetyManager = new ScaSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(working copy)
+@@ -330,7 +330,6 @@
+    public void requestZeroize()
+    {
+       ScaEncryptorPluginManager.getInstance().zeroizeAllEncryptors();
+-      node.setKeyed(false);
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java	(working copy)
+@@ -52,11 +52,11 @@
+          while (radioPolling)
+          {
+             // Get each plug-in
+-            for (final String radioName : pluginsHashTable.keySet())
++            for (final String radioName : runtimePluginInstances.keySet())
+             {
+                try
+                {
+-                  IRadioPlugin plugin = pluginsHashTable.get(radioName);
++                  IRadioPlugin plugin = runtimePluginInstances.get(radioName);
+                   if (plugin == null)
+                      continue;
+ 
+@@ -63,7 +63,8 @@
+                   // Gets the Link Quality for the radio and updates the information to the model.
+                   String[][] linkQualTable = plugin.getRadioBurstRateQualityTable();
+ 
+-                  if (linkQualTable == null)
++                  // link quality table must not be null and must have 1 row and 2 columns for matrix
++                  if (linkQualTable == null || linkQualTable.length < 1 || linkQualTable[0].length < 2)
+                      continue;
+ 
+                   // [ID],[BurstRate],[LinkQualMatrix]
+@@ -124,10 +125,18 @@
+    }
+ 
+ 
++   /** The default constructor */
+    private ScaRadioPluginsManager()
+    {
+       super();
+-      initialize();
++      // get a list of radio plug-in from configuration
++      getPluginListFromConfigurationManager();
++      // instantiate plug-in objects
++      super.instantiatePlugins();
++      // start individual plug-in
++      startPlugins();
++      // start radio polling thread and process
++      startRadioPolling();
+    }
+ 
+ 
+@@ -173,12 +182,6 @@
+    }
+ 
+ 
+-   public HardwareData getHardwareData(String radioName)
+-   {
+-      return super.getHardwareData(radioName);
+-   }
+-
+-
+    @Override
+    public ConfiguredStatus isConfigured()
+    {
+@@ -225,10 +228,10 @@
+    }
+ 
+ 
+-   /** This method calls the start of each plug-in */
++   /** This method calls the start method of each plug-in */
+    public void startPlugins()
+    {
+-      for (final String radioName : pluginsHashTable.keySet())
++      for (final String radioName : runtimePluginInstances.keySet())
+       {
+          try
+          {
+@@ -238,7 +241,7 @@
+                {
+                   try
+                   {
+-                     IRadioPlugin plugin = pluginsHashTable.get(radioName);
++                     IRadioPlugin plugin = runtimePluginInstances.get(radioName);
+                      LoggingManager.getPrimaryLogger().info("Starting radio:" + radioName + ", plugin: " + plugin);
+                      plugin.startPlugin();
+                   }
+@@ -260,6 +263,7 @@
+    }
+ 
+ 
++   /** To get the list of radio plug-ins from configuration. */
+    private void getPluginListFromConfigurationManager()
+    {
+       try
+@@ -273,7 +277,7 @@
+             String radioPluginClass = ConfigManager.getInstance().getRadioCharacteristicsByType(radioType).getPlugin();
+             LoggingManager.getPrimaryLogger().info("Radio: " + radioName + ", plugin: " + radioPluginClass);
+             super.addHardwareData(radioName, radioType);
+-            super.addRadioPluginNameAndClass(radioName, radioPluginClass);
++            super.addRadioNameAndPluginClassPair(radioName, radioPluginClass);
+          }
+       }
+       catch (Exception ex)
+@@ -284,18 +288,7 @@
+    }
+ 
+ 
+-   private void initialize()
+-   {
+-      getPluginListFromConfigurationManager();
+-      instantiatePlugins();
+-      startPlugins();
+-      startRadioPolling();
+-   }
+-
+-
+-   /**
+-    * Poll all plug-ins for link quality
+-    */
++   /** Poll all plug-ins for link quality */
+    private void startRadioPolling()
+    {
+       if (radioPollingThread != null && radioPollingThread.isAlive())

@@ -1,0 +1,70 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(revision 9931)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(working copy)
+@@ -7,6 +7,7 @@
+ import java.text.SimpleDateFormat;
+ import java.util.ArrayList;
+ import java.util.Date;
++import java.util.LinkedList;
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
+ 
+@@ -28,7 +29,6 @@
+ import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.ConstantValues.LinkSwitchAck;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+-import mil.navy.lcs.mvcs.iface.model.node.MvcsNode;
+ import mil.navy.lcs.mvcs.iface.model.node.PowerConservation;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.SleepState;
+@@ -843,10 +843,11 @@
+       return powerHandler;
+    }
+ 
++
+    //////////////////////////////////////////////////////////////////////////////
+-   /// This initialized the requested bit on the vehicle side than then uses    
++   /// This initialized the requested bit on the vehicle side than then uses
+    /// the common package file: BitResultMessage as the middle man so that
+-   //  VehicleNodeHandler may grab statuses to display on node model.
++   // VehicleNodeHandler may grab statuses to display on node model.
+    ///
+    //////////////////////////////////////////////////////////////////////////////
+    // NOTE: Not getting here
+@@ -884,7 +885,21 @@
+                {
+                   logger.error("Error: ", ex);
+                }
+-               
++
++               try
++               {
++                  LinkedList<String> ppkeys = (LinkedList<String>) plugin.getPreplacedKeyInfo();
++                  logger.info("Encryptor[{} key info: size={}]", plugin.getIPAddress(), ppkeys.size());
++                  for (int i = 0; i < ppkeys.size(); i++)
++                  {
++                     logger.info(ppkeys.get(i));
++                  }
++               }
++               catch (Exception ex)
++               {
++                  logger.error("Error: ", ex);
++               }
++
+                ips.redIp = plugin.getIPAddress();
+                ips.reachable = plugin.isReachable();
+                // Assign IPS 250 Status to bitResult member - need to loop out
+@@ -912,9 +927,9 @@
+             boolean rfDigitalIO = rfDevice.isOutputting(RFOutputType.TEST);
+             // Assign RF Switch Status to bitResult member
+             bitResult.rfSwitchStatus = rfDigitalIO;
+-           
+-            
+-            if (rfDigitalIO)
++
++
++            if (!rfDigitalIO)
+             {
+                logger.info("BIT could not change RF output to {}", RFOutputType.TEST.displayText);
+             }

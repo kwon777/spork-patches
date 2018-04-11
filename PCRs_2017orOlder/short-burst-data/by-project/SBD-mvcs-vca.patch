@@ -1,0 +1,268 @@
+Index: configs/mission-mapping.xml
+===================================================================
+--- configs/mission-mapping.xml	(revision 9607)
++++ configs/mission-mapping.xml	(working copy)
+@@ -212,6 +212,9 @@
+       <field name="encrypterTypeId" type="string">
+          <bind-xml name="encrypterTypeId" node="element" />
+       </field>
++      <field name="encrypterRedIp" type="string">
++         <bind-xml name="encrypterRedIp" node="element" />
++      </field>
+       <field name="ampId" type="string">
+          <bind-xml name="ampId" node="element" />
+       </field>
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9607)
++++ configs/mission.xsd	(working copy)
+@@ -214,6 +214,11 @@
+ 					<xs:documentation>Encrypter Type ID</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
++			<xs:element name="encrypterRedIp" type="stringtype" minOccurs="0" maxOccurs="1">
++				<xs:annotation>
++					<xs:documentation>Encrypter Red Side IP</xs:documentation>
++				</xs:annotation>
++			</xs:element>
+ 			<xs:element name="ampId" type="stringtype" minOccurs="0" maxOccurs="1">
+ 				<xs:annotation>
+ 					<xs:documentation>Radio Amplifier ID</xs:documentation>
+@@ -326,6 +331,7 @@
+ 			<xs:enumeration value="Iridium SCU" />
+ 			<xs:enumeration value="LAN Bypass" />
+ 			<xs:enumeration value="RT-1988" />
++			<xs:enumeration value="MCG-101" />
+ 		</xs:restriction>
+ 	</xs:simpleType>
+ 
+@@ -354,6 +360,7 @@
+ 			<xs:enumeration value="KIV-7M Encryptor" />
+ 			<xs:enumeration value="Matrix Switch" />
+ 			<xs:enumeration value="RT-1988" />
++			<xs:enumeration value="MCG-101" />
+ 			<xs:enumeration value="UNUSED" />
+ 		</xs:restriction>
+ 	</xs:simpleType>
+Index: src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(working copy)
+@@ -40,18 +40,9 @@
+    private VcaEncryptorPluginManager()
+    {
+       super();
+-      initialize();
+-   }
+-
+-
+-   /**
+-    * Method used to add the plugins into the Manager.
+-    */
+-   private void initialize()
+-   {
++      // list of valid encryptor plug-ins from configuration
+       getListOfEncryptorPlugins();
+-
+-      instantiatePlugins();
++      instantiatePlugins(VehicleState.model.node.getRadioLinks());
+    }
+ 
+ 
+@@ -58,7 +49,7 @@
+    /**
+     * To get the list of encryptor plug-ins that are associated with vehicle's radio.
+     */
+-   private void getListOfEncryptorPlugins()
++   protected void getListOfEncryptorPlugins()
+    {
+       try
+       {
+@@ -70,8 +61,8 @@
+             if (encryptor != null)
+             {
+                // add its name and class to the collection.
+-               System.out.print("Adding: " + encryptor.getTypeName() + " of type: " + encryptor.getPlugin() + " to hashtable\n");
+-               addEncryptorPluginNameAndClass(encryptor.getTypeName(), encryptor.getPlugin());
++               LoggingManager.getPrimaryLogger().info("Adding: " + encryptor.getTypeName() + " of type: " + encryptor.getPlugin() + " to a map.");
++               encryptorPluginClassNames.put(encryptor.getTypeName(), encryptor.getPlugin());
+             }
+          }
+       }
+@@ -103,17 +94,6 @@
+ 
+ 
+    /**
+-    * Method used to wipe and sanitize all encryptors, this will remove the keys and existing
+-    * configs in the encryptors.
+-    */
+-   @Override
+-   public void wipeAllEncryptors()
+-   {
+-      // XXX - what is this even used for?
+-   }
+-
+-
+-   /**
+     * A method used to zeroize the encryptors.
+     */
+    public void zeroizeAllEncryptors()
+@@ -132,7 +112,7 @@
+ 
+       LoggingManager.getPrimaryLogger().info("Received command to zeroize all encryptors");
+ 
+-      for (IEncryptorPlugin plugin : encryptorPluginsHashTable.values())
++      for (IEncryptorPlugin plugin : runtimeEncryptorPlugins.values())
+       {
+          try
+          {
+@@ -148,10 +128,4 @@
+       VcaMain.shutdown(ExitAction.COLD_SHUTDOWN);
+    }
+ 
+-
+-   @Override
+-   public void sanitizeAllEncryptors()
+-   {
+-      // XXX - what is this even used for?
+-   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/NodeHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/NodeHandlerBuilder.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/NodeHandlerBuilder.java	(working copy)
+@@ -11,9 +11,7 @@
+ import com.google.common.collect.Lists;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+ import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.net.MvcsNetworkConstants;
+ import mil.navy.lcs.mvcs.common.net.NodeAddressLookup;
+ import mil.navy.lcs.mvcs.common.net.PacketProcessor;
+@@ -22,7 +20,6 @@
+ import mil.navy.lcs.mvcs.common.net.sender.MessageQueue;
+ import mil.navy.lcs.mvcs.common.net.udp.UdpPacketReceiver;
+ import mil.navy.lcs.mvcs.common.net.udp.UdpPacketSender;
+-import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+@@ -73,24 +70,6 @@
+       this.messageReceiver = new MessageReceiver(local, remote, processorArray);
+ 
+       this.messageQueue.start();
+-
+-      // Populate Filter device with it's settings
+-      CrossDomain haf = config.getCrossDomain();
+-
+-      if (haf != null)
+-      {
+-         LoggingManager.getPrimaryLogger().debug("Found: " + haf.getName());
+-         LoggingManager.getPrimaryLogger().debug("Found: " + haf.getIpAddress());
+-
+-         FilterDevice filterDevices = node.getFilterDevice();
+-         filterDevices.setFilterId(haf.getName());
+-         filterDevices.setIpAddress(haf.getIpAddress());
+-         node.setFilterDevice(filterDevices);
+-      }
+-      else
+-      {
+-         LoggingManager.getPrimaryLogger().debug("haf was found to be null!");
+-      }
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java	(working copy)
+@@ -78,17 +78,18 @@
+          while (radioPolling)
+          {
+             // Get each plug-in
+-            for (final String radioName : pluginsHashTable.keySet())
++            for (final String radioName : runtimePluginInstances.keySet())
+             {
+                try
+                {
+-                  IRadioPlugin plugin = pluginsHashTable.get(radioName);
++                  IRadioPlugin plugin = runtimePluginInstances.get(radioName);
+                   if (plugin == null)
+                      continue;
+ 
+                   String[][] linkQualTable = plugin.getRadioBurstRateQualityTable();
+-
+-                  if (linkQualTable == null)
++                  
++                  // link quality table must not be null and must have 1 row and 2 columns for matrix
++                  if (linkQualTable == null|| linkQualTable.length < 1 || linkQualTable[0].length < 2)
+                      continue;
+ 
+                   // [ID],[BurstRate],[LinkQualMatrix]
+@@ -158,6 +159,7 @@
+    private VcaRadioPluginsManager()
+    {
+       super();
++      // get the list of plug-ins from configurations
+       getPluginListFromConfigurationManager();
+       super.instantiatePlugins();
+       LoggingManager.getPrimaryLogger().debug("Starting plugins");
+@@ -193,12 +195,6 @@
+    }
+ 
+ 
+-   public HardwareData getHardwareData(String radioName)
+-   {
+-      return super.getHardwareData(radioName);
+-   }
+-
+-
+    @Override
+    public ConfiguredStatus isConfigured()
+    {
+@@ -232,12 +228,12 @@
+ 
+ 
+    /**
+-    * This method calls the start of each plug-in
++    * This method calls the start method of each plug-in
+     * 
+     */
+    public void startPlugins()
+    {
+-      for (final String radioName : pluginsHashTable.keySet())
++      for (final String radioName : runtimePluginInstances.keySet())
+       {
+          try
+          {
+@@ -245,7 +241,7 @@
+             {
+                public void run()
+                {
+-                  IRadioPlugin plugin = pluginsHashTable.get(radioName);
++                  IRadioPlugin plugin = runtimePluginInstances.get(radioName);
+                   LoggingManager.getPrimaryLogger().info("Starting radio:" + radioName + ", plugin: " + plugin);
+                   plugin.startPlugin();
+                }
+@@ -262,9 +258,7 @@
+    }
+ 
+ 
+-   /**
+-    * To get the radio plugins from configurations.
+-    */
++   /** To get the list of radio plug-ins from configuration. */
+    private void getPluginListFromConfigurationManager()
+    {
+       try
+@@ -278,7 +272,7 @@
+             String radioPluginClass = ConfigManager.getInstance().getRadioCharacteristicsByType(radioType).getPlugin();
+             LoggingManager.getPrimaryLogger().info("Radio: " + radioName + ", plugin: " + radioPluginClass);
+             super.addHardwareData(radioName, radioType);
+-            super.addRadioPluginNameAndClass(radioName, radioPluginClass);
++            super.addRadioNameAndPluginClassPair(radioName, radioPluginClass);
+             LoggingManager.getPrimaryLogger().debug("Found " + radioName + " " + radioPluginClass);
+          }
+       }

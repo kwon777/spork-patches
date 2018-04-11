@@ -1,0 +1,13 @@
+Index: src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(revision 9926)
++++ src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties	(working copy)
+@@ -5,7 +5,7 @@
+ app_version_debug=${app_version}-@revision_number@
+ app_build_date=@app_build_date@
+ 
+-vessel_type=SHIP
++vessel_type=@vessel_type@
+ 
+ parent_dir=..
+ 

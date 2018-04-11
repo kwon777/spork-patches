@@ -1,0 +1,246 @@
+Index: src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java	(working copy)
+@@ -79,6 +79,15 @@
+    void requestZeroize(String nodeId) throws RemoteException;
+ 
+ 
++   /**
++    * To request to change radio frequency. If frequency isn't given, use the node ID and link ID to
++    * lookup from the configurations.
++    * 
++    * @param nodeId - The node ID
++    * @param linkId - The link ID
++    * @param frequency - The new frequency
++    * @throws RemoteException
++    */
+    void requestFrequency(String nodeId, String linkId, String frequency) throws RemoteException;
+ 
+ 
+@@ -90,7 +99,7 @@
+     * 
+     * @param nodeId The node ID
+     * @param linkId The main link of the vehicle with the OTH radio
+-    * @param outputId 
++    * @param outputId
+     * @param antennaId
+     * @param active
+     * @throws RemoteException
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/LinkModel.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/LinkModel.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/LinkModel.java	(working copy)
+@@ -231,6 +231,13 @@
+    }
+ 
+ 
++   /**
++    * To add property change event listener with given property name. The listener will get notified
++    * when this property value changes.
++    * 
++    * @param propertyName - The property to listen
++    * @param listener - The listener object
++    */
+    public void addPropertyChangeListener(final String propertyName, final PropertyChangeListener listener)
+    {
+       pcs.addPropertyChangeListener(propertyName, listener);
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsNode.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsNode.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsNode.java	(working copy)
+@@ -181,6 +181,13 @@
+    /** The node's speed in knots. */
+    private double speed;
+ 
++   /** To denote the frequency changing event. */
++   private LinkModel frequencyChanging = LinkModel.NO_LINK;
++
++   /** To denote the frequency change result. */
++   private boolean frequencyChangeSuccessful = false;
++
++
+    /**
+     * Used for sorting links based on priority, from highest priority (lowest value) at the start to
+     * lowest priority (highest value) at the end.
+@@ -266,6 +273,13 @@
+    }
+ 
+ 
++   /**
++    * To add property change event listener with given property name. The listener will get notified
++    * when this property value changes.
++    * 
++    * @param propertyName - The property to listen
++    * @param listener - The listener object
++    */
+    public void addPropertyChangeListener(final String propertyName, final PropertyChangeListener listener)
+    {
+       pcs.addPropertyChangeListener(propertyName, listener);
+@@ -775,4 +789,44 @@
+    {
+       this.ntpServerName = ntpServerName;
+    }
++
++
++   /**
++    * To get frequency changing link.
++    * 
++    * @return
++    */
++   public LinkModel getFrequencyChanging()
++   {
++      return this.frequencyChanging;
++   }
++
++
++   /**
++    * To set frequency changing link. This resets when frequency change is completed.
++    * 
++    * @param frequencyChanging
++    */
++   public void setFrequencyChanging(LinkModel frequencyChanging)
++   {
++      this.frequencyChanging = frequencyChanging;
++   }
++
++
++   /**
++    * @return the frequencyChangeSuccessful
++    */
++   public boolean isFrequencyChangeSuccessful()
++   {
++      return frequencyChangeSuccessful;
++   }
++
++
++   /**
++    * @param frequencyChangeSuccessful the frequencyChangeSuccessful to set
++    */
++   public void setFrequencyChangeSuccessful(boolean frequencyChangeSuccessful)
++   {
++      this.frequencyChangeSuccessful = frequencyChangeSuccessful;
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(working copy)
+@@ -7,6 +7,8 @@
+ import java.util.Hashtable;
+ import java.util.LinkedHashSet;
+ import java.util.Map;
++import java.util.SortedSet;
++import java.util.TreeSet;
+ 
+ import mil.navy.lcs.mvcs.iface.power.PowerOutput;
+ import mil.navy.lcs.mvcs.iface.rf.RFDevice;
+@@ -13,12 +15,10 @@
+ import mil.navy.lcs.mvcs.iface.rf.RFOutputType;
+ 
+ /**
+- * This class represents a radio link. 
++ * This class represents a radio link.
+  * <p>
+- * $LastChangedBy$
+- * <br>
+- * $LastChangedDate$
+- * <br>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
+  * $LastChangedRevision$
+  *
+  * @version 1.0
+@@ -27,6 +27,9 @@
+ {
+    private static final long serialVersionUID = 1L;
+ 
++   /** The frequency changed event for PCS. */
++   public static final String FREQUENCYCHANGED = "FREQUENCYCHANGED";
++
+    private final Map<RFOutputType, PowerOutput> ampPower;
+ 
+    private String frequency = ConstantValues.UNKNOWN;
+@@ -45,8 +48,14 @@
+    private boolean rimConnected = false;
+ 
+    private final RFDevice rfDevice;
+-   
+ 
++   /** Denotes requested frequency */
++   private int requestedFrequency = -1;
++
++   /** List of valid frequency in ascending order */
++   private SortedSet<Integer> frequencyList = new TreeSet<Integer>();
++
++
+    public RadioLink( final String linkId, final String nodeId, final int linkNumber, final MvcsLinkType mvcsLinkType, final CommsType commsType, final PowerOutput power, final Map<RFOutputType, PowerOutput> ampPower, final RFDevice rfDevice, Integer maxRange)
+    {
+       super(linkId, nodeId, linkNumber, mvcsLinkType, commsType, maxRange);
+@@ -89,9 +98,15 @@
+    }
+ 
+ 
++   /**
++    * 
++    * To set the frequency. PropertyChangedEvent triggers
++    * 
++    * @param frequency - the frequency to set
++    */
+    public void setFrequency(String frequency)
+    {
+-      this.frequency = frequency;
++      pcs.firePropertyChange(FREQUENCYCHANGED, this.frequency, this.frequency = frequency);
+    }
+ 
+ 
+@@ -148,4 +163,48 @@
+       this.rimConnected = rimConnected;
+    }
+ 
++
++   /**
++    * To get requested frequency
++    * 
++    * @return The requested frequency
++    */
++   public int getRequestedFrequency()
++   {
++      return this.requestedFrequency;
++   }
++
++
++   /**
++    * To set requested frequency. It resets when the link change has completed.
++    * 
++    * @param requestedFrequency
++    */
++   public void setRequestedFrequency(int requestedFrequency)
++   {
++      this.requestedFrequency = requestedFrequency;
++   }
++
++
++   /**
++    * @return the frequencyList
++    */
++   public Collection<Integer> getFrequencyList()
++   {
++      return frequencyList;
++   }
++
++
++   /**
++    * To add frequency in the list
++    * 
++    * @param frequency the frequency to add
++    * @return the list of frequency
++    */
++   public Collection<Integer> addFrequency(Integer frequency)
++   {
++      this.frequencyList.add(frequency);
++      return this.frequencyList;
++   }
++
+ }
+\ No newline at end of file

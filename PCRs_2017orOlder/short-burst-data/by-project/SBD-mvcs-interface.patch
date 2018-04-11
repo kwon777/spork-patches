@@ -1,0 +1,118 @@
+Index: src/main/java/mil/navy/lcs/mvcs/iface/encryption/IPS250EncryptionDevice.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/encryption/IPS250EncryptionDevice.java	(revision 0)
++++ src/main/java/mil/navy/lcs/mvcs/iface/encryption/IPS250EncryptionDevice.java	(working copy)
+@@ -0,0 +1,52 @@
++
++
++package mil.navy.lcs.mvcs.iface.encryption;
++
++
++import java.io.Serializable;
++
++/**
++ * This class represents an IPS250 encryption device. Currently only encryption device the MVCS is
++ * using is IPS-250
++ */
++public class IPS250EncryptionDevice implements Serializable
++{
++
++   /** Serial version */
++   private static final long serialVersionUID = 1L;
++
++   /** Denotes the red side IP address of the device */
++   private String redIpAddress = null;
++
++   /** Denotes the type ID */
++   private String typeId = null;
++
++
++   /** Default constructor take a red side IP address */
++   public IPS250EncryptionDevice( String redIpAddress, String typeId)
++   {
++      this.redIpAddress = redIpAddress;
++      this.typeId = typeId;
++   }
++
++
++   /**
++    * @return the red IP address
++    */
++   public String getRedIpAddress()
++   {
++      return this.redIpAddress;
++   }
++
++
++   /**
++    * To get the typeId
++    * 
++    * @return
++    */
++   public String getTypeId()
++   {
++      return this.typeId;
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsLinkType.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsLinkType.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsLinkType.java	(working copy)
+@@ -21,7 +21,8 @@
+    PRC117F(true, true, true, "PRC-117F"), //
+    RT1944(false, false, false, "RT-1944"), //
+    RT1988(false, true, true, "RT-1988"), //
+-   HFGW(true, false, true, "HFGW"); //
++   HFGW(true, false, true, "HFGW"), //
++   MCG101(false, true, true, "MCG-101"); //
+    // @formatter:on
+ 
+    // Characteristics of each link type.
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(working copy)
+@@ -10,6 +10,7 @@
+ import java.util.SortedSet;
+ import java.util.TreeSet;
+ 
++import mil.navy.lcs.mvcs.iface.encryption.IPS250EncryptionDevice;
+ import mil.navy.lcs.mvcs.iface.power.PowerOutput;
+ import mil.navy.lcs.mvcs.iface.rf.RFDevice;
+ import mil.navy.lcs.mvcs.iface.rf.RFOutputType;
+@@ -58,7 +59,10 @@
+    /** List of valid frequency in ascending order */
+    private SortedSet<Integer> frequencyList = new TreeSet<Integer>();
+ 
++   /** Denotes the encryption device (IPS250) for the radio */
++   private IPS250EncryptionDevice iPS250EncryptionDevice;
+ 
++
+    public RadioLink( final String linkId, final String nodeId, final int linkNumber, final MvcsLinkType mvcsLinkType, final CommsType commsType, final PowerOutput power, final Map<RFOutputType, PowerOutput> ampPower, final RFDevice rfDevice, Integer maxRange)
+    {
+       super(linkId, nodeId, linkNumber, mvcsLinkType, commsType, maxRange);
+@@ -231,4 +235,22 @@
+    {
+       this.antennaOverride = manualMode;
+    }
++
++
++   /**
++    * @return the encryption device (IPS250).
++    */
++   public IPS250EncryptionDevice getEncryptionDevice()
++   {
++      return this.iPS250EncryptionDevice;
++   }
++
++
++   /**
++    * @param iPS250EncryptionDevice the encryption device (IPS250) to set.
++    */
++   public void setEncryptionDevice(IPS250EncryptionDevice iPS250EncryptionDevice)
++   {
++      this.iPS250EncryptionDevice = iPS250EncryptionDevice;
++   }
+ }
+\ No newline at end of file

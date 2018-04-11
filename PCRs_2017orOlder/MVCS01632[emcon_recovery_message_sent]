@@ -1,0 +1,48 @@
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java	(revision 9554)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java	(working copy)
+@@ -31,6 +31,7 @@
+ import mil.navy.lcs.mvcs.sca.link.ScaLinkManager;
+ import mil.navy.lcs.mvcs.sca.network.ScaNetworkManager;
+ 
++import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+ /**
+@@ -51,6 +52,9 @@
+       }
+    };
+ 
++   /** the logger for this class */
++   private static final Logger logger = LoggerFactory.getLogger(VehicleNodeHandler.class);
++
+    /** the message queue */
+    private MessageQueue messageQueue;
+ 
+@@ -465,16 +469,23 @@
+       @Override
+       public void call(AcknowledgementMessage message)
+       {
+-         LoggerFactory.getLogger(VehicleNodeHandler.class).trace("Got ack {}", message);
++         logger.trace("Got ack {}", message);
+ 
+          // remove the message from the queue.
+          messageQueue.remove(message);
+ 
+          if (requestedEmconValue)
++         {
+             // PCR 1474 - SRS0597 EMCON command acknowledgment from vehicle.
+             AlertsManager.getInstance().addAlert(node.getNodeId(), AlertType.EMCON_VEHICLE_COMMAND_SUCCESS);
++            logger.info(AlertType.EMCON_VEHICLE_COMMAND_SUCCESS.format + " " + node.getNodeId());
++         }
+          else
+-            AlertsManager.getInstance().addAlert(node.getNodeId(), AlertType.EMCON_RECOVER_VEHICLE_CONNAMD_SENT);
++         {
++            // PCR 1632 - Message out of order when recovering vehicle from EMCON.
++            // CCB decided to remove the sent confirmation message. Change from alert to log.
++            logger.info(AlertType.EMCON_RECOVER_VEHICLE_CONNAMD_SENT.format + " " + node.getNodeId());
++         }
+ 
+          // update the node when EMCON is set. Updating recovery is done by message listener.
+          if (requestedEmconValue)

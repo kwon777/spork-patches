@@ -1,0 +1,917 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsHardwareData.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsHardwareData.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsHardwareData.java	(working copy)
+@@ -8,11 +8,6 @@
+ 
+ /**
+  * A data object for a UPS's outputs.
+- * <p>
+- * Date Created: Feb 26, 2010
+- * <p>
+- * $LastChangedBy$
+- * $LastChangedDate$ $LastChangedRevision$
+  * 
+  * @author st2
+  * @version 1.0
+@@ -59,9 +54,8 @@
+ 
+ 
+    /**
+-    * Method Description
+     * 
+-    * @return
++    * @return true if battery status is OK otherwise false.
+     */
+    public boolean isBatteryStatusOk()
+    {
+@@ -70,9 +64,8 @@
+ 
+ 
+    /**
+-    * Method Description
+     * 
+-    * @return
++    * @return true if inverter status is OK otherwise false.
+     */
+    public boolean isInverterStatusOk()
+    {
+@@ -81,9 +74,8 @@
+ 
+ 
+    /**
+-    * Method Description
+     * 
+-    * @return
++    * @return true if logic status is OK otherwise false.
+     */
+    public boolean isLogicStatusOk()
+    {
+@@ -92,11 +84,10 @@
+ 
+ 
+    /**
+-    * Method Description
+     * 
+-    * @return
++    * @return true if UPS overload is OK otherwise false.
+     */
+-   public boolean isUpsOverload()
++   public boolean isUpsOverloadOk()
+    {
+       return upsOverloadOk;
+    }
+@@ -103,9 +94,7 @@
+ 
+ 
+    /**
+-    * Method Description
+-    * 
+-    * @return
++    * @return true if UPS temperature is OK otherwise false.
+     */
+    public boolean isUpsTemperatureOk()
+    {
+@@ -114,9 +103,7 @@
+ 
+ 
+    /**
+-    * Returns the state of the utilily power
+-    * 
+-    * @return true if utility power is OK
++    * @return true if utility power is OK otherwise false.
+     */
+    public boolean isUtilityPowerOk()
+    {
+@@ -125,9 +112,9 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To set battery status
+     * 
+-    * @param
++    * @param the batteryStatusOk to set
+     */
+    public void setBatteryStatusOk(boolean batteryStatusOk)
+    {
+@@ -138,9 +125,9 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To set inverter status
+     * 
+-    * @param
++    * @param the inverterStatusOk to set
+     */
+    public void setInverterStatusOk(boolean inverterStatusOk)
+    {
+@@ -151,9 +138,9 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To set logic status
+     * 
+-    * @param
++    * @param the logicStatusOk to set
+     */
+    public void setLogicStatusOk(boolean logicStatusOk)
+    {
+@@ -164,9 +151,9 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To set UPS overload status
+     * 
+-    * @param
++    * @param the upsOverloadOk to set
+     */
+    public void setUpsOverloadOk(boolean upsOverloadOk)
+    {
+@@ -177,9 +164,9 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To set UPS temperature status
+     * 
+-    * @param
++    * @param the upsTemperatureOk to set
+     */
+    public void setUpsTemperatureOk(boolean upsTemperatureOk)
+    {
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(working copy)
+@@ -4,7 +4,6 @@
+ 
+ 
+ import java.beans.PropertyChangeListener;
+-import java.util.Hashtable;
+ import java.util.StringTokenizer;
+ 
+ import org.slf4j.Logger;
+@@ -13,7 +12,6 @@
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.PowerUps;
+ import mil.navy.lcs.mvcs.common.db.DatabaseManager;
+-import mil.navy.lcs.mvcs.common.misc.ListenerValues;
+ import mil.navy.lcs.mvcs.common.misc.serialUtilities.SerialComms;
+ import mil.navy.lcs.mvcs.common.misc.serialUtilities.SerialReceivedDataListenerInterface;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+@@ -29,13 +27,11 @@
+ public class UpsManager implements SerialReceivedDataListenerInterface
+ {
+    public static final String BATTERY_STATUS = "LOW BATTERY";
+-
+-   public static final String BATTLESHORT = "BATTLE SHORT";
+    public static final String INVERTER_STATUS = "INV OFF";
+    public static final String LOGIC_STATUS = "LOGIC FAULT";
+    public static final String SPACE = " ";
+    public static final String UPS_OVERLOAD = "UPS OVERLOAD";
+-   public static final String UPS_TEMPERATURE = "UPS OVERTEMPERATURE";
++   public static final String UPS_OVERTEMP = "UPS OVERTEMPERATURE";
+    public static final String UTILITY_POWER = "UTILITY OFF";
+ 
+    private static final Logger logger = LoggerFactory.getLogger(UpsManager.class);
+@@ -53,16 +49,13 @@
+ 
+    private boolean countdownFlag;
+ 
+-   private Boolean goodUpsPower;
+-
+-   /** used to indicate if this is a warm start. */
+-   private boolean isWarmStart;
+-
+    /** Holds the ship ID. */
+    private String shipId;
+ 
+-   private int shutdownCnt;
++   /** Denotes the shutdown count */
++   private int shutdownCnt = 0;
+ 
++   /** Denotes the shutdown time in minutes. Default value = 5 */
+    private int shutdownTime = 5; // shutdown time in minutes
+ 
+    /*
+@@ -82,11 +75,10 @@
+    private String upsSerialPort = "/dev/ttyQS5";
+ 
+    /**
+-    * A hash table of UPSdata objects that implement IHardware. Each data object reflects the
+-    * current state of an UPS device. Note that there may be only one UPS on the ship, though this
+-    * manager can support any number.
++    * A UPSdata object that implement IHardware. Reflects the current state of an UPS device. Note
++    * that there be only one UPS on the ship. .
+     */
+-   private Hashtable<String, UpsHardwareData> upsSettingsHashtable = null;
++   protected UpsHardwareData upsData = null;
+ 
+    /** Thread polling UPS status. */
+    protected Thread upsStatusPollingThread = null;
+@@ -94,10 +86,22 @@
+    /** checking communication to UPS device and polling status. */
+    protected UpsConnectionAndStatus upsConnectionAndPollStatus = null;
+ 
+-   /** Denotes ups device connection status. */
+-   protected boolean upsConnected = false;
++   /** Denotes the serial port connection of UPS device status. */
++   protected boolean upsSerialConnected = false;
+ 
++   /** Denotes the UPS has responded */
++   protected boolean upsResponded = false;
+ 
++   /** Denotes the command to check alarm */
++   public static final String COMMAND_ALARM = "ALARM?\n\r";
++
++   /** Denotes the command to check fault */
++   public static final String COMMAND_FAULT = "FAULT\n\r";
++
++   /** Denotes the command to check battery */
++   public static final String COMMAND_BATTERY = "BATTERY?\n\r";
++
++
+    /**
+     * Returns the single instance of the UPS power manager.
+     * 
+@@ -108,7 +112,6 @@
+       if (instance == null)
+          try
+          {
+-
+             instance = new UpsManager();
+          }
+          catch (Exception e)
+@@ -148,41 +151,18 @@
+ 
+ 
+    /**
+-    * This method provides an external interface to add property listeners in the PowerOutputData
+-    * object
++    * This method provides an external interface to add property listeners in the UPS data object
+     * 
+     * @param listener The PropertyChangeListener to be added.
+     */
+    public void addPropertyChangeListener(PropertyChangeListener listener)
+    {
+-      for (UpsHardwareData upsData : upsSettingsHashtable.values())
+-         upsData.addPropertyChangeListener(listener);
++      upsData.addPropertyChangeListener(listener);
+    }
+ 
+ 
+    /**
+-    * Add a PropertyChangeListener for a specific property. This function provides an external
+-    * interface to add a property listener in the PowerOutputData object
+-    * 
+-    * @param propertyName The name of the property to listen on.
+-    * @param listener The PropertyChangeListener to be added.
+-    */
+-   public void addPropertyChangeListener(String propertyName, PropertyChangeListener listener)
+-   {
+-      if (propertyName.equalsIgnoreCase(ListenerValues.CONFIGURED))
+-      {
+-         // TODO: Add listener for ConfiguredStatus
+-      }
+-      else
+-      {
+-         for (UpsHardwareData upsData : upsSettingsHashtable.values())
+-            upsData.addPropertyChangeListener(propertyName, listener);
+-      }
+-   }
+-
+-
+-   /**
+-    * This function provides an external interface to remove property listeners in the upsSettings
++    * This function provides an external interface to remove property listeners in the UPS data
+     * object
+     * 
+     * @param listener The PropertyChangeListener to be removed.
+@@ -189,35 +169,26 @@
+     */
+    public void removePropertyChangeListener(PropertyChangeListener listener)
+    {
+-      for (UpsHardwareData upsData : upsSettingsHashtable.values())
+-         upsData.removePropertyChangeListener(listener);
++      upsData.removePropertyChangeListener(listener);
+    }
+ 
+ 
+-   /**
+-    * This function provides an external interface to remove property listeners in the
+-    * PowerOutputData object
+-    * 
+-    * @param propertyName The name of the property that was listened on.
+-    * @param listener The PropertyChangeListener to be removed.
+-    */
+-   public void removePropertyChangeListener(String propertyName, PropertyChangeListener listener)
+-   {
+-      for (UpsHardwareData upsData : upsSettingsHashtable.values())
+-         upsData.removePropertyChangeListener(propertyName, listener);
+-   }
+-
+-
+    @Override
+    public void serialDataReceivedCallback(String serialPortId, String data, byte[] dataAsBytes)
+    {
+-
+       if (serialPortId.startsWith(upsSerialPort))
+       {
++         // the first time UPS has responded
++         if (!upsResponded)
++         {
++            logger.info("Successfully connected to UPS device via serial port {}.", upsSerialPort);
++            AlertsManager.getInstance().addAlert(shipId, AlertType.UPS_CONNECTION_SUCCESSFUL, upsSerialPort);
++         }
++
++         this.upsResponded = true;
++         upsData.setPowered(true); // UPS has responded so it must be powered
+          logger.debug("Got UPS response: " + data);
+-
+          processUpsStatus(data);
+-
+       }
+ 
+    }// serialDataReceived
+@@ -225,27 +196,23 @@
+ 
+    /**
+     * This method monitors the UPS utility power indicator, if the indicator is false, it begins the
+-    * shutdown count. if the count completes it calls the shipmain shutdown method.
++    * shutdown count. if the count completes it calls the main shutdown method.
+     * 
+-    * @param tempBoolean
++    * @param utilityPowerStatusOk the current utility power status
+     */
+-   private void checkLossOfPower(Boolean tempBoolean)
++   protected void checkLossOfPower(boolean utilityPowerStatusOk)
+    {
+       int remainingTime;
+       int countdownTime;
+ 
+       /*
+-       * NOTE - right now there is only one UPS, so we go to the hash table and get item zero (0).
+-       * If there are more than one then this all needs to be revisited, both here and in the
+-       * calling method (it must stipulate which UPS).
++       * NOTE - right now there is only one UPS. If there are more than one then this all needs to
++       * be revisited, both here and in the calling method (it must stipulate which UPS).
+        */
+ 
+-      goodUpsPower = tempBoolean.booleanValue();
+-
+-      if (!goodUpsPower)
++      if (!utilityPowerStatusOk)
+       {
+          countdownFlag = true;
+-
+          // min time = pollrate/1000 msec/60 sec
+          countdownTime = (UPS_POLL_RATE / 60000) * shutdownCnt++;
+          remainingTime = shutdownTime - countdownTime; // minutes
+@@ -270,10 +237,11 @@
+    }
+ 
+ 
+-   /************************************************************************************************
+-    * Method to check if you have input.
++   /**
++    * To convert the input string to boolean.
+     * 
+-    * @parm input false if there is no input; true otherwise
++    * @param input the input string to convert
++    * @return true if the input is "OK" otherwise false
+     * 
+     */
+    private static boolean convertStringToBoolean(String input)
+@@ -297,15 +265,14 @@
+ 
+       shipId = ConfigManager.getInstance().getShip().getId();
+ 
+-      isWarmStart = DatabaseManager.getInstance().getShipInfoDao().find(shipId).isWarmStart();
++      boolean isWarmStart = DatabaseManager.getInstance().getShipInfoDao().find(shipId).isWarmStart();
+ 
+       PowerUps localUps = ConfigManager.getInstance().getShip().getPowerUps();
+       upsSerialPort = localUps.getSerialPort();
+       shutdownTime = localUps.getShutdownTime().intValue();
+ 
+-      // initialize the UPS settings hash table and populate it with the initial data from configs
+-      upsSettingsHashtable = new Hashtable<String, UpsHardwareData>();
+-      loadUpsDevicesData(localUps);
++      // initialize the UPS data and populate it with the initial data from configs
++      this.upsData = new UpsHardwareData(localUps.getId(), localUps.getType(), ONE, false);
+ 
+       logger.info("Starting UPS Manager with serial port " + upsSerialPort + ". Warm start is " + isWarmStart);
+ 
+@@ -324,46 +291,6 @@
+ 
+ 
+    /**
+-    * Loads all the UPS data from configs into our hash table of PowerOutputData objects. This
+-    * should only be called once and at class initialization.
+-    * 
+-    */
+-   private void loadUpsDevicesData(PowerUps powerUps)
+-   {
+-      try
+-      {
+-         // There is only one UPS at this time, but in theory there could be more. If we go to > 1
+-         // then this method's calls to the config manager will need to be changed in that it will
+-         // need to loop though a list of them.
+-
+-         String hardwareId = powerUps.getId();
+-         String hardwareType = powerUps.getType();
+-         int outputNumber = ONE;
+-
+-         UpsHardwareData upsOutputData = new UpsHardwareData(hardwareId, hardwareType, outputNumber, false);
+-
+-         // Set configured state to true, since there's nothing to configure.
+-         upsOutputData.setBatteryStatusOk(false);
+-         upsOutputData.setInverterStatusOk(false);
+-         upsOutputData.setLogicStatusOk(false);
+-         upsOutputData.setUpsOverloadOk(false);
+-         upsOutputData.setUpsTemperatureOk(false);
+-         upsOutputData.setUtilityPowerOk(false);
+-
+-         // TODO - how do we know if the UPS is itself powered, so to set the
+-         // powered to true?
+-
+-         upsSettingsHashtable.put(hardwareId, upsOutputData);
+-
+-      }
+-      catch (Exception e)
+-      {
+-         logger.error("*** Error loading the UPS data. Error was: " + e.getMessage());
+-      }
+-   }
+-
+-
+-   /**
+     * To initialize serial communication to the UPS device. If not successful, note it and
+     * periodically re-check to see if the communication becomes available. If successful, add the
+     * given serial data listener then start a periodic polling thread.
+@@ -386,58 +313,45 @@
+     * @param inputData - the data that was received over the UPS serial port.
+     * 
+     */
+-   private void processUpsStatus(String inputData)
++   protected void processUpsStatus(String inputData)
+    {
+-      logger.debug("In processUpsStatus where status = " + inputData);
+-
+-      for (UpsHardwareData upsData : upsSettingsHashtable.values())
++      StringTokenizer st = new StringTokenizer(inputData, "\n");
++      while (st.hasMoreTokens())
+       {
+-         StringTokenizer st = new StringTokenizer(inputData, "\n");
+-         Boolean tempBoolean;
+-
+-         while (st.hasMoreTokens())
++         String thisLine = "";
++         thisLine = st.nextToken().toUpperCase(); // next token in upper case
++         int lastSpaceLocation = thisLine.lastIndexOf(SPACE);
++         if (lastSpaceLocation != -1)
+          {
+-            String thisLine = "";
+-            thisLine = st.nextToken();
+-            int lastSpaceLocation = thisLine.lastIndexOf(UpsWorker.SPACE);
+-            if (lastSpaceLocation != -1)
++            String status = thisLine.substring(lastSpaceLocation, thisLine.length());
++            if (thisLine.contains(UTILITY_POWER))
+             {
+-               String status = thisLine.substring(lastSpaceLocation, thisLine.length());
+-               if (thisLine.startsWith(UpsWorker.UTILITY_POWER))
+-               {
+-                  tempBoolean = new Boolean(convertStringToBoolean(status)).booleanValue();
+-                  upsData.setUtilityPowerOk(tempBoolean);
+-                  checkLossOfPower(tempBoolean);
+-               }
+-               else if (thisLine.startsWith(UpsWorker.INVERTER_STATUS))
+-               {
+-                  upsData.setInverterStatusOk(new Boolean(convertStringToBoolean(status)));
+-
+-               }
+-               else if (thisLine.startsWith(UpsWorker.BATTERY_STATUS))
+-               {
+-                  upsData.setBatteryStatusOk(new Boolean(convertStringToBoolean(status)));
+-
+-               }
+-               else if (thisLine.startsWith(UpsWorker.LOGIC_STATUS))
+-               {
+-                  upsData.setLogicStatusOk(new Boolean(convertStringToBoolean(status)));
+-
+-               }
+-               else if (thisLine.startsWith(UpsWorker.UPS_OVERLOAD))
+-               {
+-                  upsData.setUpsOverloadOk(new Boolean(convertStringToBoolean(status)));
+-
+-               }
+-               else if (thisLine.startsWith(UpsWorker.UPS_TEMPERATURE))
+-               {
+-                  upsData.setUpsTemperatureOk(new Boolean(convertStringToBoolean(status)));
+-
+-               }
+-
+-            } // if
+-         } // end of while
+-      } // end of for
++               boolean utilityPowerStatus = convertStringToBoolean(status);
++               upsData.setUtilityPowerOk(utilityPowerStatus);
++               // checkLossOfPower(utilityPowerStatus);
++            }
++            else if (thisLine.contains(INVERTER_STATUS))
++            {
++               upsData.setInverterStatusOk(convertStringToBoolean(status));
++            }
++            else if (thisLine.contains(BATTERY_STATUS))
++            {
++               upsData.setBatteryStatusOk(convertStringToBoolean(status));
++            }
++            else if (thisLine.contains(LOGIC_STATUS))
++            {
++               upsData.setLogicStatusOk(convertStringToBoolean(status));
++            }
++            else if (thisLine.contains(UPS_OVERLOAD))
++            {
++               upsData.setUpsOverloadOk(convertStringToBoolean(status));
++            }
++            else if (thisLine.contains(UPS_OVERTEMP))
++            {
++               upsData.setUpsTemperatureOk(convertStringToBoolean(status));
++            }
++         } // end of if
++      } // end of while
+    }// end of method
+ 
+ 
+@@ -451,7 +365,7 @@
+    {
+       if (upsComms != null)
+       {
+-         return upsComms.write("ALARM?\n\r");
++         return upsComms.write(COMMAND_ALARM);
+       }
+ 
+       return false;
+@@ -480,35 +394,13 @@
+ 
+ 
+    /**
+-    * Used to retrieve the status of the UPS power supply
++    * To get the last known UPS hardware status data.
+     * 
++    * @return the UpsHardwareData
+     */
+-   public boolean getRequestUpsPowerOnStatus()
++   public UpsHardwareData getUpsHardwareData()
+    {
+-      boolean results = false;
+-
+-      if (upsComms != null)
+-      {
+-         results = upsComms.write("ALARM?\n\r");
+-
+-         try
+-         {
+-            upsComms.write("ALARM?\n\r");
+-            upsComms.write("FAULT?\n\r");
+-            upsComms.write("BATTERY?\n\r");
+-            upsComms.write(2);
+-
+-            logger.info("upsComms (ALARM): " + upsComms.write("ALARM?\n\r"));
+-            logger.info("upsComms (FAULT): " + upsComms.write("FAULT?\n\r"));
+-            logger.info("upsComms: (BATTERY): " + upsComms.write("BATTERY?\n\r"));
+-            logger.info("upsComms: (BATTERY): " + upsComms.write(2));
+-         }
+-         catch (Exception e)
+-         {
+-            logger.info("PMFL UPS: (Fail to grab status of UPS:  " + e);
+-         }
+-      }
+-      return results;
++      return this.upsData;
+    }
+ 
+ 
+@@ -524,8 +416,8 @@
+ 
+       /** Denotes connection to UPS is allowed. Defaults to true */
+       protected boolean connectionAllowed = true;
+-      
+ 
++
+       /**
+        * Default constructor
+        * 
+@@ -544,7 +436,7 @@
+       public void shutdownConnection()
+       {
+          connectionAllowed = false;
+-         upsConnected = false;
++         upsSerialConnected = false;
+          if (upsComms != null)
+          {
+             upsComms.closeSerialPort();
+@@ -558,36 +450,35 @@
+          // check is allowed and UPS is not connected
+          while (connectionAllowed)
+          {
+-            // ups is connected
+-            if (upsConnected)
++            // ups is not connected
++            if (!upsSerialConnected)
+             {
+-               // poll status
+                try
+                {
+-                  requestBackupPowerStatus();
++                  // try to connect
++                  upsComms = new SerialComms(upsSerialPort, UPS_BAUD_RATE, "UpsManager");
++                  upsSerialConnected = true;
++                  logger.info("Successfully opened serial port {} for UPS device.", upsSerialPort);
++                  // add serial received data listener.
++                  upsComms.addSerialReceivedDataListener(serialReceivedDataListener);
+                }
+                catch (Exception e)
+                {
+-                  logger.warn("Unable to poll UPS: ", e);
++                  logger.error("Failed to open serial port {} for UPS device: ", upsSerialPort, e);
+                }
+             }
+ 
+-            // ups is not connected
++            // ups is connected
+             else
+             {
++               // poll status
+                try
+                {
+-                  // try to connect
+-                  upsComms = new SerialComms(upsSerialPort, UPS_BAUD_RATE, "UpsManager");
+-                  upsConnected = true;
+-                  logger.info("Successfully connected to UPS device via serial port {}!", upsSerialPort);
+-                  AlertsManager.getInstance().addAlert(shipId, AlertType.UPS_CONNECTION_SUCCESSFUL, upsSerialPort);
+-                  // add serial received data listener.
+-                  upsComms.addSerialReceivedDataListener(serialReceivedDataListener);
++                  requestBackupPowerStatus();
+                }
+                catch (Exception e)
+                {
+-                  logger.error("Failed to connect the UPS device: ", e);
++                  logger.warn("Unable to poll UPS: ", e);
+                }
+             }
+ 
+Index: src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java	(working copy)
+@@ -0,0 +1,46 @@
++
++
++package mil.navy.lcs.mvcs.sca.powerUps;
++
++
++import org.junit.Before;
++import org.junit.Test;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import junit.framework.Assert;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++/**
++ * @author Dan
++ *
++ */
++public class UpsManagerTest extends ScaTestCase
++{
++
++   private UpsManager upsManager = null;
++   private static Logger logger = LoggerFactory.getLogger(UpsManagerTest.class);
++   private String upsInput = "ALAM?C占�\n\r\n\rUTILITY OFF         OK\n\rINV OFF             OK\n\rLOW BATTERY         OK\n\rLOGIC FAULT         OK\n\rUPS OVERLOAD        OK\n\rUPS OVERTEMPERATURE OK\n\r>\n\r>";
++
++
++   @Before
++   public void setUp() throws Exception
++   {
++      upsManager = UpsManager.getInstance();
++   }
++
++
++   @Test
++   public void testProcessUpsData()
++   {
++      logger.info(upsInput);
++      upsManager.processUpsStatus(upsInput);
++      UpsHardwareData upsData = upsManager.getUpsHardwareData();
++      Assert.assertTrue("Battery status is not OK", upsData.isBatteryStatusOk());
++      Assert.assertTrue("Utility power is not OK", upsData.isUtilityPowerOk());
++      Assert.assertTrue("Inverter status is not OK", upsData.isInverterStatusOk());
++      Assert.assertTrue("Logic status is not OK", upsData.isLogicStatusOk());
++      Assert.assertTrue("Temperature is not OK", upsData.isUpsTemperatureOk());
++      Assert.assertTrue("Overload status is not OK", upsData.isUpsOverloadOk());
++   }
++}
+Index: src/main/java/mil/navy/lcs/mvcs/sca/pmfl/UpsComponentData.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/pmfl/UpsComponentData.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/sca/pmfl/UpsComponentData.java	(working copy)
+@@ -41,7 +41,7 @@
+ 	public boolean upsPowerStatus()
+  	{
+ 		boolean status;
+-		status = UpsManager.getInstance().getRequestUpsPowerOnStatus();
++		status = UpsManager.getInstance().getUpsHardwareData().isPowered();
+ 		
+ 		return status;
+ 			
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsWorker.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsWorker.java	(working copy)
+@@ -1,27 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.sca.powerUps;
+-
+-
+-/**
+- * Class Description
+- * <p>
+- * Date Created: Feb 14, 2010
+- * <p>
+- * $LastChangedBy$
+- * $LastChangedDate$ $LastChangedRevision$
+- * 
+- * @author st2
+- * @version 1.0
+- */
+-public class UpsWorker
+-{
+-   public static final String BATTERY_STATUS = "LOW BATTERY";
+-   public static final String BATTLESHORT = "BATTLE SHORT";
+-   public static final String INVERTER_STATUS = "INV OFF";
+-   public static final String LOGIC_STATUS = "LOGIC FAULT";
+-   public static final String SPACE = " ";
+-   public static final String UPS_OVERLOAD = "UPS OVERLOAD";
+-   public static final String UPS_TEMPERATURE = "UPS OVERTEMPERATURE";
+-   public static final String UTILITY_POWER = "UTILITY OFF";
+-}
+Index: src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java	(revision 0)
++++ src/main/test/mil/navy/lcs/mvcs/sca/powerUps/UpsManagerTest.java	(working copy)
+@@ -0,0 +1,46 @@
++
++
++package mil.navy.lcs.mvcs.sca.powerUps;
++
++
++import org.junit.Before;
++import org.junit.Test;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import junit.framework.Assert;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++/**
++ * @author Dan
++ *
++ */
++public class UpsManagerTest extends ScaTestCase
++{
++
++   private UpsManager upsManager = null;
++   private static Logger logger = LoggerFactory.getLogger(UpsManagerTest.class);
++   private String upsInput = "ALAM?C占�\n\r\n\rUTILITY OFF         OK\n\rINV OFF             OK\n\rLOW BATTERY         OK\n\rLOGIC FAULT         OK\n\rUPS OVERLOAD        OK\n\rUPS OVERTEMPERATURE OK\n\r>\n\r>";
++
++
++   @Before
++   public void setUp() throws Exception
++   {
++      upsManager = UpsManager.getInstance();
++   }
++
++
++   @Test
++   public void testProcessUpsData()
++   {
++      logger.info(upsInput);
++      upsManager.processUpsStatus(upsInput);
++      UpsHardwareData upsData = upsManager.getUpsHardwareData();
++      Assert.assertTrue("Battery status is not OK", upsData.isBatteryStatusOk());
++      Assert.assertTrue("Utility power is not OK", upsData.isUtilityPowerOk());
++      Assert.assertTrue("Inverter status is not OK", upsData.isInverterStatusOk());
++      Assert.assertTrue("Logic status is not OK", upsData.isLogicStatusOk());
++      Assert.assertTrue("Temperature is not OK", upsData.isUpsTemperatureOk());
++      Assert.assertTrue("Overload status is not OK", upsData.isUpsOverloadOk());
++   }
++}
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(revision 9866)
++++ src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(working copy)
+@@ -29,7 +29,7 @@
+    private InputStream inputStream;
+    private SerialPort serialPort = null;
+ 
+-   private int gatherTime = 1000;
++   private static int GATHER_TIME = 1000;
+    private boolean checkForMoreData = false;
+ 
+    private OutputStream outputStream;
+@@ -75,9 +75,7 @@
+       {
+          serialPort = (SerialPort) portIdentifier.open(newPortOwner, 3000);
+          portOwner = portIdentifier.getCurrentOwner();
+-
+          serialPort.addEventListener(this);
+-
+          serialPort.notifyOnDataAvailable(true);
+          serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
+ 
+@@ -142,8 +140,8 @@
+          {
+ 
+             // Wait a little bit for some more data to come in
+-            if (gatherTime > 0)
+-               Thread.sleep(gatherTime);
++            if (GATHER_TIME > 0)
++               Thread.sleep(GATHER_TIME);
+ 
+             /*
+              * Keep reading 256 bytes at a time until we have read all the data. Need to read into
+@@ -161,8 +159,8 @@
+                // data actually stored in a growing buffer
+                readBuffer.write(tempReadBuf, 0, numBytes);
+ 
+-               if (checkForMoreData && gatherTime > 0)
+-                  Thread.sleep(gatherTime);
++               if (checkForMoreData && GATHER_TIME > 0)
++                  Thread.sleep(GATHER_TIME);
+             }
+ 
+             fireSerialReceivedData(readBuffer.toString(), readBuffer.toByteArray());
+@@ -169,13 +167,13 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getPrimaryLogger().error("SerialPortEvent.DATA_AVAILABLE exception", e);
++            LoggingManager.getPrimaryLogger().error("SerialEvent.DATA_AVAILABLE exception: ", e);
+          }
+ 
+       }
+       else
+       {
+-         LoggingManager.getPrimaryLogger().debug("Unexpected SerialEvent type: + " + event.getEventType());
++         LoggingManager.getPrimaryLogger().debug("Unexpected SerialEvent type: ", event.getEventType());
+       }
+    }
+ 
+@@ -186,12 +184,6 @@
+     * @param data - data to be written to output stream
+     * @return - true if write succeeded; false otherwise
+     */
+-   public boolean writeBytes(byte[] data)
+-   {
+-      return write(data);
+-   }
+-
+-
+    public boolean write(byte[] data)
+    {
+       boolean results = false;
+@@ -204,7 +196,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("serial write Error ", e);
++         LoggingManager.getPrimaryLogger().error("Serial write error: ", e);
+       }
+ 
+       return results;
+@@ -219,7 +211,7 @@
+     */
+    public boolean write(String data)
+    {
+-      return writeBytes(data.getBytes());
++      return write(data.getBytes());
+    }
+ 
+ 
+@@ -260,7 +252,7 @@
+    {
+       byte[] dataBytes = new byte[1];
+       dataBytes[0] = b;
+-      return writeBytes(dataBytes);
++      return write(dataBytes);
+    }
+ 
+ 

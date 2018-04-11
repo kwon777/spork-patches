@@ -1,0 +1,67 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java	(working copy)
+@@ -3,19 +3,20 @@
+ package mil.navy.lcs.mvcs.vca.snmp.agent;
+ 
+ 
++import com.ireasoning.protocol.snmp.OIDTreeNode;
++import com.ireasoning.protocol.snmp.SnmpRowStatus;
++import com.ireasoning.protocol.snmp.SnmpTable;
++import com.ireasoning.protocol.snmp.SnmpTableEntry;
++
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.vca.main.VehicleState;
+ import mil.navy.lcs.mvcs.vca.snmp.agent.workers.VehicleTableWorker;
+ 
+-import com.ireasoning.protocol.snmp.OIDTreeNode;
+-import com.ireasoning.protocol.snmp.SnmpRowStatus;
+-import com.ireasoning.protocol.snmp.SnmpTable;
+-import com.ireasoning.protocol.snmp.SnmpTableEntry;
+ 
+-
+ /**
+  * Class represents vehicleTable MIB object in MVCS_MIB
+  */
+@@ -852,6 +853,11 @@
+    public void setVehicleLanBypassStatus(SnmpTableEntry vehicleEntry, String newValue)
+    {
+ 
++      if (ConfigManager.getInstance().getVehicle().getRouter().isTesting())
++      {
++         VehicleState.model.node.getFirstLinkByCommsType(CommsType.LAN).setConnected(Boolean.parseBoolean(newValue));
++      }
++      
+       VehicleTableWorker.getInstance().setPowerOfMediaConverterForLanByPass(newValue);
+    }
+ 
+@@ -1880,6 +1886,11 @@
+             VehicleEntry entry = (VehicleEntry) vehicleEntry;
+             entry.vehicleLOSRadioStatus = newValue;
+          }
++         
++         if (ConfigManager.getInstance().getVehicle().getRouter().isTesting())
++         {
++            VehicleState.model.node.getFirstLinkByCommsType(CommsType.LOS).setConnected(Boolean.parseBoolean(newValue));
++         }
+       }
+       catch (Exception ex)
+       {
+@@ -2060,7 +2071,12 @@
+          entry.vehicleOTHRadioStatus = newValue;
+       }
+ 
++      if (ConfigManager.getInstance().getVehicle().getRouter().isTesting())
++      {
++         VehicleState.model.node.getFirstLinkByCommsType(CommsType.OTH).setConnected(Boolean.parseBoolean(newValue));
++      }
+ 
++
+    }
+ 
+ 

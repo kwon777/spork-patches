@@ -1,0 +1,33 @@
+Index: src/main/java/mil/navy/lcs/mvcs/sca/link/path/ScaLocRecoveryWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/link/path/ScaLocRecoveryWorker.java	(revision 9525)
++++ src/main/java/mil/navy/lcs/mvcs/sca/link/path/ScaLocRecoveryWorker.java	(working copy)
+@@ -123,6 +123,7 @@
+             // radio is point-to-point
+             if (radio.mvcsLinkType.pointToPoint)
+             {
++
+                // radio could be taken from other vehicle.
+                if (ScaLinkManager.releaseP2PConnectionIfOwnedByLowerPriorityVehicle(vehicleId, radio.getLinkId()))
+                {
+@@ -132,13 +133,13 @@
+ 
+             } // end of if (point-to-point)
+ 
+-            // not point-to-point radio
+-            else
+-            {
+-               // make sure all antenna paths are open from the local radio
+-               ShipState.shipHandler.requestRfUnchecked(radioController.getRadioName(), RFOutputType.MAIN, true);
+-               ShipState.shipHandler.requestRfUnchecked(radioController.getRadioName(), RFOutputType.LNR, true);
+-            }
++            // for all radios, make sure all antenna paths are open from the local radio
++            
++            // main antenna if applicable
++            ShipState.shipHandler.requestRfUnchecked(radioController.getRadioName(), RFOutputType.MAIN, true);
++            
++            // L&R antenna if applicable
++            ShipState.shipHandler.requestRfUnchecked(radioController.getRadioName(), RFOutputType.LNR, true);
+ 
+             // NOTE: if radio is capable of doing LOS and OTH, we need to cycle the mode. This may
+             // cause timing issue with vehicle since vehicle also need to cycle between the modes.

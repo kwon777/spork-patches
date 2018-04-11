@@ -1,0 +1,25 @@
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9580)
++++ configs/mission.xsd	(working copy)
+@@ -234,6 +234,7 @@
+ 					<xs:element name="lnrFrequency" type="xs:integer" minOccurs="0" maxOccurs="1" />
+ 					<xs:element name="missionFrequency" type="xs:integer" minOccurs="0" maxOccurs="1" />
+ 					<xs:element name="relayFrequency" type="xs:integer" minOccurs="0" maxOccurs="1" />
++					<xs:element name="antennaCoverage" type="antennaCoverageType" minOccurs="0" maxOccurs="unbounded" />
+ 				</xs:sequence>
+ 			</xs:extension>
+ 		</xs:complexContent>
+@@ -313,6 +314,12 @@
+ 		<xs:attribute name="id" type="inttype" />
+ 	</xs:complexType>
+ 
++   <xs:complexType name="antennaCoverageType">
++      <xs:attribute name="side" type="stringtype" />
++      <xs:attribute name="forward" type="inttype" />
++      <xs:attribute name="aft" type="inttype" />
++   </xs:complexType>
++
+ 	<xs:simpleType name="serialporttype">
+ 		<xs:restriction base="xs:string" />
+ 	</xs:simpleType>

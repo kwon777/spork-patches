@@ -1,0 +1,42 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java	(working copy)
+@@ -35,6 +35,7 @@
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.RmmvNode;
+ import mil.navy.lcs.mvcs.iface.model.node.SleepState;
++import mil.navy.lcs.mvcs.iface.model.node.UissNode;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+ import mil.navy.lcs.mvcs.iface.rf.RFOutputType;
+ import mil.navy.lcs.mvcs.vca.link.path.VcaHFGWRadioController;
+@@ -1251,7 +1252,7 @@
+ 
+    /**
+     * To start the link testing over the test port. The radio must be testable over the test port.
+-    * It will select RF test port, power on the radio, and start heartbeats.
++    * It will select RF test port and power on the radio with an amplifier for test port.
+     * 
+     * @param radioName - The vehicle radio name.
+     * @return true if started it correctly.
+@@ -1276,9 +1277,17 @@
+ 
+       try
+       {
+-         // power on the radio and the amp
+-         radioControllers.get(vehicleRadio.getLinkId()).powerRadioAndItsDevices(true);
+-
++         // power on the radio and the amp if the amp is needed for RF test port
++         if (vcaLocalNode instanceof UissNode)
++         {
++            // No need to turn on amplifer for Usv's test port.
++            VehicleState.handler.requestPower(radioName, true);
++         }
++         else
++         {
++            radioControllers.get(radioName).powerRadioAndItsDevices(true);
++         }
++         
+          // Send frequency and/or set up connection.
+          try
+          {

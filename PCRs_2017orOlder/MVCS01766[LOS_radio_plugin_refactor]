@@ -1,0 +1,1381 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-plugin-scu
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/scu/SCUPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/scu/SCUPlugin.java	(revision 9580)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/scu/SCUPlugin.java	(working copy)
+@@ -5,11 +5,9 @@
+ 
+ import java.beans.PropertyChangeEvent;
+ import java.beans.PropertyChangeListener;
+-import java.util.List;
+ import java.util.logging.Logger;
+ 
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+-import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.SnmpParameters;
+ import mil.navy.lcs.mvcs.plugins.scu.configuration.ConfigurationManager;
+ import mil.navy.lcs.mvcs.plugins.scu.links.LinkLegend;
+@@ -30,8 +28,7 @@
+  */
+ 
+ /*
+- * ******************************************************************************
+- * FILE HISTORY
++ * ****************************************************************************** FILE HISTORY
+  * 
+  * 2010/01/14, DK - Updated so it implements interface IRadioPlugin.
+  * 
+@@ -526,21 +523,7 @@
+    /**
+     * Method Description
+     * 
+-    * @param listener
+     * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#addRadioPropertiesChangeEventListener(mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties)
+-    */
+-   @Override
+-   public boolean addRadioPropertiesChangeEventListener(IRadioProperties propertiesListener)
+-   {
+-      return radioProperties.addRadioPropertiesChangeEventListener(propertiesListener);
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    * 
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#isRimAvailable()
+     */
+    @Override
+@@ -553,20 +536,6 @@
+    /**
+     * Method Description
+     * 
+-    * @param listener
+-    * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#removeRadioPropertiesEventListener(mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties)
+-    */
+-   @Override
+-   public boolean removeRadioPropertiesEventListener(IRadioProperties propertiesListener)
+-   {
+-      return radioProperties.removeRadioPropertiesChangeListener(propertiesListener);
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    * 
+     * @param emconState
+     * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#setEMCONState(boolean)
+@@ -655,14 +624,6 @@
+ 
+ 
+    @Override
+-   public void setVehicleList(List<SnmpParameters> vehicleList)
+-   {
+-      // TODO Auto-generated method stub
+-
+-   }
+-
+-
+-   @Override
+    public void setSnmpParameters(SnmpParameters snmpParameters, boolean sendOverToRim)
+    {
+       // TODO Auto-generated method stub
+@@ -710,16 +671,4 @@
+    }
+ 
+ 
+-   /**
+-    * Returns null because this radio does not have a GUI.
+-    * 
+-    * @return null because this radio does not have a GUI
+-    */
+-   @Override
+-   public String getUrlPath()
+-   {
+-      return null;
+-   }
+-
+-
+ }
+\ No newline at end of file
+#P mvcs-plugin-prc117
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/prc117/PRC117Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/prc117/PRC117Plugin.java	(revision 9580)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/prc117/PRC117Plugin.java	(working copy)
+@@ -6,10 +6,13 @@
+ import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.HashSet;
+-import java.util.List;
+ import java.util.Set;
+ import java.util.concurrent.LinkedBlockingQueue;
+ 
++import org.slf4j.Logger;
++
++import com.ireasoning.protocol.TimeoutException;
++
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.model.Channel;
+@@ -23,10 +26,6 @@
+ import mil.navy.lcs.mvcs.plugins.prc117.notification.RadioProperties;
+ import mil.navy.lcs.mvcs.plugins.prc117.snmp.SnmpOperations;
+ 
+-import org.slf4j.Logger;
+-
+-import com.ireasoning.protocol.TimeoutException;
+-
+ public class PRC117Plugin implements IPRC117RadioPlugin
+ {
+    /** SNMP Parameters. */
+@@ -86,15 +85,6 @@
+    }
+ 
+ 
+-   @Override
+-   public boolean addRadioPropertiesChangeEventListener(IRadioProperties listener)
+-   {
+-      LoggingManager.getPrimaryLogger().debug("Adding listener " + listener);
+-      radioProperties.addRadioPropertiesChangeEventListener(listener);
+-      return true;
+-   }
+-
+-
+    /**
+     * Use this to connect to a remote radio. On shipboard side, this would mean to switch frequency
+     * to match a particular radio.
+@@ -178,34 +168,6 @@
+     * To get the radio burst rate quality.
+     */
+    @Override
+-   public String[][] getLinkQuality()
+-   {
+-      String linkMatrix = "0";
+-
+-      // get the link quality from the RIM.
+-      String linkQuality = this.radioStatusCache.getLinkQuality();
+-      if (linkQuality != null)
+-      {
+-         if (linkQuality.equalsIgnoreCase("GOOD"))
+-            linkMatrix = "100";
+-         else if (linkQuality.equalsIgnoreCase("FAIR"))
+-            linkMatrix = "80";
+-         else if (linkQuality.equalsIgnoreCase("POOR"))
+-            linkMatrix = "60";
+-         else if (linkQuality.equalsIgnoreCase("NO_COMM"))
+-            linkMatrix = "0";
+-      }
+-
+-      String[][] linkQualityTable = new String[1][1];
+-      linkQualityTable[0][0] = linkMatrix;
+-      return linkQualityTable;
+-   }
+-
+-
+-   /**
+-    * To get the radio burst rate quality.
+-    */
+-   @Override
+    public String[][] getRadioBurstRateQualityTable()
+    {
+       String connectivity = "0";
+@@ -245,18 +207,6 @@
+ 
+ 
+    /**
+-    * Use net OID .1.3.6.1.4.1.17155.1.1.1.0 Send net command to RIM with no argument. In the radio
+-    * response, look for "NET=xx" where xx is the current net ID
+-    */
+-   @Override
+-   public String getRadioIdNetSize()
+-   {
+-      // Not able to get from this radio.
+-      return "Not Set";
+-   }
+-
+-
+-   /**
+     * Not used
+     */
+    @Override
+@@ -310,13 +260,6 @@
+    }
+ 
+ 
+-   @Override
+-   public boolean removeRadioPropertiesEventListener(IRadioProperties listener)
+-   {
+-      return listeners.remove(listener);
+-   }
+-
+-
+    /**
+     * To set the amplifier power level to HIGH or LOW.
+     * 
+@@ -374,18 +317,6 @@
+ 
+ 
+    /**
+-    * Use net command OID .1.3.6.1.4.1.17155.1.1.1.0 The argument is "xxx" where xxx is the net
+-    * number so change to
+-    */
+-   @Override
+-   public boolean setRadioIdNetSize(String netId)
+-   {
+-      // not able to set to this radio.
+-      return false;
+-   }
+-
+-
+-   /**
+     * Not used
+     */
+    @Override
+@@ -433,46 +364,6 @@
+ 
+ 
+    /**
+-    * The Plug-in manager passes in a list of vehicle, which includes IP address
+-    */
+-   @Override
+-   public void setVehicleList(List<SnmpParameters> vehicleList)
+-   {
+-
+-   }
+-
+-
+-   /**
+-    * Use bit OID .1.3.6.1.4.1.17155.1.1.9.0
+-    * 
+-    * If no parameter is send for SNMP SET, all BIT is run. If a number is send, the particular BIT
+-    * is run
+-    */
+-   @Override
+-   public boolean startBit(String bitTestName, String ipAddress)
+-   {
+-      boolean returnVal = false;
+-
+-      try
+-      {
+-         if ((ipAddress == null) || (ipAddress.length() == 0))
+-            ipAddress = this.ipAddress;
+-
+-         returnVal = (snmpOp.snmpSet(ConstantValues.BIT, "", ipAddress, port) != null) ? true : false;
+-      }
+-      catch (TimeoutException e)
+-      {
+-         logger.error("Error ", e);
+-      }
+-      catch (IOException e)
+-      {
+-         logger.error("Error ", e);
+-      }
+-      return returnVal;
+-   }
+-
+-
+-   /**
+     * Used by the Plugin Manager to start this plugin
+     */
+    @Override
+@@ -588,6 +479,8 @@
+ 
+    /**
+     * Send SNMP to the RIM to start the DLC (OTH) process. Restart if already running.
++    * 
++    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#startRim()
+     */
+    @Override
+    public boolean startRim()
+@@ -1277,13 +1170,6 @@
+ 
+ 
+    @Override
+-   public String getUrlPath()
+-   {
+-      return null;
+-   }
+-
+-
+-   @Override
+    public void sendMvcsMessageOverDLC(String message) throws TimeoutException, IOException
+    {
+       // TODO need to identify destination vehicle.
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(revision 9580)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(working copy)
+@@ -3,9 +3,6 @@
+ package mil.navy.lcs.mvcs.common.radios.interfaces;
+ 
+ 
+-import java.util.List;
+-
+-
+ /**
+  * This is the main interface class for the RadioPlugin. All radio plug-ins should implement this
+  * Interface since RadioPluginManager uses this Interface to communicate them.
+@@ -76,12 +73,6 @@
+    public void setRadioName(String setRadioName);
+ 
+ 
+-   public boolean addRadioPropertiesChangeEventListener(IRadioProperties listener);
+-
+-
+-   public boolean removeRadioPropertiesEventListener(IRadioProperties listener);
+-
+-
+    public void startPlugin();
+ 
+ 
+@@ -143,28 +134,7 @@
+     */
+    public boolean setEMCONState(boolean emconState);
+ 
+-
+    /**
+-    * This function will get the link quality of each link, if available. If not, then the list will
+-    * be empty
+-    * 
+-    * @return an AbstractList containing the link quality of all radio links, if available. If not,
+-    *         the list will be null
+-    */
+-   public String[][] getLinkQuality();
+-
+-
+-   /**
+-    * This function will start the BIT on the radio, if available
+-    * 
+-    * @param a String containing the BIT test name<br>
+-    * @param ipAddress The IP address of the desired RIM, or null to specify the local RIM
+-    * @return True if command is send successfully, false otherwise
+-    */
+-   public boolean startBit(String bitTestName, String ipAddress);
+-
+-
+-   /**
+     * This function will retrieve the BIT result from the radio
+     * 
+     * @param ipAddress The IP address of the desired RIM, or null to specify the local RIM
+@@ -174,23 +144,6 @@
+ 
+ 
+    /**
+-    * This function will retrieve the radio ID, if available
+-    * 
+-    * @return a String containing the radio ID. If not, then null will be returned
+-    */
+-   public String getRadioIdNetSize();
+-
+-
+-   /**
+-    * This function will set the radio ID, if available
+-    * 
+-    * @param radioID the new radio id
+-    * @return a boolean containing true if the id was set successfully, false otherwise
+-    */
+-   public boolean setRadioIdNetSize(String radioID);
+-
+-
+-   /**
+     * This function will retrieve the frequency being used by the radio, if available
+     * 
+     * @return a String containing the radio frequency. If not, null will be returned
+@@ -244,16 +197,7 @@
+ 
+ 
+    /**
+-    * This method allows the plug-in manager to pass in a list of available vehicles. This method
+-    * will most likely be used in the SCA only.
+     * 
+-    * @param vehicleList The list of vehicles to pass in
+-    */
+-   public void setVehicleList(List<SnmpParameters> vehicleList);
+-
+-
+-   /**
+-    * 
+     * To get the radio burst rate quality table
+     * 
+     * @return a nx3 array containing the radio id, burst rate and percentage of connection
+@@ -298,15 +242,4 @@
+    public String getAntennaPath();
+ 
+ 
+-   /**
+-    * Should return the URL path to access the radio GUI. For example, for the VRC-99 radio,
+-    * something like "vrc99GuiServer" could be returned. If Cajo is being used for the server, the
+-    * "-" character should NOT be included in the returned String because it will be added by the
+-    * Radio plug-in Manager.
+-    * 
+-    * @return the URL path to access the radio GUI, or null if there is no GUI for the radio
+-    */
+-   public String getUrlPath();
+-
+-
+ }// end of class
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java	(revision 9580)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java	(working copy)
+@@ -3,7 +3,6 @@
+ package mil.navy.lcs.mvcs.common.radios;
+ 
+ 
+-import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Enumeration;
+ import java.util.Hashtable;
+@@ -12,9 +11,7 @@
+ import com.google.common.base.Strings;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+-import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstantsEnum;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+@@ -257,7 +254,6 @@
+             // Take the name of a radio and get the name of the plugin class
+             pluginRadioName = (String) e.nextElement();
+ 
+-
+             // Get the class name of that particular plugin and converts it to class name
+             Class<?> newRadioClass = Class.forName((String) radioNamesAndClassesHashTable.get(pluginRadioName));
+ 
+@@ -265,7 +261,6 @@
+             final IRadioPlugin pluginInstance = (IRadioPlugin) newRadioClass.newInstance();
+ 
+             // Put the plugin object in the pluginsHashTable hashtable
+-
+             LoggingManager.getPrimaryLogger().info("adding plugin " + pluginRadioName + " to hashtable ");
+             pluginsHashTable.put(pluginRadioName, pluginInstance);
+ 
+@@ -272,77 +267,9 @@
+             // Put in the plugin radio name for that particular plugin
+             pluginInstance.setRadioName(pluginRadioName);
+ 
+-            // This code is to get the list of all IP address needed to be managed by the
+-            // GUI. This includes all radios of the same type on the ship and
+-            // all the radios of the same type on each vehicle.
+-
+-
+-            List<SnmpParameters> allRadioList = new ArrayList<SnmpParameters>();
+-            if (ConfigManager.getInstance().isPrimaryVesselShip())
+-            {
+-               // This is the ship, so get all IP address for ship radios and vehicle radios
+-               String radioType = getRadioTypeByName(pluginRadioName, true);
+-               List<Radio> radioList = ConfigManager.getInstance().getShip().getListOfRadios();
+-
+-               // Get all the radios of the same type from the shipboard
+-               for (Radio r : radioList)
+-               {
+-                  if (r.getLinkType().equalsIgnoreCase(radioType))
+-                  {
+-                     SnmpParameters snmpParameters = new SnmpParameters();
+-                     snmpParameters.setDeviceId(ConfigManager.getInstance().getShip().getId() + "-" + r.getId());
+-                     snmpParameters.setSnmpIpAddress(r.getSnmpAgentIpAddress());
+-                     snmpParameters.setSnmpPort(r.getSnmpAgentPortNumber());
+-                     allRadioList.add(snmpParameters);
+-                  }
+-               }
+-               // Get all the radios of the same type from all vehicles
+-               List<Vehicle> vehicleList = ConfigManager.getInstance().getListOfVehicles();
+-               for (Vehicle v : vehicleList)
+-               {
+-                  List<Radio> vehicleRadioList = v.getListOfRadios();
+-                  for (Radio r : vehicleRadioList)
+-                  {
+-                     if (r.getLinkType().equalsIgnoreCase(radioType))
+-                     {
+-                        SnmpParameters snmpParameters = new SnmpParameters();
+-                        snmpParameters.setDeviceId(v.getId() + "-" + r.getId());
+-                        snmpParameters.setSnmpIpAddress(r.getSnmpAgentIpAddress());
+-                        snmpParameters.setSnmpPort(r.getSnmpAgentPortNumber());
+-                        allRadioList.add(snmpParameters);
+-                     }
+-                  }
+-               }
+-
+-
+-            }
+-            else
+-            {
+-               // This is a vehicle just get the IP address of the local agent(s)
+-               String radioType = getRadioTypeByName(pluginRadioName, false);
+-               List<Radio> radioList = ConfigManager.getInstance().getVehicle().getListOfRadios();
+-
+-               for (Radio r : radioList)
+-               {
+-                  LoggingManager.getPrimaryLogger().info("Looking for radio " + radioType + " found " + r.getLinkType());
+-                  if (r.getLinkType().equalsIgnoreCase(radioType))
+-                  {
+-                     LoggingManager.getPrimaryLogger().info("Adding " + radioType + " IP address " + r.getSnmpAgentIpAddress());
+-                     SnmpParameters snmpParameters = new SnmpParameters();
+-                     snmpParameters.setDeviceId(ConfigManager.getInstance().getVehicle().getId() + "-" + r.getId());
+-                     snmpParameters.setSnmpIpAddress(r.getSnmpAgentIpAddress());
+-                     snmpParameters.setSnmpPort(r.getSnmpAgentPortNumber());
+-                     allRadioList.add(snmpParameters);
+-                  }
+-               }
+-            }
+-
+-            pluginInstance.setVehicleList(allRadioList);
+-
+             // This code is to pass in the IP address and port that this plugin is responsible for
+             // So when the LM or anyone else calls this plugin, the command goes to the agent on
+-            // this IP
+-            // address
++            // this IP address
+             String snmpIpAddress = "";
+             int snmpPort = 0;
+             List<Radio> radioList = null;
+@@ -350,14 +277,10 @@
+             if (ConfigManager.getInstance().isPrimaryVesselShip())
+             {
+                radioList = ConfigManager.getInstance().getShip().getListOfRadios();
+-               // Old code
+-               // snmpIpAddress = ConfigManager.getInstance().getShip().getIpAddress();
+             }
+             else
+             {
+                radioList = ConfigManager.getInstance().getVehicle().getListOfRadios();
+-               // Old code
+-               // snmpIpAddress = ConfigManager.getInstance().getVehicle().getIpAddress();
+             }
+             // Find the SNMP agent IP address for this particular radio ID
+             for (Radio r : radioList)
+@@ -388,70 +311,7 @@
+ 
+ 
+    /**
+-    * This method returns the radio type based on the the radio name
+     * 
+-    * @param pluginRadioName the name of the radio
+-    * @param isShipboard whether this is a shipboard of vehicle.
+-    * @return the type of the radio
+-    * @throws ConfigException an exception if there was an error getting configuration data from the
+-    *            ConfigManager
+-    */
+-   private String getRadioTypeByName(String pluginRadioName, boolean isShipboard) throws ConfigException
+-   {
+-      List<Radio> radioList = null;
+-      String radioType = "";
+-      if (isShipboard)
+-         radioList = ConfigManager.getInstance().getShip().getListOfRadios();
+-      else
+-         radioList = ConfigManager.getInstance().getVehicle().getListOfRadios();
+-
+-      for (Radio r : radioList)
+-      {
+-         if (r.getId().equalsIgnoreCase(pluginRadioName))
+-         {
+-            radioType = r.getLinkType();
+-            break;
+-         }
+-      }
+-
+-      return radioType;
+-   }
+-
+-
+-   /**
+-    * 
+-    * Method Description
+-    * 
+-    * This method adds a property change listener to every radio plugin
+-    * 
+-    * @param pcl a property change listener interested in changes in the plugin
+-    * @return true of successful, false otherwise
+-    */
+-   // protected boolean addPropertyChangeEventListener(IRadioProperties pcl)
+-   // {
+-   // String pluginRadioName = "";
+-   // try
+-   // {
+-   // Enumeration<String> e = pluginsHashTable.keys();
+-   // while (e.hasMoreElements())
+-   // {
+-   // pluginRadioName = (String) e.nextElement();
+-   // IRadioPlugin pi = (IRadioPlugin) pluginsHashTable.get(pluginRadioName);
+-   // pi.addRadioPropertiesChangeEventListener(pcl);
+-   // }
+-   // return true;
+-   // }
+-   // catch (Exception ex)
+-   // {
+-   // LoggingManager.getPrimaryLogger().error("Error adding property listener to plugin " +
+-   // pluginRadioName);
+-   // return false;
+-   // }
+-   // }
+-
+-
+-   /**
+-    * 
+     * Method Description Check to see if a string is null or blank
+     * 
+     * @param testString the string to check
+Index: src/main/test/mil/navy/lcs/mvcs/common/EncryptIt.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/EncryptIt.java	(revision 9580)
++++ src/main/test/mil/navy/lcs/mvcs/common/EncryptIt.java	(working copy)
+@@ -1,11 +1,11 @@
+ package mil.navy.lcs.mvcs.common;
+ 
+-import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
+-
+ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
+ import org.junit.Assert;
+ import org.junit.Test;
+ 
++import mil.navy.lcs.mvcs.common.constants.MvcsConstants;
++
+ public class EncryptIt
+ {
+    private static final String ALGORITHM = "PBEWithMD5AndDES";
+@@ -27,16 +27,4 @@
+       Assert.assertTrue("Plain text password does not match decrypted password",
+             (CREDENTIAL.equals(decPasswd)));
+    }
+-
+-   private static final void changeRouterCommand()
+-   {
+-      //
+-      String username = "cisco";
+-      // ssh cisco@sdr
+-      // config t (crlf)
+-      // username cisco priv 15 password
+-      // [decrypted password]
+-      // end
+-      // exit
+-   }
+ }
+Index: src/main/test/mil/navy/lcs/mvcs/common/network/NetworkManagerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/network/NetworkManagerTest.java	(revision 9580)
++++ src/main/test/mil/navy/lcs/mvcs/common/network/NetworkManagerTest.java	(working copy)
+@@ -5,15 +5,16 @@
+ 
+ import static org.hamcrest.CoreMatchers.is;
+ import static org.junit.Assert.assertThat;
++
++import org.junit.Before;
++import org.junit.Test;
++
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.network.NetworkManager.QoSClassMap;
+ import mil.navy.lcs.mvcs.common.network.exception.RouterException;
+ import mil.navy.lcs.mvcs.common.node.HardwareDataWithConnectedState;
+ 
+-import org.junit.Before;
+-import org.junit.Test;
+ 
+-
+ public class NetworkManagerTest
+ {
+    private final MockRouterCommunications mockRouterComms = new MockRouterCommunications();
+@@ -30,7 +31,7 @@
+ 
+    }
+ 
+-   private NetworkManager manager = new ExtendedNetworkManager();
++   protected NetworkManager manager = new ExtendedNetworkManager();
+ 
+ 
+    @Before
+Index: src/main/test/mil/navy/lcs/mvcs/common/net/prc117/Prc117PacketIT.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/common/net/prc117/Prc117PacketIT.java	(revision 9580)
++++ src/main/test/mil/navy/lcs/mvcs/common/net/prc117/Prc117PacketIT.java	(nonexistent)
+@@ -1,378 +0,0 @@
+-
+-
+-package mil.navy.lcs.mvcs.common.net.prc117;
+-
+-
+-import static org.hamcrest.Matchers.is;
+-import static org.junit.Assert.assertThat;
+-
+-import java.io.IOException;
+-import java.net.DatagramPacket;
+-import java.net.DatagramSocket;
+-import java.net.InetAddress;
+-import java.net.InetSocketAddress;
+-import java.net.SocketAddress;
+-import java.util.List;
+-
+-import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+-import mil.navy.lcs.mvcs.common.messages.Message;
+-import mil.navy.lcs.mvcs.common.messages.PowerMessage;
+-import mil.navy.lcs.mvcs.common.radios.interfaces.IPRC117RadioPlugin;
+-import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties;
+-import mil.navy.lcs.mvcs.common.radios.interfaces.SnmpParameters;
+-
+-import org.junit.After;
+-import org.junit.Before;
+-import org.junit.BeforeClass;
+-import org.junit.Test;
+-
+-import com.google.common.base.Function;
+-import com.ireasoning.protocol.TimeoutException;
+-
+-/**
+- * Tests the Udp packet sending / receiving subsystem.
+- */
+-public class Prc117PacketIT
+-{
+-   private static final int port = 8888;
+-
+-   Prc117PacketSender sender;
+-   Prc117PacketReceiver receiver;
+-
+-   IPRC117RadioPlugin plugin = new IPRC117RadioPlugin()
+-   {
+-
+-      @Override
+-      public void setRadioName(String setRadioName)
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public boolean addRadioPropertiesChangeEventListener(IRadioProperties listener)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean removeRadioPropertiesEventListener(IRadioProperties listener)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public void startPlugin()
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public void stopPlugin()
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public String getRadioName()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public boolean isRadioAvailable()
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean startRim()
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean stopRim()
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean isRimAvailable()
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean getEMCONState()
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean setEMCONState(boolean emconState)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public String[][] getLinkQuality()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public boolean startBit(String bitTestName, String ipAddress)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public String[] getBitResult(String ipAddress)
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public String getRadioIdNetSize()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public boolean setRadioIdNetSize(String radioID)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public String getRadioFrequency()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public boolean setRadioFrequency(String newRadioFreq)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean connectToRadio(String destinationNodeId, String destinationRadio)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public boolean disconnectFromRadio(String destinationNodeId, String destinationRadio)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public void setSnmpParameters(SnmpParameters snmpParameters, boolean sendOverToRim)
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public void setVehicleList(List<SnmpParameters> vehicleList)
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public String[][] getRadioBurstRateQualityTable()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public String getRadioPowerMode()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public boolean setRadioPowerMode(String powerMode)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-
+-      @Override
+-      public void setAntennaPath(String antennaPathOrAmpPower)
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public String getAntennaPath()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public String getUrlPath()
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public void setSnmpSetOverDLC(String oid, String newval) throws TimeoutException, IOException
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public String setSnmpGetOverDLC(String oid) throws TimeoutException, IOException, ConfigException
+-      {
+-         // TODO Auto-generated method stub
+-         return null;
+-      }
+-
+-
+-      @Override
+-      public void sendSnmpTrapOverDLC(String oid, String message)
+-      {
+-         // TODO Auto-generated method stub
+-
+-      }
+-
+-
+-      @Override
+-      public void sendMvcsMessageOverDLC(String message) throws TimeoutException, IOException
+-      {
+-         DatagramSocket socket = new DatagramSocket();
+-
+-         InetAddress destHost = InetAddress.getLocalHost();
+-         SocketAddress destination = new InetSocketAddress(destHost, port);
+-
+-         byte[] bytes = message.getBytes();
+-         DatagramPacket sendPacket = new DatagramPacket(bytes, bytes.length, destination);
+-
+-         socket.send(sendPacket);
+-         socket.close();
+-      }
+-
+-
+-      @Override
+-      public boolean uploadConfigurationFile(String configurationFileNameAndPath)
+-      {
+-         // TODO Auto-generated method stub
+-         return false;
+-      }
+-
+-   };
+-
+-   Function<String, InetAddress> addressLookup = new Function<String, InetAddress>()
+-   {
+-      @Override
+-      public InetAddress apply(String arg0)
+-      {
+-         return InetAddress.getLoopbackAddress();
+-      }
+-   };
+-
+-
+-   @BeforeClass
+-   public static void setUpBeforeClass() throws Exception
+-   {
+-   }
+-
+-
+-   @Before
+-   public void setUp() throws Exception
+-   {
+-      SocketAddress receiveAddress = new InetSocketAddress(InetAddress.getLocalHost(), port);
+-
+-      sender = new Prc117PacketSender(plugin)
+-      {
+-         @Override
+-         protected boolean shouldSend(Message message)
+-         {
+-            return true;
+-         }
+-      };
+-
+-      receiver = new Prc117PacketReceiver(receiveAddress);
+-   }
+-
+-
+-   @After
+-   public void tearDown()
+-   {
+-      sender.close();
+-      receiver.close();
+-   }
+-
+-
+-   @Test(timeout = 4000)
+-   public void testSendReceivePacket() throws InterruptedException
+-   {
+-      Message expected = new PowerMessage("", true);
+-      sender.send(expected);
+-
+-      Message actual = receiver.waitForMessage();
+-      assertThat(actual, is(expected));
+-   }
+-
+-}
+#P mvcs-plugin-rt1944
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(revision 9580)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(working copy)
+@@ -3,20 +3,21 @@
+ package mil.navy.lcs.mvcs.plugins.rt1944;
+ 
+ 
+-import gnu.cajo.utils.CodebaseServer;
+-import gnu.cajo.utils.ItemServer;
+-
+ import java.beans.PropertyChangeEvent;
+ import java.beans.PropertyChangeListener;
+ import java.io.IOException;
+-import java.util.ArrayList;
+-import java.util.List;
+ import java.util.Timer;
+ import java.util.TimerTask;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.ireasoning.protocol.TimeoutException;
++
++import gnu.cajo.utils.CodebaseServer;
++import gnu.cajo.utils.ItemServer;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+-import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.SnmpParameters;
+ import mil.navy.lcs.mvcs.plugins.rt1944.configuration.ConfigManager;
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.GuiServer;
+@@ -27,11 +28,6 @@
+ import mil.navy.lcs.mvcs.plugins.rt1944.radiocommands.RadioCommandsManager;
+ import mil.navy.lcs.mvcs.plugins.rt1944.snmp.trap.SnmpTrapd;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import com.ireasoning.protocol.TimeoutException;
+-
+ /**
+  * Class Description
+  * <p>
+@@ -109,8 +105,6 @@
+    Thread snmpTrapThread;
+ 
+ 
+-   List<SnmpParameters> vehicleList;
+-
+    // TimerTask object that will attempt to switch the radio antenna path.
+    private PathSwitcher pathThread = null;
+ 
+@@ -138,16 +132,9 @@
+ 
+    public Rt1944Plugin()
+    {
++      this.RadioControl = new RadioCommands();
++      this.rt1944PluginWorker = null;
+ 
+-      this(new RadioCommands(), null);
+-   }
+-
+-
+-   protected Rt1944Plugin( RadioCommands radioControl, Rt1944PluginWorker worker)
+-   {
+-      this.RadioControl = radioControl;
+-      this.rt1944PluginWorker = worker;
+-
+       initialize();
+    }
+ 
+@@ -155,22 +142,6 @@
+    /**
+     * Method Description
+     *
+-    * @param listener
+-    * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#addRadioPropertiesChangeEventListener(mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties)
+-    */
+-   @Override
+-   public boolean addRadioPropertiesChangeEventListener(IRadioProperties listener)
+-   {
+-      logger.info("Adding listener " + listener);
+-      getRadioProperties().addRadioPropertiesChangeEventListener(listener);
+-      return true;
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    *
+     * @param destinationNodeId
+     * @param destinationRadio
+     * @return
+@@ -247,19 +218,6 @@
+     * Method Description
+     *
+     * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getLinkQuality()
+-    */
+-   @Override
+-   public String[][] getLinkQuality()
+-   {
+-      return rt1944PluginWorker.getLinkQuality();
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    *
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getRadioBurstRateQualityTable()
+     */
+    @Override
+@@ -319,19 +277,6 @@
+     * Method Description
+     *
+     * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getRadioIdNetSize()
+-    */
+-   @Override
+-   public String getRadioIdNetSize()
+-   {
+-      return rt1944PluginWorker.getRadioIdNetSize();
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    *
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getRadioName()
+     */
+    @Override
+@@ -355,19 +300,7 @@
+ 
+ 
+    /**
+-    * Returns a hardcoded URL path.
+     *
+-    * @return a hardcoded URL path
+-    */
+-   @Override
+-   public String getUrlPath()
+-   {
+-      return "rt1944GuiServer";
+-   }
+-
+-
+-   /**
+-    *
+     * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#isRadioAvailable()
+     */
+@@ -424,20 +357,6 @@
+    }
+ 
+ 
+-   /**
+-    * Method Description
+-    *
+-    * @param listener
+-    * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#removeRadioPropertiesEventListener(mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties)
+-    */
+-   @Override
+-   public boolean removeRadioPropertiesEventListener(IRadioProperties listener)
+-   {
+-      return false;
+-   }
+-
+-
+    public void saveChangesPermanently()
+    {
+       try
+@@ -451,8 +370,8 @@
+       }
+    }
+ 
+-   /*PCR 1469 - Radio Switching
+-    * Created timer thread to prevent MVCS Lockup.
++   /*
++    * PCR 1469 - Radio Switching Created timer thread to prevent MVCS Lockup.
+     */
+    /** Handles setting the antenna path for the radio */
+    private class PathSwitcher extends TimerTask
+@@ -461,7 +380,8 @@
+       /** Selected Antenna to be used by the radio. */
+       private String antennaSelection;
+ 
+-      public PathSwitcher(String antennaPath)
++
++      public PathSwitcher( String antennaPath)
+       {
+          this.antennaSelection = antennaPath;
+       }
+@@ -475,7 +395,7 @@
+             /*
+              * Test whether the selected antenna is the current antenna. To exit the loop.
+              */
+-            if ( RadioControl.getPath().contentEquals(antennaSelection))
++            if (RadioControl.getPath().contentEquals(antennaSelection))
+             {
+                logger.info("Selected antenna already in use, ignoring switch command.");
+                // If setting the path was successful, cancel the run.
+@@ -512,7 +432,7 @@
+          {
+             logger.debug("Set Antenna Path Thread has been cancelled.");
+          }
+-         //Cancels and removes the reference to the current timer.
++         // Cancels and removes the reference to the current timer.
+          antSwitchTimer.cancel();
+          antSwitchTimer.purge();
+       }
+@@ -519,12 +439,12 @@
+ 
+       try
+       {
+-         //Start or restart the timer.
++         // Start or restart the timer.
+ 
+          // Pass in a new TimerTask with the new antenna path.
+          pathThread = new PathSwitcher(antennaPath);
+ 
+-         //A new timer object is referenced since we destroyed our previous timer.
++         // A new timer object is referenced since we destroyed our previous timer.
+          antSwitchTimer = new Timer("MVCS-" + this.getClass().getSimpleName() + "-AntennaSwitchThread", true);
+ 
+          // Continues to attempt to set the antenna path till successful.
+@@ -577,28 +497,6 @@
+    /**
+     * Method Description
+     *
+-    * @param radioID
+-    * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#setRadioIdNetSize(java.lang.String)
+-    */
+-   @Override
+-   public boolean setRadioIdNetSize(String radioID)
+-   {
+-      try
+-      {
+-         RadioControl.setSSID(radioID);
+-      }
+-      catch (IOException e)
+-      {
+-         e.printStackTrace();
+-      }
+-      return false;
+-   }
+-
+-
+-   /**
+-    * Method Description
+-    *
+     * @param setRadioName
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#setRadioName(java.lang.String)
+     */
+@@ -662,36 +560,6 @@
+    }
+ 
+ 
+-   /**
+-    * Method Description
+-    *
+-    * @param vehicleList
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#setVehicleList(java.util.List)
+-    */
+-   @Override
+-   public void setVehicleList(List<SnmpParameters> vehicleList)
+-   {
+-      this.vehicleList = vehicleList;
+-
+-   }
+-
+-
+-   /**
+-    * Not used.
+-    *
+-    * @param bitTestName
+-    * @param ipAddress
+-    * @return
+-    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#startBit(java.lang.String,
+-    *      java.lang.String)
+-    */
+-   @Override
+-   public boolean startBit(String bitTestName, String ipAddress)
+-   {
+-      return true;
+-   }
+-
+-
+    public void startEmconThread(final boolean emconState)
+    {
+       Thread tempThread = new Thread()
+@@ -865,7 +733,6 @@
+     */
+    protected void initialize()
+    {
+-      this.vehicleList = new ArrayList<SnmpParameters>();
+       ConfigManager.getInstance();
+       radioProperties.setRadioName(myRadioName);
+       // guiServer = new GuiServer();

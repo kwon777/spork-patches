@@ -1,0 +1,1780 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-interface
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(working copy)
+@@ -49,6 +49,9 @@
+ 
+    private final RFDevice rfDevice;
+ 
++   /** Denotes manual antenna override mode. */
++   private boolean antennaOverride = false;
++
+    /** Denotes requested frequency */
+    private int requestedFrequency = -1;
+ 
+@@ -207,4 +210,25 @@
+       return this.frequencyList;
+    }
+ 
++
++   /**
++    * To get antenna override mode.
++    * 
++    * @return true for manual, false for automatic mode. Defaults to false (automatic mode).
++    */
++   public boolean isAntennaOverride()
++   {
++      return this.antennaOverride;
++   }
++
++
++   /**
++    * To set antenna override mode. TRUE = manual, FALSE = automatic
++    * 
++    * @param manualMode - manual override mode to set.
++    */
++   public void setAntennaOverride(boolean manualMode)
++   {
++      this.antennaOverride = manualMode;
++   }
+ }
+\ No newline at end of file
+Index: src/main/java/mil/navy/lcs/mvcs/iface/rf/Antenna.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/rf/Antenna.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/iface/rf/Antenna.java	(working copy)
+@@ -17,7 +17,7 @@
+    PORT("Port"), // left side
+    STBD("StarBoard"); // right side
+ 
+-   /** String representation of the OTH amplifier values.  */
++   /** String representation of the OTH amplifier values. */
+    public final String displayText;
+ 
+ 
+@@ -30,4 +30,22 @@
+    {
+       this.displayText = displayText;
+    }
++
++
++   /**
++    * To get antenna using the given string (Case Insensitive).
++    * 
++    * @param antenna the antenna starts with "POR" or "ST"
++    * @return PORT antenna if given string starts with "POR". STBD antenna if given string starts
++    *         with "ST". Otherwise NA antenna.
++    */
++   public static Antenna getAntenna(String antenna)
++   {
++      if (antenna != null && antenna.toUpperCase().contains("POR"))
++         return Antenna.PORT;
++      else if (antenna != null && antenna.toUpperCase().contains("ST"))
++         return Antenna.STBD;
++      else
++         return Antenna.NA;
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/iface/app/MvcsRemoteInterface.java	(working copy)
+@@ -105,4 +105,15 @@
+     * @throws RemoteException
+     */
+    void requestAmpAntenna(String nodeId, String linkId, String outputId, String antennaId, boolean active) throws RemoteException;
++
++
++   /**
++    * 
++    * Request the OTH antenna override (manual) mode.
++    * 
++    * @param linkId - the OTH radio ID
++    * @param manual - manual if true
++    * @throws RemoteException
++    */
++   void requestOthAntennaOverride(String linkId, boolean manual) throws RemoteException;
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/iface/rf/IRfAmpDeviceHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/rf/IRfAmpDeviceHandler.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/iface/rf/IRfAmpDeviceHandler.java	(working copy)
+@@ -17,6 +17,9 @@
+ public interface IRfAmpDeviceHandler extends IHardwareStatus<RFDevice>
+ {
+    /**
++    * To get the currently used antenna from the controller (HARDWARE). This may block for few
++    * seconds.
++    * 
+     * @return The antenna of the RF device.
+     */
+    Antenna getCurrentAntenna();
+@@ -23,19 +26,13 @@
+ 
+ 
+    /**
+-    * Sets the amplifier to the requested antenna.
++    * Sets the amplifier to the requested antenna. This may block for few seconds. Update the device
++    * upon successful change.
+     * 
+-    * @param selectedAntenna
+-    * @param output
++    * @param selectedAntenna - The antenna selected
++    * @param device - The RF device to update upon change
+     * @return if the antenna was successfully selected.
+     */
+-   boolean setCurrentAntenna(Antenna selectedAntenna);
++   boolean setCurrentAntenna(RFDevice device, Antenna selectedAntenna);
+ 
+-
+-   /**
+-    * Used by calling class to update the RFOutput
+-    * 
+-    * @param device
+-    */
+-   void updateOutput(RFDevice device);
+ }
+#P mvcs-webgui
+Index: WebContent/css/nodeInfo.css
+===================================================================
+--- WebContent/css/nodeInfo.css	(revision 9562)
++++ WebContent/css/nodeInfo.css	(working copy)
+@@ -277,6 +277,29 @@
+ 	align-items: flex-end;
+ }
+ 
++.overrideOffButton {
++	color: rgb(48, 255, 24);
++	border-style: solid;
++}
++
++.overrideOnButton {
++	border-style: solid;
++	color: rgb(255, 165, 0);
++}
++
++.overrideOffText {
++	color: rgb(48, 255, 24);
++}
++
++.overrideOnText {
++	color: rgb(255, 165, 0);
++}
++
++.othAntennaStatus {
++	padding-left: 3em;
++	/* text-align: center;	*/
++}
++
+ .controlButton{
+ width: 11em;
+ margin-bottom:.3em;
+Index: src/mil/navy/lcs/mvcs/webgui/servlets/requests/OthAntennaOverrideRequestServlet.java
+===================================================================
+--- src/mil/navy/lcs/mvcs/webgui/servlets/requests/OthAntennaOverrideRequestServlet.java	(nonexistent)
++++ src/mil/navy/lcs/mvcs/webgui/servlets/requests/OthAntennaOverrideRequestServlet.java	(working copy)
+@@ -0,0 +1,63 @@
++package mil.navy.lcs.mvcs.webgui.servlets.requests;
++
++import java.io.IOException;
++import javax.servlet.ServletException;
++import javax.servlet.http.HttpServlet;
++import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletResponse;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import mil.navy.lcs.mvcs.webgui.app.AppState;
++import mil.navy.lcs.mvcs.webgui.servlets.MvcsServlet;
++import mil.navy.lcs.mvcs.webgui.servlets.ServletUtils;
++
++/**
++ * Servlet implementation class OthAntennaOverrideRequest
++ */
++public class OthAntennaOverrideRequestServlet extends MvcsServlet {
++	private static final long serialVersionUID = 1L;
++	 private static final Logger logger = LoggerFactory.getLogger(OthAntennaOverrideRequestServlet.class);
++       
++    /**
++     * @see HttpServlet#HttpServlet()
++     */
++    public OthAntennaOverrideRequestServlet() {
++        super();
++    }
++
++   @Override
++   protected void doAuthenticatedGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
++   {
++      //Nothing to do here for MVCS.
++   }
++
++   @Override
++   protected void doAuthenticatedPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
++   {
++      try
++      {
++         String linkId = ((String) request.getParameter("linkId"));
++         String requested = ((String) request.getParameter("requested"));
++         boolean on = "true".equalsIgnoreCase(requested);
++         
++         System.out.println("OTH Antenna Override: " + linkId + " " + requested);
++
++         logger.info("OthAntennaOverride request: {} {} ", new Object[] { linkId, requested });
++
++         AppState.instance.bi.getBackend().requestOthAntennaOverride(linkId, on);
++
++         response.setContentType("text/plain");
++      }
++      catch (Exception e)
++      {
++         logger.error("Failed Antenna Change Request: {} ", ServletUtils.parametersToString(request));
++         logger.error("Error: ", e);
++         throw new ServletException(e);
++      }
++
++      
++   }
++
++}
+Index: WebContent/WEB-INF/web.xml
+===================================================================
+--- WebContent/WEB-INF/web.xml	(revision 9562)
++++ WebContent/WEB-INF/web.xml	(working copy)
+@@ -237,4 +237,14 @@
+     <servlet-name>AmpAntennaRequestServlet</servlet-name>
+     <url-pattern>/AmpAntennaRequest</url-pattern>
+   </servlet-mapping>
++  <servlet>
++    <description></description>
++    <display-name>OthAntennaOverrideRequestServlet</display-name>
++    <servlet-name>OthAntennaOverrideRequestServlet</servlet-name>
++    <servlet-class>mil.navy.lcs.mvcs.webgui.servlets.requests.OthAntennaOverrideRequestServlet</servlet-class>
++  </servlet>
++  <servlet-mapping>
++    <servlet-name>OthAntennaOverrideRequestServlet</servlet-name>
++    <url-pattern>/OthAntennaOverrideRequest</url-pattern>
++  </servlet-mapping>
+ </web-app>
+\ No newline at end of file
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9563)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -248,6 +248,7 @@
+ 
+ var requestRF = function(device, node, on, output) {
+ 
++	//alert(node.nodeId()+" " + link.rfDevice.name() + " ");
+ 	//PCR MVCS01394 - Confirmation Box for disabling links.
+ 	if(on == "false" && !confirm(Strings.confirmDisableRFPath))
+ 	{
+@@ -348,6 +349,21 @@
+ 	});
+ };
+ 
++//JavaScript function called when the OTH antenna override is requested to be
++//changed.
++var requestOthAntennaOverride = function(link, on, output) {
++	if (on=='true' && !confirm(Strings.confirmAntennaOverride))
++		return;
++	$.ajax({
++		url : 'OthAntennaOverrideRequest',
++		type : 'post',
++		data : {
++			'linkId' : link.linkId(),
++			'requested' : on
++		}
++	});
++};
++
+ //JavaScript function that is called when a node request shutdown (MVCS01414)
+ var requestWarmShutdown = function(node)
+ {
+Index: WebContent/js/Strings.js
+===================================================================
+--- WebContent/js/Strings.js	(revision 9563)
++++ WebContent/js/Strings.js	(working copy)
+@@ -24,6 +24,7 @@
+ 	confirmDisableRF: "Are you sure you want to disable RF transmit.",
+ 	confirmDisableRFPath: "May lose comms. Disable Link?",
+ 	confirmFrequencyChange: "May lose comms. Change frequency to ",
++	confirmAntennaOverride: "Are you sure you want to manually select antenna?",
+ 
+ 	alertEmconTimeValue: "Please enter a value between 1 and 120",
+ 	alertZeroizeCommandReceived: "Zeroization command will be sent to the vehicle.",
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9563)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -415,9 +415,8 @@
+ 												<tr>
+ 													<td>RF Outputs</td>
+ 												</tr>
+-												<!-- ko with: rfDevice -->
+-												<!-- ko if: rfOutputs().length > 0 -->
+-												<!-- ko foreach: rfOutputs -->
++												<!-- ko if: rfDevice.rfOutputs().length > 0 -->
++												<!-- ko foreach: rfDevice.rfOutputs -->
+ 												<tr>
+ 												<!-- PCR MVCS01445 - Convert LNR to L&R -->
+ 													<td class="dataLabel" data-bind="text: displayName" />
+@@ -424,28 +423,46 @@
+ 													<!--  PCR MVCS01482, remove off button for RF outputs -->
+ 													<td class="status" data-bind="css: { 'good': outputting}">
+ 														<button class="request true"
+-															data-bind="click: requestRF.bind($data, $parent, $parents[2], 'true'), css: { pressed: outputting, depressed:!outputting}">on</button>
++															data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'true'), css: { pressed: outputting, depressed:!outputting}">on</button>
+ 														<button class="request false shipOnly"
+-															data-bind="click: requestRF.bind($data, $parent, $parents[2], 'false')">off</button>
+-															
+-															<!-- We only want to show these buttons if it the ship, and for the main link. -->
+-															<button class="shipOnly request" data-bind="visible: displayName()=='MAIN', click: requestAmpAntenna.bind($data, $parent, $parents[2], 'true', 'PORT'), css: { on: ampAntenna() == 'PORT'}">Port</button>
+-															<button class="shipOnly request" data-bind="visible: displayName()=='MAIN', click: requestAmpAntenna.bind($data, $parent, $parents[2], 'true', 'STBD'), css: { on: ampAntenna() == 'STBD'}">Stbd</button>
+-															
+-													</td>
+-													<td />
++															data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'false')">off</button>
++                                                    </td>
+ 												</tr>
+-												<!-- /ko -->
+-												<!-- /ko -->
+-												<!-- ko ifnot: rfOutputs().length > 0 -->
+-												<tr>
+-													<td>NO RF ITEMS</td>
+-												</tr>
+-												<!-- /ko -->
+-												<!-- /ko -->
+-											</table>
+-											<!-- /ko -->
+-										</div>
++                        						<!-- We only want to show these buttons if it the ship, and for the main link. -->
++			                                    <!--  ko if: (displayName()=='MAIN' && $parents[1].isShip()) -->
++                                                <tr>
++                                                  <td class="othAntennaStatus" data-bind="css:{'overrideOnText': $parent.antennaOverride(), 'overrideOffText': !$parent.antennaOverride() }, text: $parent.antennaOverride()?' Manual ':'Automatic' " />
++                                                  <td class="status">
++                                                    <button class="overrideOnButton"
++                                                      data-bind="visible: !$parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent,'true')">&nbsp; Manual &nbsp;</button>
++                                                    <button class="overrideOffButton"
++                                                      data-bind="visible: $parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent, 'false')">Automatic</button>
++                                                  </td>
++                                                </tr>
++                                                <tr>
++                                                  <td class="othAntennaStatus" data-bind="css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}, text: 'Antenna:  &nbsp;&nbsp;' + ampAntenna()" />
++                                                  <td class="status">
++                                                    <button class="shipOnly request"
++                                                      data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='PORT', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'PORT')">PORT</button>
++                                                    <button class="shipOnly request"
++                                                      data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='STBD', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'STBD')">STBD</button>
++                                                  </td>
++                                                </tr>
++                                                <!-- /ko -->
++                                                <!-- end of if MAIN and Ship -->
++                                                <!-- /ko -->
++                                                <!-- end of foreach output-->
++                                                <!-- /ko -->
++                                                <!-- end of if output less than 0-->
++                                                <!-- ko ifnot: rfDevice.rfOutputs().length > 0 -->
++                                                <tr>
++                                                  <td>NO RF ITEMS</td>
++                                                </tr>
++                                                <!-- /ko -->
++                                            </table>
++                                            <!-- /ko -->
++                                            <!-- end of if $data.rfDevice -->
++                                          </div>
+ 										<div class="clear"></div>
+ 									</div>
+ 									<div class="clear"></div>
+Index: test.system/mil/navy/lcs/mvcs/webgui/app/BackendInterfaceTest.java
+===================================================================
+--- test.system/mil/navy/lcs/mvcs/webgui/app/BackendInterfaceTest.java	(revision 9562)
++++ test.system/mil/navy/lcs/mvcs/webgui/app/BackendInterfaceTest.java	(working copy)
+@@ -225,4 +225,9 @@
+       // TODO Auto-generated method stub
+       
+    }
++
++   @Override
++   public void requestOthAntennaOverride(String linkId, boolean manual) throws RemoteException
++   {
++   }
+ }
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/rf/PRC117RadioSwitchHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/rf/PRC117RadioSwitchHandler.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/sca/rf/PRC117RadioSwitchHandler.java	(working copy)
+@@ -66,7 +66,7 @@
+ 
+ 
+    @Override
+-   public boolean setCurrentAntenna(Antenna selectedAntenna)
++   public boolean setCurrentAntenna(RFDevice device, Antenna selectedAntenna)
+    {
+       boolean result = false;
+       switch (selectedAntenna)
+@@ -83,6 +83,11 @@
+             logger.info("Invalid Amp Setting was requested.");
+             break;
+       }
++
++      // update the device
++      if (result)
++         updateOutputAntenna(device, selectedAntenna);
++
+       return result;
+ 
+    }
+@@ -111,11 +116,17 @@
+    }
+ 
+ 
+-   @Override
+-   public void updateOutput(RFDevice device)
++   /**
++    * 
++    * To update the device object with newly changed antenna position.
++    * 
++    * @param device - The RF device
++    * @param selectedAntenna - The newly selected antenna
++    */
++   private void updateOutputAntenna(RFDevice device, Antenna selectedAntenna)
+    {
+       RFOutput output = device.getRfOutput(RFOutputType.MAIN);
+-      output.setAmpAntenna(getCurrentAntenna());
++      output.setAmpAntenna(selectedAntenna);
+    }
+ 
+ 
+@@ -124,7 +135,7 @@
+    {
+       if (devices.hasRfOutput(RFOutputType.MAIN))
+       {
+-         updateOutput(devices);
++         updateOutputAntenna(devices, getCurrentAntenna());
+       }
+       // Current no way to tell if this was updated correctly
+       return true;
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(working copy)
+@@ -6,6 +6,7 @@
+ import java.beans.PropertyChangeEvent;
+ import java.beans.PropertyChangeListener;
+ import java.util.Comparator;
++import java.util.HashMap;
+ import java.util.Hashtable;
+ import java.util.List;
+ import java.util.SortedMap;
+@@ -49,6 +50,7 @@
+ import mil.navy.lcs.mvcs.sca.main.ShipMain;
+ import mil.navy.lcs.mvcs.sca.main.ShipState;
+ import mil.navy.lcs.mvcs.sca.radios.ScaRadioPluginsManager;
++import mil.navy.lcs.mvcs.sca.rf.OTHAntennaAutomation;
+ 
+ /**
+  * This class is responsible to handle requests for MVCS ship node.
+@@ -164,6 +166,8 @@
+ 
+    private IFilterDeviceHandler filterDeviceHandler;
+ 
++   protected HashMap<RadioLink, OTHAntennaAutomation> othAntennaAutomation = new HashMap<RadioLink, OTHAntennaAutomation>();
++
+    /** the frequency change listeners for radios */
+    protected Hashtable<RadioLink, FrequencyChangeListener> frequencyChangeListeners = new Hashtable<RadioLink, FrequencyChangeListener>();
+ 
+@@ -660,10 +664,10 @@
+    /**
+     * To request that the change the OTH Amplifier to the desired Antenna choice.
+     * 
+-    * @param linkId
+-    * @param rfOutputType
+-    * @param antennaId
+-    * @param active
++    * @param linkId - The link ID
++    * @param rfOutputType - The RF output type
++    * @param antennaId - The antenna ID
++    * @param active - Activate the output
+     */
+    public void requestOthAmpAntenna(String linkId, RFOutputType rfOutputType, String antennaId, boolean active)
+    {
+@@ -677,16 +681,41 @@
+       // Ship must be set to a valid RF Device and Output.
+       if (device != null && output != null)
+       {
+-         if (othAmplifierHandler.setCurrentAntenna(Antenna.valueOf(antennaId)))
+-         {
+-            // If the current was correctly set on the Amplifier update the node.
+-            othAmplifierHandler.updateOutput(device);
+-         }
++         // change antenna then update the device.
++         othAmplifierHandler.setCurrentAntenna(device, Antenna.valueOf(antennaId));
+       }
+ 
+    }// end of method
+ 
++
+    /**
++    * 
++    * To change antenna override mode.
++    * 
++    * @param linkId - the radio link ID
++    * @param manual - true for manual, false for automatic
++    */
++   public void requestOthAntennaMode(String linkId, boolean manual)
++   {
++      RadioLink radioLink = (RadioLink) node.getLink(linkId);
++      if (radioLink != null)
++      {
++         radioLink.setAntennaOverride(manual);
++      }
++      logger.debug("{} OTH antenna override mode is now set to " + (manual ? "manual" : "automatic"));
++   }
++
++
++   /**
++    * @return the OTH antenna automation object
++    */
++   public HashMap<RadioLink, OTHAntennaAutomation> getOthAntennaAutomation()
++   {
++      return this.othAntennaAutomation;
++   }
++
++
++   /**
+     * To listen for frequency change event of a radio so it can update the progress.
+     */
+    private class FrequencyChangeListener implements PropertyChangeListener, Runnable
+Index: src/main/java/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomation.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomation.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomation.java	(working copy)
+@@ -0,0 +1,350 @@
++
++
++package mil.navy.lcs.mvcs.sca.rf;
++
++
++import java.beans.PropertyChangeEvent;
++import java.beans.PropertyChangeListener;
++import java.util.concurrent.TimeUnit;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import mil.navy.lcs.mvcs.common.config.model.AntennaCoverage;
++import mil.navy.lcs.mvcs.common.config.model.Radio;
++import mil.navy.lcs.mvcs.common.link.utils.Dates;
++import mil.navy.lcs.mvcs.iface.app.MvcsThreads;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.RmmvNode;
++import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
++import mil.navy.lcs.mvcs.iface.rf.Antenna;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.model.HostModelInitializer;
++
++/**
++ * This class is responsible for automating antenna selection between PORT or STARBOARD of host side
++ * OTH (PRC117) radio.
++ * <p>
++ * Date Created: Jul 5, 2016
++ * <p>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
++ * $LastChangedRevision$
++ *
++ * @author Dan
++ * @version 1.0
++ */
++public class OTHAntennaAutomation implements Runnable, PropertyChangeListener
++{
++
++   private static final Logger logger = LoggerFactory.getLogger(OTHAntennaAutomation.class);
++
++   /** The RMMV with the highest priority. RMMV is only vehicle that has PRC117 radio. */
++   private VehicleNode othOwnerVehicle = null;
++
++   /** The OTH radio object */
++   private RadioLink radioLink;
++
++   /**
++    * To denote the port side antenna coverage points (where x, 0 <= x < 360) forward [at index 0]
++    * and aft [at index 1]
++    */
++   int[] port_antenna_coverage_points = new int[2];
++
++   /**
++    * To denote the starboard side antenna coverage points (where x, 0 <= x < 360) forward [at index
++    * 0] and aft [at index 1]
++    */
++   int[] starboard_antenna_coverage_points = new int[2];
++
++   /** To denote the last time antenna changed due to LOC-recovery function */
++   long lastTimeAntennaSwitchedDueToLOCR = -1;
++
++   /**
++    * To denote the time (seconds) to stay with one side antenna during LOC-recovery. Defaults to
++    * 600 seconds.
++    */
++   static int timeToStayWithAntennaDuringLOCR = 600; // 10 minutes
++
++   /** Denotes whether LOC recovery function is on. Defaults to off (false). */
++   static boolean LOC_RECOVERY_ON = false;
++
++   /** The antenna automation interval in milliseconds. Defaults to 20 seconds */
++   static long AUTOMATION_INTERVAL = 20;
++
++
++   public OTHAntennaAutomation( RadioLink radioLink, Radio radio)
++   {
++      this.radioLink = radioLink;
++
++      // retrieve coverage angles for both antennas from configurations
++      // forward points must be in top half circle (271 - 89 degrees)
++      // aft points must be in bottom half circle (91 - 269 degrees)
++      int port_forward_point = 0; // defaults to 0 degree
++      int port_aft_point = 180; // defaults to 180 degree
++      int starboard_forward_point = 0; // defaults to 0 degree
++      int starboard_aft_point = 180; // defaults to 180 degree
++      if (radio.getId().equalsIgnoreCase(radioLink.getLinkId()))
++      {
++         for (AntennaCoverage coverage : radio.getAntennaCoverages())
++         {
++            Antenna antenna = Antenna.getAntenna(coverage.getSide());
++            if (antenna != null && antenna == Antenna.PORT)
++            {
++               port_forward_point = coverage.getForward();
++               port_aft_point = coverage.getAft();
++            }
++            else if (antenna != null && antenna == Antenna.STBD)
++            {
++               starboard_forward_point = coverage.getForward();
++               starboard_aft_point = coverage.getAft();
++            }
++         }
++      }
++
++      // define coverage points for forward & aft of both antennas. value must be 0<= and <360
++      // forward points must be in top half circle (271 - 89 degrees)
++      // aft points must be in bottom half circle (91 - 269 degrees)
++
++      // use 0 degree if port forward point isn't in the top half circle
++      port_antenna_coverage_points[0] = isWithinTopHalfCircle(port_forward_point) ? port_forward_point : 0;
++
++      // use 180 degree if starboard forward point isn't in the top half circle
++      starboard_antenna_coverage_points[0] = isWithinTopHalfCircle(starboard_forward_point) ? starboard_forward_point : 0;
++
++      // use 180 degree if starboard aft point isn't in the bottom half circle
++      starboard_antenna_coverage_points[1] = isWithinBottomHalfCircle(starboard_aft_point) ? starboard_aft_point : 180;
++
++      // use 180 degree if port aft point isn't in the bottom half circle
++      port_antenna_coverage_points[1] = isWithinBottomHalfCircle(port_aft_point) ? port_aft_point : 180;
++
++      // Initialize a thread to run periodically
++      MvcsThreads.scheduledPool.scheduleAtFixedRate(this, 0, AUTOMATION_INTERVAL, TimeUnit.SECONDS);
++   }
++
++
++   /**
++    * Gets the owner vehicle of OTH radio. The vehicle must be hosting an OTH radio.
++    * 
++    * @return
++    */
++   public VehicleNode getOthOwnerVehicle()
++   {
++      return this.othOwnerVehicle;
++   }
++
++
++   @Override
++   public void run()
++   {
++      Thread.currentThread().setName("MVCS-OthAntennaAutomation");
++
++      logger.debug(radioLink.getLinkId() + ":OTH antenna automation is running in every {} seconds.", AUTOMATION_INTERVAL);
++
++      // antenna selection: NA, PORT, STARBOARD
++      Antenna antennaSelection = Antenna.NA;
++
++      // find the OTH owner vehicle. The highest priority RMMV
++      for (VehicleNode vehicle : HostModelInitializer.sortMvcsNodeByPriority(ShipState.model.getVehicles().values()))
++      {
++         if (vehicle instanceof RmmvNode)
++         {
++            othOwnerVehicle = vehicle;
++            break;
++         }
++      }
++
++      // OTH owner vehicle does not exist
++      if (othOwnerVehicle == null)
++      {
++         logger.debug("OTH-Antenna-Automation: RMMV not found.");
++         return;
++      } // end of if othOwner vehicle found
++
++      // The vehicle must be deployed
++      if (!othOwnerVehicle.isDeployed())
++      {
++         logger.debug("OTH-Antenna-Automation: Vehicle {} is not deployed", othOwnerVehicle.getVehicleName());
++         return;
++      } // end of if vehicle deployed
++
++      // check whether GPS has updated
++      boolean gpsUpdated = (System.currentTimeMillis() - othOwnerVehicle.getGpsAge()) < (AUTOMATION_INTERVAL * 1000);
++      logger.debug("OTH-Antenna-Automation: {}'s GPS has last updated on " + Dates.getSimpleDateFormat(othOwnerVehicle.getGpsAge()), othOwnerVehicle.getNodeName());
++
++      // GPS updated
++      if (gpsUpdated)
++      {
++         // reset the LOCR antenna switch time
++         lastTimeAntennaSwitchedDueToLOCR = -1;
++
++         // retrieve heading of vehicle
++         double heading = othOwnerVehicle.getHeading();
++
++         // vehicle's position is in overlapping zone
++         if (isWithinStarboardRange(heading) && isWithinPortRange(heading))
++         {
++            // continue with no change
++            return;
++         }
++         // vehicle is in starboard range only
++         else if (isWithinStarboardRange(heading) && !isWithinPortRange(heading))
++         {
++            // use starboard antenna
++            antennaSelection = Antenna.STBD;
++         }
++         // vehicle is in port range only
++         else if (!isWithinStarboardRange(heading) && isWithinPortRange(heading))
++         {
++            // use port antenna
++            antennaSelection = Antenna.PORT;
++         }
++         // vehicle is in no coverage zone
++         else
++         {
++            // send alert or log
++            logger.debug("OTH-Antenna-Automation: Vehicle is in no coverage zone.");
++            return;
++         }
++      }
++      // GPS not updated
++      else
++      {
++         // vehicle has COMMs
++         if (othOwnerVehicle.isComms())
++         {
++            // reset the LOCR antenna switch time
++            lastTimeAntennaSwitchedDueToLOCR = -1;
++
++            // send a log
++            logger.debug("OTH-Antenna-Automation: GPS not updated but {} still has COMMS.", othOwnerVehicle.getNodeName());
++         }
++         // vehicle does not have COMMs
++         else
++         {
++            // LOCR switch time hasn't been initialized
++            if (lastTimeAntennaSwitchedDueToLOCR < 0)
++               // initialize the LOCR antenna switch time
++               lastTimeAntennaSwitchedDueToLOCR = System.currentTimeMillis();
++
++            // Time to switch to other antenna (LOC-recovery)
++            if ((timeToStayWithAntennaDuringLOCR * 1000) < System.currentTimeMillis() - lastTimeAntennaSwitchedDueToLOCR)
++            {
++               // update the time stamp
++               lastTimeAntennaSwitchedDueToLOCR = System.currentTimeMillis();
++
++               logger.debug("OTH-Antenna-Automation: Time has reached for switching antenna due to LOC. RECOVERY " + (LOC_RECOVERY_ON ? "ON" : "OFF"));
++
++               // LOC recover is on
++               if (LOC_RECOVERY_ON)
++               {
++                  // use other side antenna
++                  Antenna current = ShipState.shipHandler.getOthAmplifierHandler().getCurrentAntenna();
++                  logger.debug("OTH-Antenna-Automation: {} has no COMMS; current OTH antenna is on " + current, othOwnerVehicle.getNodeName());
++                  antennaSelection = (current == Antenna.PORT) ? Antenna.STBD : Antenna.PORT;
++               }
++            }
++         }
++      } // end of GPS not updated
++
++      // antenna selected
++      if (antennaSelection != Antenna.NA)
++      {
++         // Manual override mode
++         if (radioLink.isAntennaOverride())
++         {
++            // send log
++            logger.debug("OTH-Antenna-Automation: Automated chioce is {} but it is in manual override mode.", antennaSelection);
++            // continue to next iteration
++            return;
++         }
++
++         // send a command if automatic mode
++         logger.info("OTH-Antenna-Automation: Selecting {} antenna.", antennaSelection);
++         ShipState.shipHandler.getOthAmplifierHandler().setCurrentAntenna(radioLink.getRFDevice(), antennaSelection);
++
++      } // end of if antenna selected
++
++   }// end of run
++
++
++   /**
++    * 
++    * To check the given point is within the starboard antenna range.
++    * 
++    * @param p the point. point must be within 0 and less than 360 degree
++    * @return true if the point is within the starboard antenna range.
++    */
++   private boolean isWithinStarboardRange(double p)
++   {
++      // points must be two. all values must be within 0 and less than 360 degree
++      if (starboard_antenna_coverage_points.length != 2 && (p < 0 || p >= 360))
++         return false;
++
++      // the point must be between forward coverage point and aft coverage point
++      return (p >= starboard_antenna_coverage_points[0] && p <= starboard_antenna_coverage_points[1]);
++   }
++
++
++   /**
++    * 
++    * To check the given point is within the port antenna range.
++    * 
++    * @param p the point. point must be within 0 and less than 360 degree
++    * @return true if the point is within the port antenna range.
++    */
++   private boolean isWithinPortRange(double p)
++   {
++      // points must be two. all values must be within 0 and less than 360 degree
++      if (port_antenna_coverage_points.length == 2 && (p < 0 || p > 360))
++         return false;
++
++      // the point must be between forward coverage point and aft coverage point
++      return (p <= port_antenna_coverage_points[0] && p >= port_antenna_coverage_points[1]);
++   }
++
++
++   @Override
++   public void propertyChange(PropertyChangeEvent evt)
++   {
++      // TODO override mode changed
++      // TODO suspend thread or command to change antenna position
++
++      // TODO vehicle priority changed
++      // TODO suspend thread or command to change antenna position for previous priority vehicle
++   }
++
++
++   /**
++    * To check whether the point is in the top half circle (between 270 and 90 degrees). Return
++    * false if the point is at 270 or at 90 degree.
++    * 
++    * @param point - the point to check
++    * @return True if the point is between 270 and 90 degree of a circle.
++    */
++   public static boolean isWithinTopHalfCircle(int point)
++   {
++      // between 270 and 360 degree OR from 0 to less than 90 degree
++      if (point > 270 && point < 360 || point >= 0 && point < 90)
++         return true;
++
++      return false;
++   }
++
++
++   /**
++    * To check whether the point is in the bottom half circle (between 90 and 270 degrees). Return
++    * false if the point is at 90 degree or at 270 degree.
++    * 
++    * @param point - the point to check
++    * @return true if the point is between 90 and 270 degree of a circle.
++    */
++   public static boolean isWithinBottomHalfCircle(int point)
++   {
++      // between 90 to 270 degree
++      if (point > 90 && point < 270)
++         return true;
++
++      return false;
++   }
++}
+Index: configs/mission-mapping.xml
+===================================================================
+--- configs/mission-mapping.xml	(revision 9562)
++++ configs/mission-mapping.xml	(working copy)
+@@ -367,6 +367,10 @@
+ 			collection="arraylist">
+ 			<bind-xml name="channel" />
+ 		</field>
++		<field name="antennaCoverages" type="mil.navy.lcs.mvcs.common.config.model.AntennaCoverage"
++			collection="arraylist">
++			<bind-xml name="antennaCoverage" />
++		</field>
+ 	</class>
+ 	<class name="mil.navy.lcs.mvcs.common.config.model.Channel">
+ 		<map-to xml="channel" />
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9562)
++++ configs/mission.xsd	(working copy)
+@@ -218,6 +218,7 @@
+                <xs:element name="snmpAgentPortNumber" type="inttype" minOccurs="1"
+                   maxOccurs="1" />
+                <xs:element name="launchRadio" type="booleantype" minOccurs="0" maxOccurs="1" />
++               <xs:element name="antennaCoverage" type="antennaCoverageType" minOccurs="0" maxOccurs="unbounded" />
+             </xs:sequence>
+          </xs:extension>
+       </xs:complexContent>
+@@ -325,6 +326,12 @@
+       <xs:attribute name="id" type="inttype" />
+    </xs:complexType>
+ 
++   <xs:complexType name="antennaCoverageType">
++      <xs:attribute name="side" type="stringtype" />
++      <xs:attribute name="forward" type="inttype" />
++      <xs:attribute name="aft" type="inttype" />
++   </xs:complexType>
++
+    <xs:complexType name="circuitbreakertype">
+       <xs:sequence>
+          <xs:element name="id" type="stringtype" minOccurs="1" maxOccurs="1">
+Index: src/main/test/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomationTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomationTest.java	(nonexistent)
++++ src/main/test/mil/navy/lcs/mvcs/sca/rf/OTHAntennaAutomationTest.java	(working copy)
+@@ -0,0 +1,111 @@
++
++
++package mil.navy.lcs.mvcs.sca.rf;
++
++
++import org.junit.After;
++import org.junit.AfterClass;
++import org.junit.Assert;
++import org.junit.Before;
++import org.junit.BeforeClass;
++import org.junit.Test;
++
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.model.Radio;
++import mil.navy.lcs.mvcs.common.config.model.Ship;
++import mil.navy.lcs.mvcs.common.model.ShipNodeBuilder;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
++import mil.navy.lcs.mvcs.sca.node.handler.ShipNodeHandler;
++import mil.navy.lcs.mvcs.sca.test.ScaTestCase;
++
++/**
++ * Class Description
++ * <p>
++ * Date Created: Jul 15, 2016
++ * <p>
++ * $LastChangedBy$ <br>
++ * $LastChangedDate$ <br>
++ * $LastChangedRevision$
++ *
++ * @author Dan
++ * @version 1.0
++ */
++public class OTHAntennaAutomationTest extends ScaTestCase
++{
++
++   private ConfigManager cm;
++   private Ship ship;
++   private ShipNodeHandler nodeHandler;
++   private ShipNode node;
++   private LinkModel link;
++   private OTHAntennaAutomation automation;
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @BeforeClass
++   public static void setUpBeforeClass() throws Exception
++   {
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @AfterClass
++   public static void tearDownAfterClass() throws Exception
++   {
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @Before
++   public void setUp() throws Exception
++   {
++      cm = ConfigManager.getInstance();
++      ship = cm.getShip();
++      node = new ShipNodeBuilder(ship).build();
++      node.setTransmitAllowed(false);
++      node.setEmcon(false);
++
++      link = node.getFirstLinkByLinkType(MvcsLinkType.PRC117F);
++      nodeHandler = new ShipNodeHandler(node);
++      automation = new OTHAntennaAutomation((RadioLink) link, (Radio) ship.getLinkFromList(link.getLinkId()));
++      nodeHandler.getOthAntennaAutomation().put((RadioLink) link, automation);
++   }
++
++
++   /**
++    * Method Description
++    * 
++    * @throws java.lang.Exception
++    */
++   @After
++   public void tearDown() throws Exception
++   {
++   }
++
++
++   /**
++    * Test method for
++    * {@link mil.navy.lcs.mvcs.sca.rf.OTHAntennaAutomation#OTHAntennaAutomation(RadioLink, Radio)} .
++    */
++   @Test
++   public void testOTHAntennaAutomation()
++   {
++      Assert.assertNotNull(automation);
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(working copy)
+@@ -340,4 +340,15 @@
+          throw new RuntimeException(e);
+       }
+    }
++
++
++   @Override
++   public void requestOthAntennaOverride(String linkId, boolean manual) throws RemoteException
++   {
++      logger.info("OTH Antenna Override: {} = {}", new Object[] { linkId, manual });
++
++      ShipNodeHandler handler = ShipState.shipHandler;
++      handler.requestOthAntennaMode(linkId, manual);
++
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/VehicleTable.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/VehicleTable.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/VehicleTable.java	(working copy)
+@@ -1929,9 +1929,10 @@
+    {
+       synchronized (vehicleEntry)
+       {
++         VehicleEntry entry = (VehicleEntry) vehicleEntry;
++         entry.vehicleOTHRadioStatus = newValue;
+          if (ConfigManager.getInstance().getShip().getRouter().isTesting())
+          {
+-            VehicleEntry entry = (VehicleEntry) vehicleEntry;
+             ShipState.model.getNode(entry.vehicleId).getFirstLinkByCommsType(CommsType.OTH).setConnected(Boolean.parseBoolean(newValue));
+          }
+       }
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(revision 9563)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(working copy)
+@@ -12,8 +12,12 @@
+ import mil.navy.lcs.mvcs.common.config.model.MatrixSwitch;
+ import mil.navy.lcs.mvcs.common.config.model.OthAmpController;
+ import mil.navy.lcs.mvcs.common.config.model.Power;
++import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.ShipNode;
+ import mil.navy.lcs.mvcs.sca.filter.ScaFilterDeviceHandler;
+ import mil.navy.lcs.mvcs.sca.power.MideasternTcpComms;
+@@ -21,6 +25,7 @@
+ import mil.navy.lcs.mvcs.sca.power.PowerDeviceHandler_28VMidEastern;
+ import mil.navy.lcs.mvcs.sca.rf.NorthStarTcpComms;
+ import mil.navy.lcs.mvcs.sca.rf.NorthStarTestComms;
++import mil.navy.lcs.mvcs.sca.rf.OTHAntennaAutomation;
+ import mil.navy.lcs.mvcs.sca.rf.PRC117RadioSwitchHandler;
+ import mil.navy.lcs.mvcs.sca.rf.RfDeviceHandler_NorthStarMatrixSwitch;
+ import mil.navy.lcs.mvcs.sca.safety.ScaSafetyManager;
+@@ -79,7 +84,6 @@
+          handler.setRfHandler(new RfDeviceHandler_NorthStarMatrixSwitch(new NorthStarTcpComms(rfConfig.getSerialPort())));
+       }
+ 
+-
+       // Sets the Amplifier to use for the ship.
+       // Retrieve the OTH settings from the configuration file
+       OthAmpController othAmp = ConfigManager.getInstance().getShip().getOthAmpController();
+@@ -97,7 +101,7 @@
+       // Create FilterDevice to be used by the ship
+ 
+       // Populate Filter device with it's settings
+-      CrossDomain haf = ConfigManager.getInstance().getShip().getCrossDomain();
++      CrossDomain haf = config.getCrossDomain();
+       FilterDevice filterDevices = node.getFilterDevice();
+       filterDevices.setFilterId(haf.getName());
+       filterDevices.setIpAddress(haf.getIpAddress());
+@@ -111,6 +115,13 @@
+       ScaSafetyManager safetyManager = new ScaSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);
+ 
++      // initialize OTH antenna automation thread. Can ship have more than one PRC117? POSSIBLE
++      for (LinkModel link : node.getLinksByLinkType(MvcsLinkType.PRC117F))
++      {
++         logger.info("Initializing OTH antenna automation for {}", link.getLinkId());
++         handler.othAntennaAutomation.put((RadioLink) link, new OTHAntennaAutomation((RadioLink) link, (Radio) config.getLinkFromList(link.getLinkId())));
++      }
++
+       return handler;
+    }
+ }
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9562)
++++ missions/default-mission.xml	(working copy)
+@@ -101,6 +101,9 @@
+          <heartbeatWindowSize>300</heartbeatWindowSize>
+          <snmpAgentIpAddress>172.20.10.2</snmpAgentIpAddress>
+          <snmpAgentPortNumber>5161</snmpAgentPortNumber>
++         <!-- a whole number from 0 to 359 degree of a circle  -->
++		 <antennaCoverage side="stbd" forward="0" aft="179" />
++		 <antennaCoverage side="port" forward="359" aft="180" />
+       </radio>
+       <radio>
+          <id>rt1988-0</id>
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java	(revision 9562)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java	(working copy)
+@@ -1,5 +1,8 @@
++
++
+ package mil.navy.lcs.mvcs.common.config.model;
+ 
++
+ import java.io.Serializable;
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -11,10 +14,7 @@
+  *
+  * TODO {Purpose of This Class}
+  *
+- * Id: $Id$
+- * $LastChangedBy: $
+- * $LastChangedDate: $
+- * $LastChangedRevision: $
++ * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  *
+  */
+ public class Radio extends Link implements Serializable
+@@ -45,10 +45,12 @@
+    private String loopback;
+    private boolean launchRadio = false;
+    private List<Channel> listOfChannels = new ArrayList<Channel>();
++   private List<AntennaCoverage> antennaCoverages = new ArrayList<AntennaCoverage>();
+ 
+ 
+    /**
+     * Get the SNMP Agent port number
++    * 
+     * @return an Integer representing the SNMP Port number
+     */
+    public Integer getSnmpAgentPortNumber()
+@@ -56,8 +58,10 @@
+       return this.snmpAgentPortNumber;
+    }
+ 
++
+    /**
+     * Set the SNMP agent port number
++    * 
+     * @param portNumber the Integer representing the SNMP port number
+     */
+    public void setSnmpAgentPortNumber(Integer portNumber)
+@@ -65,8 +69,10 @@
+       this.snmpAgentPortNumber = portNumber;
+    }
+ 
++
+    /**
+     * This function returns the IP Address of the SNMP Agent for this particular radio
++    * 
+     * @return a String containing the IP address of the agent
+     */
+    public String getSnmpAgentIpAddress()
+@@ -74,8 +80,10 @@
+       return this.snmpAgentIpAddress;
+    }
+ 
++
+    /**
+     * This function sets the IP address of the SNMP agent
++    * 
+     * @param ipAddress the IP address of the SNMP agent
+     */
+    public void setSnmpAgentIpAddress(String ipAddress)
+@@ -83,8 +91,10 @@
+       this.snmpAgentIpAddress = ipAddress;
+    }
+ 
++
+    /**
+     * This function sets the frequency NET range for the 117 radio
++    * 
+     * @return a string containing the 117 NET range
+     */
+    public String getFrequencyNetRange()
+@@ -92,8 +102,10 @@
+       return this.frequencyNetRange;
+    }
+ 
++
+    /**
+     * This function sets the frequency NET range for the PRC117 radio
++    * 
+     * @param netRange the PRC117 range
+     */
+    public void setFrequencyNetRange(String netRange)
+@@ -101,8 +113,10 @@
+       this.frequencyNetRange = netRange;
+    }
+ 
++
+    /**
+     * Get the LNR frequency
++    * 
+     * @return an Integer containing the LNR frequency
+     */
+    public Integer getLnrFrequency()
+@@ -110,8 +124,10 @@
+       return this.lnrFrequency;
+    }
+ 
++
+    /**
+     * Set the LNR frequency
++    * 
+     * @param lnrFrequency an Integer containing the LNR frequency
+     */
+    public void setLnrFrequency(Integer lnrFrequency)
+@@ -122,6 +138,7 @@
+ 
+    /**
+     * Get the Mission frequency
++    * 
+     * @return an Integer containing the Mission frequency
+     */
+    public Integer getMissionFrequency()
+@@ -129,8 +146,10 @@
+       return this.missionFrequency;
+    }
+ 
++
+    /**
+     * Set the Mission frequency
++    * 
+     * @param missionFrequency an Integer containing the Mission frequency
+     */
+    public void setMissionFrequency(Integer missionFrequency)
+@@ -141,6 +160,7 @@
+ 
+    /**
+     * Get the Relay frequency
++    * 
+     * @return an Integer containing the Relay frequency
+     */
+    public Integer getRelayFrequency()
+@@ -148,8 +168,10 @@
+       return this.relayFrequency;
+    }
+ 
++
+    /**
+     * Set the Relay frequency
++    * 
+     * @param relayFrequency an Integer containing the Relay frequency
+     */
+    public void setRelayFrequency(Integer relayFrequency)
+@@ -165,6 +187,8 @@
+    {
+       return this.ampId;
+    }
++
++
+    /**
+     * @param ampId the ampId to set
+     */
+@@ -172,6 +196,8 @@
+    {
+       this.ampId = ampId;
+    }
++
++
+    /**
+     * @return the telephoneNum
+     */
+@@ -179,6 +205,8 @@
+    {
+       return this.telephoneNum;
+    }
++
++
+    /**
+     * @param telephoneNum the telephoneNum to set
+     */
+@@ -186,148 +214,188 @@
+    {
+       this.telephoneNum = telephoneNum;
+    }
++
++
+    /**
+     * @return the heartbeatFrequency
+     */
+-   public Integer getHeartbeatFrequency( )
++   public Integer getHeartbeatFrequency()
+    {
+       return this.heartbeatFrequency;
+    }
++
++
+    /**
+     * @param heartbeatFrequency the heartbeatFrequency to set
+     */
+-   public void setHeartbeatFrequency( Integer heartbeatFrequency )
++   public void setHeartbeatFrequency(Integer heartbeatFrequency)
+    {
+       this.heartbeatFrequency = heartbeatFrequency;
+    }
++
++
+    /**
+     * @return the heartbeatWindowSize
+     */
+-   public Integer getHeartbeatWindowSize( )
++   public Integer getHeartbeatWindowSize()
+    {
+       return this.heartbeatWindowSize;
+    }
++
++
+    /**
+     * @param heartbeatWindowSize the heartbeatWindowSize to set
+     */
+-   public void setHeartbeatWindowSize( Integer heartbeatWindowSize )
++   public void setHeartbeatWindowSize(Integer heartbeatWindowSize)
+    {
+       this.heartbeatWindowSize = heartbeatWindowSize;
+    }
++
++
+    /**
+     * @return the goodPercentage
+     */
+-   public Integer getGoodPercentage( )
++   public Integer getGoodPercentage()
+    {
+       return this.goodPercentage;
+    }
++
++
+    /**
+     * @param goodPercentage the goodPercentage to set
+     */
+-   public void setGoodPercentage( Integer goodPercentage )
++   public void setGoodPercentage(Integer goodPercentage)
+    {
+       this.goodPercentage = goodPercentage;
+    }
++
++
+    /**
+     * @return the warningPercentage
+     */
+-   public Integer getWarningPercentage( )
++   public Integer getWarningPercentage()
+    {
+       return this.warningPercentage;
+    }
++
++
+    /**
+     * @param warningPercentage the warningPercentage to set
+     */
+-   public void setWarningPercentage( Integer warningPercentage )
++   public void setWarningPercentage(Integer warningPercentage)
+    {
+       this.warningPercentage = warningPercentage;
+    }
++
++
+    /**
+     * @return the losRange
+     */
+-   public Integer getLosRange( )
++   public Integer getLosRange()
+    {
+       return this.losRange;
+    }
++
++
+    /**
+     * @param losRange the losRange to set
+     */
+-   public void setLosRange( Integer losRange )
++   public void setLosRange(Integer losRange)
+    {
+       this.losRange = losRange;
+    }
++
++
+    /**
+     * @return the losLowerGuardLine
+     */
+-   public Integer getLosLowerGuardLine( )
++   public Integer getLosLowerGuardLine()
+    {
+       return this.losLowerGuardLine;
+    }
++
++
+    /**
+     * @param losLowerGuardLine the losLowerGuardLine to set
+     */
+-   public void setLosLowerGuardLine( Integer losLowerGuardLine )
++   public void setLosLowerGuardLine(Integer losLowerGuardLine)
+    {
+       this.losLowerGuardLine = losLowerGuardLine;
+    }
++
++
+    /**
+     * @return the lrRange
+     */
+-   public Integer getLrRange( )
++   public Integer getLrRange()
+    {
+       return this.lrRange;
+    }
++
++
+    /**
+     * @param lrRange the lrRange to set
+     */
+-   public void setLrRange( Integer lrRange )
++   public void setLrRange(Integer lrRange)
+    {
+       this.lrRange = lrRange;
+    }
++
++
+    /**
+     * @return the lrLowerGuardLine
+     */
+-   public Integer getLrLowerGuardLine( )
++   public Integer getLrLowerGuardLine()
+    {
+       return this.lrLowerGuardLine;
+    }
++
++
+    /**
+     * @param lrLowerGuardLine the lrLowerGuardLine to set
+     */
+-   public void setLrLowerGuardLine( Integer lrLowerGuardLine )
++   public void setLrLowerGuardLine(Integer lrLowerGuardLine)
+    {
+       this.lrLowerGuardLine = lrLowerGuardLine;
+    }
++
++
+    /**
+     * @return the slaTimeout
+     */
+-   public Integer getSlaTimeout( )
++   public Integer getSlaTimeout()
+    {
+       return this.slaTimeout;
+    }
++
++
+    /**
+     * @param slaTimeout the slaTimeout to set
+     */
+-   public void setSlaTimeout( Integer slaTimeout )
++   public void setSlaTimeout(Integer slaTimeout)
+    {
+       this.slaTimeout = slaTimeout;
+    }
++
++
+    /**
+     * @return sleepRadio
+     */
+-   public Boolean getSleepRadio ()
++   public Boolean getSleepRadio()
+    {
+       return this.sleepRadio;
+    }
+ 
++
+    /**
+     * @param sleepRadio The sleepRadio boolean value is set.
+     */
+-   public void setSleepRadio( Boolean sleepRadio )
++   public void setSleepRadio(Boolean sleepRadio)
+    {
+       this.sleepRadio = sleepRadio;
+    }
+ 
++
+    /**
+     * @return the encrypterTypeId
+     */
+@@ -336,9 +404,9 @@
+       return this.encrypterTypeId;
+    }
+ 
++
+    /**
+-    * @param encrypterTypeId
+-    *            the encrypterTypeId to set
++    * @param encrypterTypeId the encrypterTypeId to set
+     */
+    public void setEncrypterTypeId(String encrypterTypeId)
+    {
+@@ -345,11 +413,13 @@
+       this.encrypterTypeId = encrypterTypeId;
+    }
+ 
++
+    public Encrypter getEncrypterCharacteristics()
+    {
+       return RadioConstants.getEncrypterCharacteristics(this.encrypterTypeId);
+    }
+ 
++
+    /**
+     * @return the listOfChannels
+     */
+@@ -358,6 +428,7 @@
+       return this.listOfChannels;
+    }
+ 
++
+    /**
+     * @param listOfChannels the listOfChannels to set
+     */
+@@ -366,6 +437,7 @@
+       this.listOfChannels = listOfChannels;
+    }
+ 
++
+    /**
+     * @return the loopback
+     */
+@@ -374,6 +446,7 @@
+       return this.loopback;
+    }
+ 
++
+    /**
+     * @param loopback the loopback to set
+     */
+@@ -382,6 +455,7 @@
+       this.loopback = loopback;
+    }
+ 
++
+    /**
+     * @return the launchRadio
+     */
+@@ -390,6 +464,7 @@
+       return this.launchRadio;
+    }
+ 
++
+    /**
+     * @param launchRadio the launchRadio to set
+     */
+@@ -398,6 +473,7 @@
+       this.launchRadio = launchRadio;
+    }
+ 
++
+    /**
+     * @param secondaryAmpId the secondaryAmpId to set
+     */
+@@ -406,6 +482,7 @@
+       this.secondaryAmpId = secondaryAmpId;
+    }
+ 
++
+    /**
+     * @return the secondaryAmpId
+     */
+@@ -413,4 +490,23 @@
+    {
+       return secondaryAmpId;
+    }
++
++
++   /**
++    * @return the antennaCoverages
++    */
++   public List<AntennaCoverage> getAntennaCoverages()
++   {
++      return this.antennaCoverages;
++   }
++
++
++   /**
++    * 
++    * @param antennaCoverages the antennaCoverages to set
++    */
++   public void setAntennaCoverages(List<AntennaCoverage> antennaCoverages)
++   {
++      this.antennaCoverages = antennaCoverages;
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/model/AntennaCoverage.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/model/AntennaCoverage.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/model/AntennaCoverage.java	(working copy)
+@@ -0,0 +1,111 @@
++
++
++package mil.navy.lcs.mvcs.common.config.model;
++
++
++import java.io.Serializable;
++
++/**
++ * The antenna coverage class represents antenna coverage of the radio. Properties include the side,
++ * forward, and aft of antenna coverage points in circle between 0 and 360 degree.
++ * 
++ * @author Dan Kwon
++ *
++ */
++public class AntennaCoverage implements Serializable
++{
++   private static final long serialVersionUID = 231L;
++   private String side = "";
++   private int forward = 0, aft = 0;
++
++
++   /**
++    * Default constructor
++    */
++   public AntennaCoverage()
++   {
++      super();
++   }
++
++
++   /**
++    * @param side The side of antenna coverage.
++    * @param forward The forward coverage point from the top half of a circle.
++    * @param aft The aft coverage point from the bottom half of a circle.
++    */
++   public AntennaCoverage( String side, int forward, int aft)
++   {
++      this.side = side;
++      this.forward = forward;
++      this.aft = aft;
++   }
++
++
++   /**
++    * 
++    * @return The String representation of antenna coverage.
++    */
++   public String toString()
++   {
++      return this.side + "/" + this.forward + "/" + this.aft;
++   }
++
++
++   /**
++    * 
++    * @return the side of antenna coverage.
++    */
++   public String getSide()
++   {
++      return this.side;
++   }
++
++
++   /**
++    * @param side the side to set.
++    */
++   public void setSide(String side)
++   {
++      this.side = side;
++   }
++
++
++   /**
++    * 
++    * @return the forward coverage of the antenna.
++    */
++   public int getForward()
++   {
++      return this.forward;
++   }
++
++
++   /**
++    * 
++    * @param forward the forward coverage to set.
++    */
++   public void setForward(int forward)
++   {
++      this.forward = forward;
++   }
++
++
++   /**
++    * 
++    * @return the aft coverage of the antenna.
++    */
++   public int getAft()
++   {
++      return this.aft;
++   }
++
++
++   /**
++    * @param aft the aft coverage to set.
++    */
++   public void setAft(int aft)
++   {
++      this.aft = aft;
++   }
++
++}

@@ -1,0 +1,583 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-vca
+Index: src/main/java/mil/navy/lcs/mvcs/vca/link/path/VcaAutoLocRecoveryWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/link/path/VcaAutoLocRecoveryWorker.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/link/path/VcaAutoLocRecoveryWorker.java	(working copy)
+@@ -9,8 +9,10 @@
+ import java.util.HashMap;
+ import java.util.List;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.common.link.utils.Dates;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+ import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.PowerConservation;
+@@ -91,7 +93,10 @@
+    /** The radio LOC recovery workers. */
+    private HashMap<String, VcaRadioLocRecoveryWorker> radioLocRecoveryWorkers;
+ 
++   /** Logger for this class */
++   private static final Logger logger = LoggerFactory.getLogger(VcaAutoLocRecoveryWorker.class);
+ 
++
+    /**
+     * The default constructor.
+     */
+@@ -108,7 +113,7 @@
+    @Override
+    public void run()
+    {
+-      LoggingManager.getPrimaryLogger().info("AutoLocRecovery is being delayed for " + LOC_RECOVERY_TIME_DELAY + " seconds.");
++      logger.info("AutoLocRecovery is being delayed for " + LOC_RECOVERY_TIME_DELAY + " seconds.");
+ 
+       // started time
+       long startTime = System.currentTimeMillis();
+@@ -121,11 +126,11 @@
+          }
+          catch (InterruptedException e)
+          {
+-            LoggingManager.getPrimaryLogger().info("LOC delay timer has interrupted. ");
++            logger.info("LOC delay timer has interrupted. ");
+          }
+       }
+ 
+-      LoggingManager.getPrimaryLogger().info("AutoLocRecovery in process.");
++      logger.info("AutoLocRecovery in process.");
+ 
+       // reset the fail-safe reboot time stamp
+       this.failSafeLastRebootedTimeStamp = 0;
+@@ -144,12 +149,12 @@
+          // Fail-safe 808: every 15 minute, reboot the DLI_R, OTH_R, and radios.
+          if (powerMode == PowerConservation.FAILSAFE_808.index)
+          {
+-            LoggingManager.getPrimaryLogger().info("The last failsafe 808 reboot time stamp: " + Dates.getSimpleDateFormat(this.failSafeLastRebootedTimeStamp));
++            logger.info("The last failsafe 808 reboot time stamp: " + Dates.getSimpleDateFormat(this.failSafeLastRebootedTimeStamp));
+ 
+             // initial entry of Fail-safe 808. the last rebooted time has never recorded.
+             if (this.failSafeLastRebootedTimeStamp < 1)
+             {
+-               LoggingManager.getPrimaryLogger().info("Initial entry of fail-safe 808.");
++               logger.info("Initial entry of fail-safe 808.");
+                // record the current entry time.
+                this.failSafeLastRebootedTimeStamp = System.currentTimeMillis();
+             }
+@@ -160,7 +165,7 @@
+                // record the rebooting time stamp
+                this.failSafeLastRebootedTimeStamp = System.currentTimeMillis();
+ 
+-               LoggingManager.getPrimaryLogger().info("Failsafe 808 reboot has reached. Rebooting DLI_R, OTH_R, and radios...");
++               logger.info("Failsafe 808 reboot has reached. Rebooting DLI_R, OTH_R, and radios...");
+ 
+                // reboot the DLI_R
+                String cmd = DLI_SERVICE + " restart";
+@@ -168,7 +173,7 @@
+                try
+                {
+                   Process p = Runtime.getRuntime().exec(cmd, null);
+-                  LoggingManager.getPrimaryLogger().info("Executing command: " + cmd);
++                  logger.info("Executing command: " + cmd);
+ 
+                   int k = p.waitFor();
+                   BufferedReader reader;
+@@ -184,12 +189,12 @@
+                   {
+                      StringBuffer sb = new StringBuffer();
+                      sb.append(str);
+-                     LoggingManager.getPrimaryLogger().info("Received the following response:" + sb.toString());
++                     logger.info("Received the following response:" + sb.toString());
+                   }
+                }
+                catch (Exception e)
+                {
+-                  LoggingManager.getPrimaryLogger().error("Error executing command: " + cmd, e);
++                  logger.error("Error executing command: " + cmd, e);
+                }
+ 
+                // reboot the OTH_R
+@@ -200,7 +205,7 @@
+                   if (othRadioPlugin != null)
+                   {
+                      // restart the OTH.
+-                     LoggingManager.getPrimaryLogger().info("Restarting the OTH.");
++                     logger.info("Restarting the OTH.");
+                      othRadioPlugin.startRim();
+                   }
+                }
+@@ -208,7 +213,7 @@
+                // power down the radios.
+                for (RadioLink vRadio : priortizedRadios)
+                {
+-                  LoggingManager.getPrimaryLogger().info("FailSafe8080 Powering down radio " + vRadio.getLinkId());
++                  logger.info("FailSafe8080 Powering down radio " + vRadio.getLinkId());
+                   VcaLinkManager.getInstance().getRadioControllers().get(vRadio.getLinkId()).powerRadioAndItsDevices(false);
+                }
+ 
+@@ -225,7 +230,7 @@
+                // power up the radios
+                for (RadioLink vRadio : priortizedRadios)
+                {
+-                  LoggingManager.getPrimaryLogger().info("FailSafe808 Powering up radio " + vRadio.getLinkId());
++                  logger.info("FailSafe808 Powering up radio " + vRadio.getLinkId());
+                   VcaLinkManager.getInstance().getRadioControllers().get(vRadio.getLinkId()).powerRadioAndItsDevices(true);
+                }
+ 
+@@ -234,7 +239,7 @@
+             // reboot time has not reached.
+             else
+             {
+-               LoggingManager.getPrimaryLogger().info("Failsafe 808 reboot time yet reached.");
++               logger.info("Failsafe 808 reboot time yet reached.");
+                // Need to use both radios. Done below with Full power.
+             } // end of else (not reboot time)
+ 
+@@ -340,7 +345,7 @@
+ 
+       } // end of while (not abort)
+ 
+-      LoggingManager.getPrimaryLogger().info("End of AutoLocRecovery run().");
++      logger.info("End of AutoLocRecovery run().");
+ 
+    }// end of run
+ 
+@@ -361,7 +366,7 @@
+          }
+          catch (InterruptedException ie)
+          {
+-            LoggingManager.getPrimaryLogger().error("VcaAutoLocRecoveryWorker's sleep has interrupted.");
++            logger.error("VcaAutoLocRecoveryWorker's sleep has interrupted.");
+          }
+       } // end of while (sleep before next iteration)
+    }
+@@ -385,7 +390,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -424,6 +429,8 @@
+       protected VcaRadioLocRecoveryWorker( RadioLink vcaRadio)
+       {
+          this.vcaRadio = vcaRadio;
++
++         this.setName("MVCS-" + this.getClass().getSimpleName());
+       }
+ 
+ 
+@@ -430,12 +437,12 @@
+       @Override
+       public void run()
+       {
+-         LoggingManager.getPrimaryLogger().info("AutoLocRecovery in process for radio " + vcaRadio.getLinkId() + ".");
++         logger.info("AutoLocRecovery in process for radio " + vcaRadio.getLinkId() + ".");
+ 
+          // use the radio until aborted or stopped. Also use its amp (done by radio controller)
+          useRadioAndAntennasWhileNotAbortAndNotStop(vcaRadio);
+ 
+-         LoggingManager.getPrimaryLogger().info("AutoLocRecovery in terminated for radio " + vcaRadio.getLinkId() + ".");
++         logger.info("AutoLocRecovery in terminated for radio " + vcaRadio.getLinkId() + ".");
+       }
+ 
+ 
+@@ -462,7 +469,7 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getPrimaryLogger().error("Error: ", e);
++            logger.error("Error: ", e);
+          }
+ 
+          // loop while not abort and not stop.
+@@ -473,7 +480,7 @@
+ 
+             if (radioController == null)
+             {
+-               LoggingManager.getPrimaryLogger().error(vcaRadio.getLinkId() + " RadioController not found!");
++               logger.error(vcaRadio.getLinkId() + " RadioController not found!");
+                return;
+             }
+ 
+@@ -535,7 +542,7 @@
+             }
+             catch (InterruptedException ie)
+             {
+-               LoggingManager.getPrimaryLogger().error("VcaAutoLocRecoveryWorker's sleep has interrupted.");
++               logger.error("VcaAutoLocRecoveryWorker's sleep has interrupted.");
+             }
+          } // end of while (sleep before next iteration)
+       }
+Index: src/main/java/mil/navy/lcs/mvcs/vca/dio/JniDigitalIO.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/dio/JniDigitalIO.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/dio/JniDigitalIO.java	(working copy)
+@@ -114,15 +114,9 @@
+       if (!isOpen)
+       {
+          value = _open();
+-      }
+-      else
+-      {
+-         LoggingManager.getPrimaryLogger().debug("Some error occured while trying to access the DIO. Good Luck!");
+-      }
+ 
+-      if (value < 0)
+-      {
+-         LoggingManager.getPrimaryLogger().debug("(ToggleOn)Jni returned a value <0 is the card already open? May need to close and reopen or just send the command");
++         if (value < 0)
++            LoggingManager.getPrimaryLogger().debug("(ToggleOn)Jni returned a value < 0 is the card already open? May need to close and reopen or just send the command.");
+       }
+ 
+       LoggingManager.getPrimaryLogger().debug("Setting line on Ballard: " + dio);
+@@ -140,15 +134,9 @@
+       if (!isOpen)
+       {
+          value = _open();
+-      }
+-      else
+-      {
+-         LoggingManager.getPrimaryLogger().debug("Some error occured while trying to access the DIO. Good Luck!");
+-      }
+ 
+-      if (value < 0)
+-      {
+-         LoggingManager.getPrimaryLogger().debug("(ToggleOff)Jni returned a value <0 is the card already open? May need to close and reopen or just send the command");
++         if (value < 0)
++            LoggingManager.getPrimaryLogger().debug("(ToggleOff)Jni returned a value < 0 is the card already open? May need to close and reopen or just send the command.");
+       }
+ 
+       LoggingManager.getPrimaryLogger().debug("Setting line off Ballard: " + dio);
+Index: src/main/java/mil/navy/lcs/mvcs/vca/link/path/VcaPathSwitchWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/link/path/VcaPathSwitchWorker.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/link/path/VcaPathSwitchWorker.java	(working copy)
+@@ -5,6 +5,9 @@
+ 
+ import java.util.List;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+ import mil.navy.lcs.mvcs.common.config.model.RadioCharacteristics;
+@@ -85,7 +88,10 @@
+    /** The VCA link. */
+    private LinkModel newVcaPath = null;
+ 
++   /** Logger for this class */
++   private static final Logger logger = LoggerFactory.getLogger(VcaPathSwitchWorker.class);
+ 
++
+    /**
+     * The constructor.
+     * 
+@@ -115,7 +121,7 @@
+          {
+             if (vcaNode.isEmcon())
+             {
+-               LoggingManager.getPrimaryLogger().warn("The vehicle is in EMCON. Terminating the link change to radio " + newVcaPath + ".");
++               logger.warn("The vehicle is in EMCON. Terminating the link change to radio " + newVcaPath + ".");
+                return;
+             }
+ 
+@@ -133,7 +139,7 @@
+             }
+             catch (ConfigException e)
+             {
+-               LoggingManager.getPrimaryLogger().error("Error from Config: ", e);
++               logger.error("Error from Config: ", e);
+             }
+ 
+             if (abort)
+@@ -163,7 +169,7 @@
+             }
+             catch (Exception e)
+             {
+-               LoggingManager.getPrimaryLogger().error("Error: ", e);
++               logger.error("Error: ", e);
+             }
+ 
+             // Send frequency and/or set up connection.
+@@ -173,7 +179,7 @@
+             }
+             catch (Exception e)
+             {
+-               LoggingManager.getPrimaryLogger().error("Error from plug-in " + newVehiclePathName + ":", e);
++               logger.error("Error from plug-in " + newVehiclePathName + ":", e);
+             }
+ 
+          } // end of if (is a radio)
+@@ -181,7 +187,7 @@
+          // max time to wait
+          int maxAllowedTimeInMiliseconds = maxAllowedTimeInSeconds * 1000;
+ 
+-         LoggingManager.getPrimaryLogger().info("Max time(ms) to wait for path switching: " + maxAllowedTimeInMiliseconds + "\tPath: " + newVehiclePathName + "\tStarted time: " + Dates.getSimpleDateFormat(startedTime));
++         logger.info("Max time(ms) to wait for path switching: " + maxAllowedTimeInMiliseconds + "\tPath: " + newVehiclePathName + "\tStarted time: " + Dates.getSimpleDateFormat(startedTime));
+ 
+          // wait for the path to be up within specified time
+          while (!abort && maxAllowedTimeInMiliseconds > System.currentTimeMillis() - startedTime)
+@@ -196,7 +202,7 @@
+          } // end of while
+ 
+          long timeSpentInMiliseconds = System.currentTimeMillis() - startedTime;
+-         LoggingManager.getPrimaryLogger().info("Time(ms) spent to switch path = " + timeSpentInMiliseconds);
++         logger.info("Time(ms) spent to switch path = " + timeSpentInMiliseconds);
+ 
+          if (abort)
+             return;
+@@ -204,7 +210,7 @@
+          // no connection
+          if (!newVcaPath.isConnected())
+          {
+-            LoggingManager.getPrimaryLogger().info("Manual link switch has failed due to no connectivity on path " + newVehiclePathName);
++            logger.info("Manual link switch has failed due to no connectivity on path " + newVehiclePathName);
+          }
+ 
+          // still has connection via the path
+@@ -224,7 +230,7 @@
+                   // max time to wait
+                   int maxWaitingTimeInMiliseconds = 120 * 1000;
+ 
+-                  LoggingManager.getPrimaryLogger().info("Max time(ms) to wait for confirmation: " + maxWaitingTimeInMiliseconds + "\tPath: " + newVehiclePathName + "\tStarted time: " + Dates.getSimpleDateFormat(startedTime));
++                  logger.info("Max time(ms) to wait for confirmation: " + maxWaitingTimeInMiliseconds + "\tPath: " + newVehiclePathName + "\tStarted time: " + Dates.getSimpleDateFormat(startedTime));
+ 
+                   // check confirmation
+                   boolean confirmed = false;
+@@ -239,12 +245,12 @@
+ 
+                   } // end of while
+ 
+-                  LoggingManager.getPrimaryLogger().info("Got Confirmation: " + confirmed);
++                  logger.info("Got Confirmation: " + confirmed);
+ 
+                   // not confirmed
+                   if (!confirmed)
+                   {
+-                     LoggingManager.getPrimaryLogger().warn("Never recieved the confirmation from RMMV.");
++                     logger.warn("Never recieved the confirmation from RMMV.");
+                      // TODO what else? turn off the new link?
+                   }
+                }
+@@ -253,7 +259,7 @@
+                if (!newVcaPath.isConnected())
+                {
+                   String msg = "Manual link switch has failed due to no connectivity on path " + newVehiclePathName;
+-                  LoggingManager.getPrimaryLogger().warn(msg);
++                  logger.warn(msg);
+                }
+ 
+                // still has connection
+@@ -267,7 +273,7 @@
+             }
+             catch (Exception e)
+             {
+-               LoggingManager.getPrimaryLogger().error("Error,", e);
++               logger.error("Error,", e);
+             }
+ 
+          } // end of else (has connection)
+@@ -315,7 +321,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().debug("VcaPathSwitchWorker has interrupted.", e);
++         logger.debug("VcaPathSwitchWorker has interrupted.", e);
+       }
+ 
+    }// end of method
+@@ -340,7 +346,7 @@
+       // Can't abort if link is connected or received the trap from VCA.
+       if (newVcaPath == null || newVcaPath.isConnected())
+       {
+-         LoggingManager.getPrimaryLogger().info("Too late to abort the link switch.");
++         logger.info("Too late to abort the link switch.");
+          return false;
+       }
+ 
+@@ -367,7 +373,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }// end of method
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/vca/rf/RfDeviceHandler_Uiss.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/rf/RfDeviceHandler_Uiss.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/rf/RfDeviceHandler_Uiss.java	(working copy)
+@@ -5,7 +5,9 @@
+ 
+ import java.io.IOException;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
+ import mil.navy.lcs.mvcs.iface.rf.IRfDeviceHandler;
+ import mil.navy.lcs.mvcs.iface.rf.RFDevice;
+@@ -44,8 +46,8 @@
+    /** Alternate(L&R) Port(J2) of the LOS Radio */
+    private final int rt1944LR = prop.getInteger(UissRfSwitch.losRadioSwitchAlt);
+ 
+-   /** This is a digital line that controls the load port. **/
+-   private final int load = prop.getInteger(UissRfSwitch.swline);
++   /** Logger for this class */
++   private static final Logger logger = LoggerFactory.getLogger(RfDeviceHandler_Uiss.class);
+ 
+ 
+    public RfDeviceHandler_Uiss( IDigitalIO digitalIO, IRadioSwitchHandler radioSwitchHandler)
+@@ -66,11 +68,11 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Could not select the device. Select through Digital IO.");
++         logger.error("Could not select the device. Select through Digital IO.");
+       }
+       catch (IllegalRfModeException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("An Invalid RF Selection was made for this device.");
++         logger.error("An Invalid RF Selection was made for this device.");
+       }
+    }
+ 
+@@ -77,13 +79,14 @@
+ 
+    private void setLosOutput(RFDevice device, RFOutput output, boolean on) throws IOException, IllegalRfModeException
+    {
++      // If requested to turn off, do nothing because there is no dummy load.
++      if (!on)
++      {
++         logger.info("No action is taken when RF output(" + output.getOutputType().displayText + ") is requested OFF.");
++         return;
++      }
+ 
+-      // Need to indicated to the internal model that we powering off all RF Devices.
+-      device.getRfOutput(RFOutputType.LNR).setOutputting(false);
+-      device.getRfOutput(RFOutputType.MAIN).setOutputting(false);
+-      device.getRfOutput(RFOutputType.TEST).setOutputting(false);
+-
+-      if (!on || output.getOutputType() == RFOutputType.LNR)
++      if (output.getOutputType() == RFOutputType.LNR)
+       {
+          /* ********Very Important ** */
+          /*
+@@ -99,8 +102,10 @@
+          digitalIO.toggleLineOn(losLnr);
+ 
+          device.getRfOutput(RFOutputType.LNR).setOutputting(true);
++         device.getRfOutput(RFOutputType.MAIN).setOutputting(false);
++         device.getRfOutput(RFOutputType.TEST).setOutputting(false);
+ 
+-         // Switch path internal to radio (J1 - Alternate(L&R) Output)
++         // Switch path to radio J1 (J1 - Alternate(L&R/Test) Output)
+          radioSwitchHandler.switchToPath(rt1944LR);
+       }
+       else if (output.getOutputType() == RFOutputType.MAIN)
+@@ -120,9 +125,10 @@
+          digitalIO.toggleLineOn(losMain);
+ 
+          device.getRfOutput(RFOutputType.MAIN).setOutputting(true);
++         device.getRfOutput(RFOutputType.LNR).setOutputting(false);
++         device.getRfOutput(RFOutputType.TEST).setOutputting(false);
+ 
+-         // Switch path internal to radio (J2 - Main Output)
+-         // Radio J2 goes to RF switch for Main/Test Port
++         // Switch path to radio J2 (J2 - Main Output)
+          radioSwitchHandler.switchToPath(rt1944Main);
+       }
+       else if (output.getOutputType() == RFOutputType.TEST)
+@@ -142,9 +148,10 @@
+          digitalIO.toggleLineOn(losTestport);
+ 
+          device.getRfOutput(RFOutputType.TEST).setOutputting(true);
++         device.getRfOutput(RFOutputType.LNR).setOutputting(false);
++         device.getRfOutput(RFOutputType.MAIN).setOutputting(false);
+ 
+-         // Switch path internal to radio (J1 - Main Output)
+-         // Radio J1 goes to RF switch for Main/Test Port
++         // Switch path to radio J1 (J1 - Alternate(L&R/Test) Output)
+          radioSwitchHandler.switchToPath(rt1944LR);
+       }
+    }
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/link/path/ScaLocRecoveryWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/link/path/ScaLocRecoveryWorker.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/link/path/ScaLocRecoveryWorker.java	(working copy)
+@@ -3,6 +3,9 @@
+ package mil.navy.lcs.mvcs.sca.link.path;
+ 
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+@@ -45,7 +48,10 @@
+    /** The ID of vehicle. */
+    private String vehicleId;
+ 
++   /** Logger for this class */
++   private static final Logger logger = LoggerFactory.getLogger(ScaLocRecoveryWorker.class);
+ 
++
+    /**
+     * Default constructor.
+     * 
+@@ -75,7 +81,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -83,7 +89,7 @@
+    @Override
+    public void run()
+    {
+-      LoggingManager.getPrimaryLogger().info("Vehicle " + vehicleId + " LOC recovery is being delayed for " + LOC_RECOVERY_TIME_DELAY + " seconds.");
++      logger.info("Vehicle " + vehicleId + " LOC recovery is being delayed for " + LOC_RECOVERY_TIME_DELAY + " seconds.");
+ 
+       // started time
+       long startTime = System.currentTimeMillis();
+@@ -96,11 +102,11 @@
+          }
+          catch (InterruptedException e)
+          {
+-            LoggingManager.getPrimaryLogger().info("LOC delay timer has interrupted. ");
++            logger.info("LOC delay timer has interrupted. ");
+          }
+       }
+ 
+-      LoggingManager.getPrimaryLogger().warn("LOC recovery in processing for vehicle " + vehicleId);
++      logger.warn("LOC recovery in processing for vehicle " + vehicleId);
+ 
+       VehicleNode thisVehicle = ShipState.model.getVehicle(vehicleId);
+ 
+@@ -158,12 +164,12 @@
+          }
+          catch (InterruptedException ie)
+          {
+-            LoggingManager.getPrimaryLogger().warn("ScaAutoLocRecoveryWorker's sleep has interrupted.");
++            logger.warn("ScaAutoLocRecoveryWorker's sleep has interrupted.");
+          }
+ 
+       } // end of while (not abort)
+ 
+-      LoggingManager.getPrimaryLogger().info("Auto LOC recovery for vehicle " + vehicleId + " is terminated.");
++      logger.info("Auto LOC recovery for vehicle " + vehicleId + " is terminated.");
+ 
+    }// end of run
+ }

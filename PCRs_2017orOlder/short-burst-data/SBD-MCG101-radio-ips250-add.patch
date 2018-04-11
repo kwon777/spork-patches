@@ -1,0 +1,1669 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/model/Radio.java	(working copy)
+@@ -10,10 +10,8 @@
+ import mil.navy.lcs.mvcs.common.constants.RadioConstants;
+ 
+ /**
+- * Radio
++ * This class represents a radio of the mission configuration.
+  *
+- * TODO {Purpose of This Class}
+- *
+  * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  *
+  */
+@@ -23,6 +21,7 @@
+    static final long serialVersionUID = 221L;
+ 
+    private String encrypterTypeId;
++   private String encrypterRedIp;
+    private String ampId;
+    private String secondaryAmpId;
+    private String telephoneNum;
+@@ -509,4 +508,22 @@
+    {
+       this.antennaCoverages = antennaCoverages;
+    }
++
++
++   /**
++    * @return the encrypterRedIp (the red side IP)
++    */
++   public String getEncrypterRedIp()
++   {
++      return this.encrypterRedIp;
++   }
++
++
++   /**
++    * @param encrypterRedIp the encrypterRedIp to set
++    */
++   public void setEncrypterRedIp(String encrypterRedIp)
++   {
++      this.encrypterRedIp = encrypterRedIp;
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/constants/HardwareConstantsEnum.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/constants/HardwareConstantsEnum.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/constants/HardwareConstantsEnum.java	(working copy)
+@@ -1,63 +1,64 @@
++
++
+ package mil.navy.lcs.mvcs.common.constants;
+ 
++
+ /**
+- * ApplicationConstantsEnum
++ * Hardware constants enumeration key. The keys must match with property key of the hardware
++ * constant file from the hardware-constants.properties file from the
++ * mil.navy.lcs.mvcs.common.constants in the resources folder.
+  *
+- * TODO {Purpose of This Class}
++ * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  *
+- * Id: $Id$
+- * $LastChangedBy: $
+- * $LastChangedDate: $
+- * $LastChangedRevision: $
+- *
+  */
+ public enum HardwareConstantsEnum {
+ 
+-   MISSION,
+-   SHIP,
+-   VEHICLE,
+-   SPS,
+-   SHS,
+-   ROUTER,
+-   MS,
+-   PSU,
+-   UPS,
+-   LANBYPASS,
+-   RADIO,
+-   VRC99RMS,
+-   VRC99_AMPLIFIER,
+-   RT1944,
+-   RT1944_AMPLIFIER,
+-   PRC117,
+-   PRC117_AMPLIFIER,
+-   RT1988,
+-   IRIDIUM,
+-   HFGW,
+-   KIV7,
+-   LCS1,
+-   LCS2,
+-   LCS3,
+-   USV,
+-   ASW,
+-   RMV,
+-   MTV,
+-   UUV,
+-   SBAND,
+-   LBAND,
+-   CB,
+-   DUMMY_LOAD,
+-   MAIN_ANTENNA,
+-   LNR_ANTENNA,
+-   LNR_AMPLIFIER,
+-   RF_TEST_PORT,
+-   MEDIA_CONVERTER,
+-   LOS_MAIN_ANTENNA,
+-   LOS_LNR_ANTENNA,
+-   LOS_RF_TEST_PORT,
+-   OTH_MAIN_ANTENNA,
+-   OTH_LNR_ANTENNA,
+-   OTH_RF_TEST_PORT,
+-   LOS_RADIO_AMP,
+-   OTH_RADIO_AMP,
++   MISSION, // this comment is added to keep the format of source
++   SHIP, //
++   VEHICLE, //
++   SPS, //
++   SHS, //
++   ROUTER, //
++   MS, //
++   PSU, //
++   UPS, //
++   LANBYPASS, //
++   RADIO, //
++   VRC99RMS, //
++   VRC99_AMPLIFIER, //
++   RT1944, //
++   RT1944_AMPLIFIER, //
++   PRC117, //
++   PRC117_AMPLIFIER, //
++   RT1988, //
++   IRIDIUM, //
++   HFGW, //
++   MCG101, //
++   KIV7, //
++   LCS1, //
++   LCS2, //
++   LCS3, //
++   USV, //
++   ASW, //
++   RMV, //
++   MTV, //
++   UUV, //
++   SBAND, //
++   LBAND, //
++   CB, //
++   DUMMY_LOAD, //
++   MAIN_ANTENNA, //
++   LNR_ANTENNA, //
++   LNR_AMPLIFIER, //
++   RF_TEST_PORT, //
++   MEDIA_CONVERTER, //
++   LOS_MAIN_ANTENNA, //
++   LOS_LNR_ANTENNA, //
++   LOS_RF_TEST_PORT, //
++   OTH_MAIN_ANTENNA, //
++   OTH_LNR_ANTENNA, //
++   OTH_RF_TEST_PORT, //
++   LOS_RADIO_AMP, //
++   OTH_RADIO_AMP, //
+    IPS250
+ }
+\ No newline at end of file
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/NodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/NodeBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/NodeBuilder.java	(working copy)
+@@ -12,6 +12,7 @@
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.CircuitBreaker;
++import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+ import mil.navy.lcs.mvcs.common.config.model.LanBypass;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.RadioQosProperties;
+@@ -18,6 +19,9 @@
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstantsEnum;
++import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import mil.navy.lcs.mvcs.iface.encryption.EncryptionDevice;
++import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.HeartbeatData;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+@@ -44,15 +48,23 @@
+    public T build()
+    {
+       node.setNodeId(config.getId());
+-      //PCR MVCS01448 - Changing GUI to display name rather then ID
++      // PCR MVCS01448 - Changing GUI to display name rather then ID
+       node.setNodeName(config.getName());
+       node.addPowerDevices(getPowerDevices());
+       node.addLinks(getLinks());
++      // add filter device (HAF-100) to the node
++      node.setFilterDevice(getFilterDevice());
+ 
+       return node;
+    }
+ 
+ 
++   /**
++    * To get the LAN and the radio links of the node. If radio uses an encryption device, the
++    * encryption device will get created here.
++    * 
++    * @return the collection of links in this node.
++    */
+    private Collection<LinkModel> getLinks()
+    {
+       final Collection<LinkModel> links = new LinkedList<LinkModel>();
+@@ -60,6 +72,7 @@
+       final String rt1944Type = HardwareConstants.getConstant(HardwareConstantsEnum.RT1944);
+       final String prc117Type = HardwareConstants.getConstant(HardwareConstantsEnum.PRC117);
+       final String rt1988Type = HardwareConstants.getConstant(HardwareConstantsEnum.RT1988);
++      final String mcg101Type = HardwareConstants.getConstant(HardwareConstantsEnum.MCG101);
+ 
+       links.add(createLanLink(config.getLanBypass()));
+ 
+@@ -74,6 +87,8 @@
+             radioLink = createPRC117Link(radio);
+          else if (rt1988Type.equals(type))
+             radioLink = createRT1988Link(radio);
++         else if (mcg101Type.equals(type))
++            radioLink = createMCG101Link(radio);
+ 
+          if (radioLink != null)
+          {
+@@ -81,8 +96,21 @@
+             links.add(radioLink);
+          }
+ 
+-      }// end of for(radios)
++         // add encryption device if exists in the radio configuration
++         String encrypterType = radio.getEncrypterTypeId();
++         if (encrypterType != null && encrypterType.equalsIgnoreCase(HardwareConstants.getConstant(HardwareConstantsEnum.IPS250)))
++         {
++            //  get ID or Red side IP
++            String redIP = radio.getEncrypterRedIp();
++            if (redIP != null)
++            {
++               EncryptionDevice ips250 = new EncryptionDevice(redIP);
++               radioLink.setEncryptionDevice(ips250);
++            }
++         }
+ 
++      } // end of for(radios)
++
+       return links;
+ 
+    }// end of getLinks()
+@@ -131,6 +159,32 @@
+ 
+ 
+    /**
++    * To get the filter device for the node using the mission configuration.
++    * 
++    * @return the filter device
++    */
++   private FilterDevice getFilterDevice()
++   {
++      FilterDevice filterDevice = new FilterDevice();
++      // Populate Filter device with it's settings
++      CrossDomain haf = config.getCrossDomain();
++
++      if (haf != null)
++      {
++         LoggingManager.getPrimaryLogger().debug("HAF found: " + haf.getName() + " " + haf.getIpAddress());
++         filterDevice.setFilterId(haf.getName());
++         filterDevice.setIpAddress(haf.getIpAddress());
++      }
++      else
++      {
++         LoggingManager.getPrimaryLogger().debug("HAF not found for this nodeId: " + node.getNodeId());
++      }
++
++      return filterDevice;
++   }
++
++
++   /**
+     * To create LAN link.
+     * 
+     * @param lan - the LanBypass configurations
+@@ -154,4 +208,7 @@
+ 
+ 
+    abstract RadioLink createRT1988Link(Radio radio);
++
++
++   abstract RadioLink createMCG101Link(Radio radio);
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/RmmvNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/RmmvNodeBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/RmmvNodeBuilder.java	(working copy)
+@@ -7,7 +7,6 @@
+ 
+ import com.google.common.collect.ImmutableMap;
+ 
+-import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.Channel;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+@@ -166,8 +165,15 @@
+    @Override
+    protected RadioLink createRT1988Link(Radio radio)
+    {
+-      throw new RuntimeException("No RT1988 support for UUV");
++      throw new RuntimeException("No RT-1988 support for RMMV");
+    }
+ 
+ 
++   @Override
++   RadioLink createMCG101Link(Radio radio)
++   {
++      throw new RuntimeException("No MCG-101 support for RMMV");
++   }
++
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/constants/HardwareConstants.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/constants/HardwareConstants.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/constants/HardwareConstants.java	(working copy)
+@@ -1,5 +1,8 @@
++
++
+ package mil.navy.lcs.mvcs.common.constants;
+ 
++
+ import java.io.FileNotFoundException;
+ import java.io.IOException;
+ import java.util.Properties;
+@@ -8,21 +11,18 @@
+ import mil.navy.lcs.mvcs.common.utils.FileUtils;
+ 
+ /**
+- * HardwareConstants
++ * This class contains hardware constants. Constant values are loaded during runtime from the
++ * hardware-constants.properties file from the mil.navy.lcs.mvcs.common.constants in the resources
++ * folder.
+  *
+- * TODO {Purpose of This Class}
++ * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  *
+- * Id: $Id$
+- * $LastChangedBy: $
+- * $LastChangedDate: $
+- * $LastChangedRevision: $
+- *
+  */
+ public class HardwareConstants
+ {
+-   private static final HardwareConstants INSTANCE = new HardwareConstants();
+    private static Properties CONSTANTS = getConstants();
+ 
++
+    /**
+     * Private constructor
+     */
+@@ -30,8 +30,10 @@
+    {
+    }
+ 
++
+    /**
+     * This method is responsible for retrieving a constant with optional dynamic token strings.
++    * 
+     * @param keyEnum - Unique key for accessing the constant
+     * @return Returns the matching constant with option values replaced
+     */
+@@ -40,8 +42,10 @@
+       return getConstant(keyEnum.toString());
+    }
+ 
++
+    /**
+     * This method is responsible for retrieving a constant with optional dynamic token strings.
++    * 
+     * @param key - Unique key for accessing the message
+     * @param tokens - Optional values to replace tokens within the message
+     * @return Returns the matching Alert message with option values replaced
+@@ -52,9 +56,10 @@
+       return msg;
+    }
+ 
++
+    /**
+-    * TESTING ONLY
+-    * This method is responsible for overriding the default constant value for VESSEL TYPE as SHIP.
++    * TESTING ONLY This method is responsible for overriding the default constant value for VESSEL
++    * TYPE as SHIP.
+     */
+    public static void setVesselTypeAsShip()
+    {
+@@ -61,9 +66,10 @@
+       setConstant("vessel_type", ConfigConstants.VesselType.SHIP.toString());
+    }
+ 
++
+    /**
+-    * TESTING ONLY
+-    * This method is responsible for overriding the default constant value for VESSEL TYPE as VEHICLE.
++    * TESTING ONLY This method is responsible for overriding the default constant value for VESSEL
++    * TYPE as VEHICLE.
+     */
+    public static void setVesselTypeAsVehicle()
+    {
+@@ -70,10 +76,12 @@
+       setConstant("vessel_type", ConfigConstants.VesselType.VEHICLE.toString());
+    }
+ 
++
+    /**
+-    * USE FOR TESTING ONLY
+-    * This method is responsible for overriding a default constant value for testing purposes.
+-    * The primary use for this method will be in setting the VESSEL TYPE within Unit Tests.
++    * USE FOR TESTING ONLY This method is responsible for overriding a default constant value for
++    * testing purposes. The primary use for this method will be in setting the VESSEL TYPE within
++    * Unit Tests.
++    * 
+     * @param key
+     * @param value
+     */
+@@ -82,8 +90,10 @@
+       CONSTANTS.put(key, value);
+    }
+ 
++
+    /**
+     * This method is responsible for loading the application Constants from the properties file.
++    * 
+     * @return Returns the loaded application Constants in a Properties object
+     */
+    private static Properties getConstants()
+@@ -106,14 +116,17 @@
+       return props;
+    }
+ 
++
+    /**
+-    * Returns a copy of the hardware constant properties. Returning a copy of these prevents call-by-reference changes to the original.
++    * Returns a copy of the hardware constant properties. Returning a copy of these prevents
++    * call-by-reference changes to the original.
+     *
+     * @return A new hardware Properties object.
+     */
+    public static Properties getCopyOfProperties()
+    {
+-      // NOTE - Don't think this is really creating a deep copy, which means that this isn't really a copy.
++      // NOTE - Don't think this is really creating a deep copy, which means that this isn't really
++      // a copy.
+       Properties copyOfProperties = new Properties();
+       copyOfProperties.putAll(CONSTANTS);
+       return copyOfProperties;
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(working copy)
+@@ -73,6 +73,11 @@
+ public interface IRadioPlugin
+ {
+ 
++   /**
++    * To set radio name
++    * 
++    * @param setRadioName - Sets the radio name
++    */
+    public void setRadioName(String setRadioName);
+ 
+ 
+@@ -82,12 +87,17 @@
+    public boolean removeRadioPropertiesEventListener(IRadioProperties listener);
+ 
+ 
++   /** To start the plug-in */
+    public void startPlugin();
+ 
+ 
++   /** To stop the plug-in */
+    public void stopPlugin();
+ 
+ 
++   /**
++    * @return the radio name
++    */
+    public String getRadioName();
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java	(working copy)
+@@ -958,7 +958,7 @@
+       CredentialSimple credential = null;
+       for (CredentialSimple c : listOfCredentials)
+       {
+-         if (c.getId().equals(id))
++         if (c.getId().equalsIgnoreCase(id))
+          {
+             credential = c;
+             break;
+Index: src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml	(revision 9593)
++++ src/main/resources/mil/navy/lcs/mvcs/common/config/radio-type-characteristics.xml	(working copy)
+@@ -189,6 +189,33 @@
+          </properties>
+       </priority>
+    </radioCharacteristics>
++
++   <radioCharacteristics>
++      <typeId>mcg101</typeId>
++      <radioType>MCG-101</radioType>
++      <radioImage>IridiumScu1_shadowed_px60.jpg</radioImage>
++      <appletName></appletName>
++      <emconCapable>false</emconCapable>
++      <othCapable>true</othCapable>
++      <lrCapable>true</lrCapable>
++      <missionCapable>true</missionCapable>
++      <frequencyType></frequencyType>
++      <pointToPoint>true</pointToPoint>
++      <linkQualityCapable>false</linkQualityCapable>
++      <maxLosRangeInNauticalMiles>10000</maxLosRangeInNauticalMiles>
++      <maxLrRangeInFeet>10000</maxLrRangeInFeet>
++      <maxAllowableTimeToStartInSec>180</maxAllowableTimeToStartInSec>
++      <maxAllowableTimeForManualPathSwitchInSec>180
++      </maxAllowableTimeForManualPathSwitchInSec>
++      <plugin>mil.navy.lcs.mvcs.plugins.mcg101.MCG101Plugin</plugin>
++      <heartbeatPort>0</heartbeatPort>
++      <priority>
++         <number>0</number>
++         <properties>
++            <label>0</label>
++         </properties>
++      </priority>
++   </radioCharacteristics>
+    
+ 
+ </radioCharacteristicsConfig>
+Index: src/main/java/mil/navy/lcs/mvcs/common/constants/RadioConstants.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/constants/RadioConstants.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/constants/RadioConstants.java	(working copy)
+@@ -1,5 +1,8 @@
++
++
+ package mil.navy.lcs.mvcs.common.constants;
+ 
++
+ import java.io.Serializable;
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -12,115 +15,112 @@
+ import mil.navy.lcs.mvcs.common.utils.XmlUtils;
+ 
+ /**
+- * RadioConstants
++ * This class contains radio constant values such as characteristics of radio and associated
++ * encryption device.
+  *
+- * TODO {Purpose of This Class}
+  *
+- * Id: $Id$
+- * $LastChangedBy: $
+- * $LastChangedDate: $
+- * $LastChangedRevision: $
++ * Id: $Id$ $LastChangedBy: $ $LastChangedDate: $ $LastChangedRevision: $
+  *
+  */
+ public class RadioConstants implements Serializable
+ {
+-	private static final long serialVersionUID = 230L;
++   private static final long serialVersionUID = 230L;
+ 
+-	private static final RadioConstants INSTANCE = new RadioConstants();
+-	private static List<RadioCharacteristics> listOfRadioCharacteristics = getListOfRadioCharacteristics();
+-	private static List<Encrypter> listOfEncrypters = getListOfEncrypters();
++   private static List<RadioCharacteristics> listOfRadioCharacteristics = getListOfRadioCharacteristics();
++   private static List<Encrypter> listOfEncrypters = getListOfEncrypters();
+ 
+-	/**
+-	 *
+-	 */
+-	private RadioConstants()
+-	{
+-	}
+ 
+-	/**
+-	 * This method is responsible for returning the Radio Characteristics based on the
+-	 * supplied Link/Radio Type ID.
+-	 * @param typeId - Link Type ID
+-	 * @return Returns the Radio Characteristics object
+-	 */
+-	public static RadioCharacteristics getRadioCharacteristics( final String typeId )
+-	{
+-		RadioCharacteristics radioChars = null;
+-		for (RadioCharacteristics rc : listOfRadioCharacteristics)
+-		{
+-			if (typeId.equals(rc.getTypeId()))
+-			{
+-				radioChars = rc;
+-			}
+-		}
+-		return radioChars;
+-	}
++   /**
++    *
++    */
++   private RadioConstants()
++   {
++   }
+ 
+-	/**
+-	 * This method is responsible for returning the Encrypter Characteristics
+-	 * based on the supplied Encrypter Type ID.
+-	 * 
+-	 * @param typeId
+-	 *            - Encrypter Type ID
+-	 * @return Returns the Encrypter Characteristics object
+-	 */
+-	public static Encrypter getEncrypterCharacteristics(final String typeId)
+-	{
+-		Encrypter encrypter = null;
+-		for (Encrypter rc : listOfEncrypters)
+-		{
+-			if (typeId.equals(rc.getTypeId()))
+-			{
+-				encrypter = rc;
+-			}
+-		}
+-		return encrypter;
+-	}
+ 
+-	/**
+-	 * This method is responsible for loading the static Radio Characteristics
+-	 * config
+-	 * 
+-	 * @throws ConfigException
+-	 */
+-	private static List<RadioCharacteristics> getListOfRadioCharacteristics()
+-	{
+-		List<RadioCharacteristics> list = new ArrayList<RadioCharacteristics>();
+-		RadioCharacteristicsConfig configUnmarshalled;
+-		try
+-		{
+-			configUnmarshalled = (RadioCharacteristicsConfig) XmlUtils.unmarshallConfig(
+-					AppConstants.getConstant(AppConstantsEnum.RADIO_CHARACTERISTICS_MAPPING_PATH),
+-					AppConstants.getConstant(AppConstantsEnum.RADIO_CHARACTERISTICS_PATH));
+-			list = configUnmarshalled.getListOfRadioCharacteristics();
+-		}
+-		catch (Exception e)
+-		{
+-			e.printStackTrace();
+-		}
+-		return list;
+-	}
++   /**
++    * This method is responsible for returning the Radio Characteristics based on the supplied
++    * Link/Radio Type ID.
++    * 
++    * @param typeId - Link Type ID
++    * @return Returns the Radio Characteristics object
++    */
++   public static RadioCharacteristics getRadioCharacteristics(final String typeId)
++   {
++      RadioCharacteristics radioChars = null;
++      for (RadioCharacteristics rc : listOfRadioCharacteristics)
++      {
++         if (typeId.equals(rc.getTypeId()))
++         {
++            radioChars = rc;
++         }
++      }
++      return radioChars;
++   }
+ 
+-	/**
+-	 * This method is responsible for loading the static Encrypter
+-	 * Characteristics config
+-	 * 
+-	 * @throws ConfigException
+-	 */
+-	private static List<Encrypter> getListOfEncrypters()
+-	{
+-		List<Encrypter> list = new ArrayList<Encrypter>();
+-		EncryptersConfig configUnmarshalled;
+-		try
+-		{
+-			configUnmarshalled = (EncryptersConfig) XmlUtils.unmarshallConfig(AppConstants.getConstant(AppConstantsEnum.ENCRYPTER_CONFIG_MAPPING_PATH), AppConstants.getConstant(AppConstantsEnum.ENCRYPTER_CONFIG_PATH));
+-			list = configUnmarshalled.getListOfEncrypters();
+-		}
+-		catch (Exception e)
+-		{
+-			e.printStackTrace();
+-		}
+-		return list;
+-	}
+ 
++   /**
++    * This method is responsible for returning the Encrypter Characteristics based on the supplied
++    * Encrypter Type ID.
++    * 
++    * @param typeId - Encrypter Type ID
++    * @return Returns the Encrypter Characteristics object
++    */
++   public static Encrypter getEncrypterCharacteristics(final String typeId)
++   {
++      Encrypter encrypter = null;
++      for (Encrypter rc : listOfEncrypters)
++      {
++         if (typeId.equalsIgnoreCase(rc.getTypeId()))
++         {
++            encrypter = rc;
++         }
++      }
++      return encrypter;
++   }
++
++
++   /**
++    * This method is responsible for loading the static Radio Characteristics config
++    * 
++    * @throws ConfigException
++    */
++   private static List<RadioCharacteristics> getListOfRadioCharacteristics()
++   {
++      List<RadioCharacteristics> list = new ArrayList<RadioCharacteristics>();
++      RadioCharacteristicsConfig configUnmarshalled;
++      try
++      {
++         configUnmarshalled = (RadioCharacteristicsConfig) XmlUtils.unmarshallConfig(AppConstants.getConstant(AppConstantsEnum.RADIO_CHARACTERISTICS_MAPPING_PATH), AppConstants.getConstant(AppConstantsEnum.RADIO_CHARACTERISTICS_PATH));
++         list = configUnmarshalled.getListOfRadioCharacteristics();
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++      }
++      return list;
++   }
++
++
++   /**
++    * This method is responsible for loading the static Encrypter Characteristics config
++    * 
++    * @throws ConfigException
++    */
++   private static List<Encrypter> getListOfEncrypters()
++   {
++      List<Encrypter> list = new ArrayList<Encrypter>();
++      EncryptersConfig configUnmarshalled;
++      try
++      {
++         configUnmarshalled = (EncryptersConfig) XmlUtils.unmarshallConfig(AppConstants.getConstant(AppConstantsEnum.ENCRYPTER_CONFIG_MAPPING_PATH), AppConstants.getConstant(AppConstantsEnum.ENCRYPTER_CONFIG_PATH));
++         list = configUnmarshalled.getListOfEncrypters();
++      }
++      catch (Exception e)
++      {
++         e.printStackTrace();
++      }
++      return list;
++   }
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/UissNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/UissNodeBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/UissNodeBuilder.java	(working copy)
+@@ -7,7 +7,6 @@
+ 
+ import com.google.common.collect.ImmutableMap;
+ 
+-import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.VesselCommon;
+ import mil.navy.lcs.mvcs.common.constants.HardwareConstants;
+@@ -51,7 +50,7 @@
+    @Override
+    protected RadioLink createRT1988Link(Radio radio)
+    {
+-      throw new RuntimeException("No RT1988 support for UUV");
++      throw new RuntimeException("No RT1988 support for USV");
+    }
+ 
+ 
+@@ -58,7 +57,7 @@
+    @Override
+    protected RadioLink createPRC117Link(Radio radio)
+    {
+-      throw new RuntimeException("No PRC117 support for UUV");
++      throw new RuntimeException("No PRC117 support for USV");
+    }
+ 
+ 
+@@ -118,4 +117,11 @@
+ 
+       return rfDevice;
+    }
++
++
++   @Override
++   protected RadioLink createMCG101Link(Radio radio)
++   {
++      throw new RuntimeException("No MCG-101 support for USV");
++   }
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/encryptor/EncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/encryptor/EncryptorPluginManager.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/encryptor/EncryptorPluginManager.java	(working copy)
+@@ -151,18 +151,6 @@
+ 
+ 
+    /**
+-    * Method which is used to sanitize all encryptors.
+-    */
+-   public abstract void sanitizeAllEncryptors();
+-
+-
+-   /**
+-    * Method which is used to wipe all encryptors.
+-    */
+-   public abstract void wipeAllEncryptors();
+-
+-
+-   /**
+     * Method which is used to zeroize all encryptors.
+     */
+    public abstract void zeroizeAllEncryptors();
+Index: src/main/resources/mil/navy/lcs/mvcs/common/constants/hardware-constants.properties
+===================================================================
+--- src/main/resources/mil/navy/lcs/mvcs/common/constants/hardware-constants.properties	(revision 9593)
++++ src/main/resources/mil/navy/lcs/mvcs/common/constants/hardware-constants.properties	(working copy)
+@@ -18,6 +18,7 @@
+ iridium=Iridium SCU
+ rt1988=RT-1988
+ hfgw=HFGW
++mcg101=MCG-101
+ kiv7=KIV-7M Encryptor
+ lcs1=LCS 1
+ lcs2=LCS 2
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/UuvNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/UuvNodeBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/UuvNodeBuilder.java	(working copy)
+@@ -67,4 +67,20 @@
+    }
+ 
+ 
++   @Override
++   RadioLink createMCG101Link(Radio radio)
++   {
++      final String radioId = radio.getId();
++      final int linkNumber = radio.getLinkNumber();
++
++      final PowerOutput power = node.getPowerDeviceForHardwareId(radioId).getOutputsByDeviceId().get(radioId);
++      power.setType(PowerOutputType.RADIO);
++
++      final Map<RFOutputType, PowerOutput> ampPower = Collections.emptyMap();
++      final RFDevice rfDevice = new RFDevice(radioId, MvcsLinkType.MCG101);
++
++      return new RadioLink(radioId, node.getNodeId(), linkNumber, MvcsLinkType.MCG101, CommsType.SAT, power, ampPower, rfDevice, radio.getLosRange());
++   }
++
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/model/ShipNodeBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/model/ShipNodeBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/common/model/ShipNodeBuilder.java	(working copy)
+@@ -181,4 +181,20 @@
+ 
+       return new RadioLink(configRadio.getId(), node.getNodeId(), linkNumber, MvcsLinkType.RT1988, CommsType.SAT, power, ampPower, rfDevice, configRadio.getLosRange());
+    }
++
++
++   @Override
++   RadioLink createMCG101Link(Radio radio)
++   {
++      final String radioId = radio.getId();
++      final int linkNumber = 0;
++
++      final PowerOutput power = node.getPowerDeviceForHardwareId(radioId).getOutputsByDeviceId().get(radioId);
++      power.setType(PowerOutputType.RADIO);
++
++      final Map<RFOutputType, PowerOutput> ampPower = Collections.emptyMap();
++      final RFDevice rfDevice = new RFDevice(radioId, MvcsLinkType.MCG101);
++
++      return new RadioLink(radio.getId(), node.getNodeId(), linkNumber, MvcsLinkType.MCG101, CommsType.SAT, power, ampPower, rfDevice, radio.getLosRange());
++   }
+ }
+#P mvcs-vca
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/NodeHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/NodeHandlerBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/NodeHandlerBuilder.java	(working copy)
+@@ -11,9 +11,7 @@
+ import com.google.common.collect.Lists;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+ import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.net.MvcsNetworkConstants;
+ import mil.navy.lcs.mvcs.common.net.NodeAddressLookup;
+ import mil.navy.lcs.mvcs.common.net.PacketProcessor;
+@@ -22,7 +20,6 @@
+ import mil.navy.lcs.mvcs.common.net.sender.MessageQueue;
+ import mil.navy.lcs.mvcs.common.net.udp.UdpPacketReceiver;
+ import mil.navy.lcs.mvcs.common.net.udp.UdpPacketSender;
+-import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+@@ -73,24 +70,6 @@
+       this.messageReceiver = new MessageReceiver(local, remote, processorArray);
+ 
+       this.messageQueue.start();
+-
+-      // Populate Filter device with it's settings
+-      CrossDomain haf = config.getCrossDomain();
+-
+-      if (haf != null)
+-      {
+-         LoggingManager.getPrimaryLogger().debug("Found: " + haf.getName());
+-         LoggingManager.getPrimaryLogger().debug("Found: " + haf.getIpAddress());
+-
+-         FilterDevice filterDevices = node.getFilterDevice();
+-         filterDevices.setFilterId(haf.getName());
+-         filterDevices.setIpAddress(haf.getIpAddress());
+-         node.setFilterDevice(filterDevices);
+-      }
+-      else
+-      {
+-         LoggingManager.getPrimaryLogger().debug("haf was found to be null!");
+-      }
+    }
+ 
+ 
+Index: configs/mission-mapping.xml
+===================================================================
+--- configs/mission-mapping.xml	(revision 9593)
++++ configs/mission-mapping.xml	(working copy)
+@@ -212,6 +212,9 @@
+       <field name="encrypterTypeId" type="string">
+          <bind-xml name="encrypterTypeId" node="element" />
+       </field>
++      <field name="encrypterRedIp" type="string">
++         <bind-xml name="encrypterRedIp" node="element" />
++      </field>
+       <field name="ampId" type="string">
+          <bind-xml name="ampId" node="element" />
+       </field>
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9593)
++++ configs/mission.xsd	(working copy)
+@@ -214,6 +214,11 @@
+ 					<xs:documentation>Encrypter Type ID</xs:documentation>
+ 				</xs:annotation>
+ 			</xs:element>
++			<xs:element name="encrypterRedIp" type="stringtype" minOccurs="0" maxOccurs="1">
++				<xs:annotation>
++					<xs:documentation>Encrypter Red Side IP</xs:documentation>
++				</xs:annotation>
++			</xs:element>
+ 			<xs:element name="ampId" type="stringtype" minOccurs="0" maxOccurs="1">
+ 				<xs:annotation>
+ 					<xs:documentation>Radio Amplifier ID</xs:documentation>
+@@ -326,6 +331,7 @@
+ 			<xs:enumeration value="Iridium SCU" />
+ 			<xs:enumeration value="LAN Bypass" />
+ 			<xs:enumeration value="RT-1988" />
++			<xs:enumeration value="MCG-101" />
+ 		</xs:restriction>
+ 	</xs:simpleType>
+ 
+@@ -354,6 +360,7 @@
+ 			<xs:enumeration value="KIV-7M Encryptor" />
+ 			<xs:enumeration value="Matrix Switch" />
+ 			<xs:enumeration value="RT-1988" />
++			<xs:enumeration value="MCG-101" />
+ 			<xs:enumeration value="UNUSED" />
+ 		</xs:restriction>
+ 	</xs:simpleType>
+Index: src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(working copy)
+@@ -103,17 +103,6 @@
+ 
+ 
+    /**
+-    * Method used to wipe and sanitize all encryptors, this will remove the keys and existing
+-    * configs in the encryptors.
+-    */
+-   @Override
+-   public void wipeAllEncryptors()
+-   {
+-      // XXX - what is this even used for?
+-   }
+-
+-
+-   /**
+     * A method used to zeroize the encryptors.
+     */
+    public void zeroizeAllEncryptors()
+@@ -148,10 +137,4 @@
+       VcaMain.shutdown(ExitAction.COLD_SHUTDOWN);
+    }
+ 
+-
+-   @Override
+-   public void sanitizeAllEncryptors()
+-   {
+-      // XXX - what is this even used for?
+-   }
+ }
+#P mvcs-sca
+Index: configs/mission.xsd
+===================================================================
+--- configs/mission.xsd	(revision 9593)
++++ configs/mission.xsd	(working copy)
+@@ -173,8 +173,8 @@
+       <xs:complexContent>
+          <xs:extension base="linkType">
+             <xs:sequence>
+-               <xs:element name="encrypterTypeId" type="stringtype" minOccurs="0"
+-                  maxOccurs="1" />
++               <xs:element name="encrypterTypeId" type="stringtype" minOccurs="0" maxOccurs="1" />
++               <xs:element name="encrypterRedIp" type="stringtype" minOccurs="0" maxOccurs="1" />
+                <xs:element name="ampId" type="stringtype" minOccurs="0" maxOccurs="1" />
+                <xs:element name="secondaryAmpId" type="stringtype" minOccurs="0"
+                   maxOccurs="1" />
+@@ -648,6 +648,7 @@
+          <xs:enumeration value="Iridium SCU" />
+          <xs:enumeration value="LAN Bypass" />
+          <xs:enumeration value="RT-1988" />
++         <xs:enumeration value="MCG-101" />
+       </xs:restriction>
+    </xs:simpleType>
+ 
+@@ -676,6 +677,7 @@
+          <xs:enumeration value="Matrix Switch" />
+          <xs:enumeration value="KIV-7M Encryptor" />
+          <xs:enumeration value="RT-1988" />
++         <xs:enumeration value="MCG-101" />
+          <xs:enumeration value="UNUSED" />
+       </xs:restriction>
+    </xs:simpleType>
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java	(working copy)
+@@ -16,7 +16,6 @@
+ import com.google.common.collect.Lists;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+ import mil.navy.lcs.mvcs.common.messages.NearShipMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.net.MvcsNetworkConstants;
+@@ -29,7 +28,6 @@
+ import mil.navy.lcs.mvcs.common.net.udp.UdpPacketSender;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertsManager;
+-import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsNode;
+@@ -117,24 +115,6 @@
+          }
+       }
+ 
+-      // Populate Filter device with it's settings
+-      CrossDomain haf = ConfigManager.getInstance().getVehicleFromList(node.getNodeId()).getCrossDomain();
+-
+-      if (haf != null)
+-      {
+-         logger.debug("Found: " + haf.getName());
+-         logger.debug("Found: " + haf.getIpAddress());
+-
+-         FilterDevice filterDevices = node.getFilterDevice();
+-         filterDevices.setFilterId(haf.getName());
+-         filterDevices.setIpAddress(haf.getIpAddress());
+-         node.setFilterDevice(filterDevices);
+-      }
+-      else
+-      {
+-         logger.debug("haf was found to be null!");
+-      }
+-
+    }// end of constructor
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(working copy)
+@@ -330,7 +330,6 @@
+    public void requestZeroize()
+    {
+       ScaEncryptorPluginManager.getInstance().zeroizeAllEncryptors();
+-      node.setKeyed(false);
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java	(working copy)
+@@ -47,7 +47,7 @@
+ 
+ 
+    /**
+-    * Method used to get the instance of this object.
++    * used to get the instance of this object.
+     * 
+     * @return ScaEncrytorPluginManager The instance of this object.
+     */
+@@ -119,13 +119,6 @@
+    }
+ 
+ 
+-   @Override
+-   public void sanitizeAllEncryptors()
+-   {
+-
+-   }
+-
+-
+    /**
+     * Method Description This method allows the timer, used in setState(), to return back for
+     * clearing out the request in the associated hash tables.
+@@ -142,16 +135,9 @@
+ 
+ 
+    @Override
+-   public void wipeAllEncryptors()
+-   {
+-      // TODO Add Logic to send command to VCA to zeroize all encryptors.
+-   }
+-
+-
+-   @Override
+    public void zeroizeAllEncryptors()
+    {
+-      // TODO Add Logic to send command to VCA to zeroize all vehicle-side encryptors.
++      // no need to zeroize in the shipboard side. If implement later, update the ship model.
+    }
+ 
+ 
+@@ -165,12 +151,12 @@
+          // Get the list of radios from the Configuration Manager.
+          for (Radio radio : ConfigManager.getInstance().getShip().getListOfRadios())
+          {
+-            // every encryptor should be associated with a radio.
++            // an encryptor should be associated with one or more radios.
+             Encrypter encryptor = radio.getEncrypterCharacteristics();
+             if (encryptor != null)
+             {
+                // add its name and class to the collection.
+-               System.out.print("Adding: " + encryptor.getTypeName() + " of type: " + encryptor.getPlugin() + " to hashtable\n");
++               LoggingManager.getPrimaryLogger().info("Adding: " + encryptor.getTypeName() + " of type: " + encryptor.getPlugin() + " to hashtable\n");
+                addEncryptorPluginNameAndClass(encryptor.getTypeName(), encryptor.getPlugin());
+             }
+          }
+Index: src/main/java/mil/navy/lcs/mvcs/sca/model/HostModelInitializer.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/model/HostModelInitializer.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/sca/model/HostModelInitializer.java	(working copy)
+@@ -51,6 +51,7 @@
+     */
+    public static ShipModel createHostModel(final Ship configShip, final List<Vehicle> configVehicles)
+    {
++      // identify vehicle types
+       String rmvType = HardwareConstants.getConstant(HardwareConstantsEnum.RMV);
+       String uissType = HardwareConstants.getConstant(HardwareConstantsEnum.USV);
+       String uuvType = HardwareConstants.getConstant(HardwareConstantsEnum.UUV);
+Index: missions/default-mission.xml
+===================================================================
+--- missions/default-mission.xml	(revision 9593)
++++ missions/default-mission.xml	(working copy)
+@@ -77,6 +77,7 @@
+          <networkId>1</networkId>
+          <configurable>true</configurable>
+          <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.10.10</encrypterRedIp>
+          <ampId>rt1944Amp-00</ampId>
+          <secondaryAmpId>rt1944Amp-01</secondaryAmpId>
+          <sleepRadio>false</sleepRadio>
+@@ -106,18 +107,19 @@
+ 		 <antennaCoverage side="port" forward="359" aft="180" />
+       </radio>
+       <radio>
+-         <id>rt1988-0</id>
+-         <typeId>iridium</typeId>
+-         <linkType>RT-1988</linkType>
++         <id>SATCOM-0</id>
++         <typeId>mcg101</typeId>
++         <linkType>MCG-101</linkType>
+          <networkId>1</networkId>
+          <configurable>false</configurable>
+-         <encrypterTypeId>kiv7</encrypterTypeId>
++         <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.10.18</encrypterRedIp>
+          <telephoneNum>00881693630409</telephoneNum>
+          <sleepRadio>false</sleepRadio>
+          <heartbeatFrequency>10</heartbeatFrequency>
+          <heartbeatWindowSize>300</heartbeatWindowSize>
+-         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+-         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
++         <snmpAgentIpAddress>172.20.10.3</snmpAgentIpAddress>
++         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+       </radio>
+       <matrixSwitch>
+          <id>ms-00</id>
+@@ -169,9 +171,9 @@
+             <safetyCheck>false</safetyCheck>
+          </circuitBreaker>
+          <circuitBreaker>
+-            <id>rt1988-0</id>
++            <id>SATCOM-0</id>
+             <devNumber>7</devNumber>
+-            <devName>RT-1988</devName>
++            <devName>MCG-101</devName>
+             <safetyCheck>true</safetyCheck>
+          </circuitBreaker>
+       </power>
+@@ -746,13 +748,14 @@
+       </lanBypass>
+       <radio>
+          <id>SATCOM</id>
+-         <typeId>rt1988</typeId>
+-         <linkType>RT-1988</linkType>
++         <typeId>mcg101</typeId>
++         <linkType>MCG-101</linkType>
+          <linkNumber>3</linkNumber>
+          <priority>3</priority>
+          <networkId>1</networkId>
+          <configurable>false</configurable>
+-         <encrypterTypeId>kiv7</encrypterTypeId>
++         <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.15.18</encrypterRedIp>
+          <telephoneNum>00881693630409</telephoneNum>
+          <sleepRadio>false</sleepRadio>
+          <heartbeatFrequency>30</heartbeatFrequency>
+@@ -764,8 +767,8 @@
+          <lrRange>50</lrRange><!-- in nautical miles -->
+          <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+          <slaTimeout>10</slaTimeout>
+-         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+-         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
++         <snmpAgentIpAddress>172.20.15.3</snmpAgentIpAddress>
++         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+       </radio>
+       <matrixSwitch>
+          <id>ms-50</id>
+@@ -789,7 +792,7 @@
+          <circuitBreaker>
+             <id>SATCOM</id>
+             <devNumber>1</devNumber>
+-            <devName>RT-1988</devName>
++            <devName>MCG-101</devName>
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+@@ -838,13 +841,14 @@
+       </lanBypass>
+       <radio>
+          <id>SATCOM</id>
+-         <typeId>rt1988</typeId>
+-         <linkType>RT-1988</linkType>
++         <typeId>mcg101</typeId>
++         <linkType>MCG-101</linkType>
+          <linkNumber>3</linkNumber>
+          <priority>3</priority>
+          <networkId>1</networkId>
+          <configurable>false</configurable>
+-         <encrypterTypeId>kiv7</encrypterTypeId>
++         <encrypterTypeId>ips250</encrypterTypeId>
++         <encrypterRedIp>172.20.16.18</encrypterRedIp>
+          <telephoneNum>00881693630409</telephoneNum>
+          <sleepRadio>false</sleepRadio>
+          <heartbeatFrequency>30</heartbeatFrequency>
+@@ -856,8 +860,8 @@
+          <lrRange>50</lrRange><!-- in nautical miles -->
+          <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+          <slaTimeout>10</slaTimeout>
+-         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+-         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
++         <snmpAgentIpAddress>172.20.16.3</snmpAgentIpAddress>
++         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+       </radio>
+       <matrixSwitch>
+          <id>ms-60</id>
+@@ -881,7 +885,7 @@
+          <circuitBreaker>
+             <id>SATCOM</id>
+             <devNumber>1</devNumber>
+-            <devName>RT-1988</devName>
++            <devName>MCG-101</devName>
+          </circuitBreaker>
+       </power>
+       <snmpAgentTest>
+Index: configs/mission-mapping.xml
+===================================================================
+--- configs/mission-mapping.xml	(revision 9593)
++++ configs/mission-mapping.xml	(working copy)
+@@ -38,9 +38,9 @@
+ 		<field name="id" type="string">
+ 			<bind-xml name="id" node="element" />
+ 		</field>
+-      <field name="name" type="string">
+-         <bind-xml name="name" node="element" />
+-      </field>
++		<field name="name" type="string">
++			<bind-xml name="name" node="element" />
++		</field>
+ 		<field name="typeId" type="string">
+ 			<bind-xml name="typeId" node="element" />
+ 		</field>
+@@ -92,12 +92,12 @@
+ 		<field name="gpsOffset" type="integer">
+ 			<bind-xml name="gpsOffset" node="element" />
+ 		</field>
+-      <field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
+-         <bind-xml name="crossDomain" node="element" />
+-      </field>
+-      <field name="othAmpController" type="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
+-         <bind-xml name="othAmpController" node="element" />
+-      </field>
++		<field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
++			<bind-xml name="crossDomain" node="element" />
++		</field>
++		<field name="othAmpController" type="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
++			<bind-xml name="othAmpController" node="element" />
++		</field>
+ 		<field name="sps" type="mil.navy.lcs.mvcs.common.config.model.Sps">
+ 			<bind-xml name="sps" node="element" />
+ 		</field>
+@@ -107,8 +107,7 @@
+ 		<field name="lanBypass" type="mil.navy.lcs.mvcs.common.config.model.LanBypass">
+ 			<bind-xml name="lanBypass" node="element" />
+ 		</field>
+-		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio"
+-			collection="arraylist">
++		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio" collection="arraylist">
+ 			<bind-xml name="radio" node="element" />
+ 		</field>
+ 		<field name="listOfMatrixSwitches" type="mil.navy.lcs.mvcs.common.config.model.MatrixSwitch"
+@@ -133,8 +132,7 @@
+ 		<field name="security" type="mil.navy.lcs.mvcs.common.config.model.Security">
+ 			<bind-xml name="security" node="element" />
+ 		</field>
+-		<field name="snmpAgentTest"
+-			type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
++		<field name="snmpAgentTest" type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
+ 			<bind-xml name="snmpAgentTest" node="element" />
+ 		</field>
+ 	</class>
+@@ -180,9 +178,9 @@
+ 		<field name="depthLimit" type="double">
+ 			<bind-xml name="depthLimit" node="element" />
+ 		</field>
+-      <field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
+-         <bind-xml name="crossDomain" node="element" />
+-      </field>
++		<field name="crossDomain" type="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
++			<bind-xml name="crossDomain" node="element" />
++		</field>
+ 		<field name="router" type="mil.navy.lcs.mvcs.common.config.model.Router">
+ 			<bind-xml name="router" node="element" />
+ 		</field>
+@@ -189,8 +187,7 @@
+ 		<field name="lanBypass" type="mil.navy.lcs.mvcs.common.config.model.LanBypass">
+ 			<bind-xml name="lanBypass" node="element" />
+ 		</field>
+-		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio"
+-			collection="arraylist">
++		<field name="listOfRadios" type="mil.navy.lcs.mvcs.common.config.model.Radio" collection="arraylist">
+ 			<bind-xml name="radio" />
+ 		</field>
+ 		<field name="listOfMatrixSwitches" type="mil.navy.lcs.mvcs.common.config.model.MatrixSwitch"
+@@ -204,8 +201,7 @@
+ 			collection="arraylist">
+ 			<bind-xml name="acl" />
+ 		</field>
+-		<field name="snmpAgentTest"
+-			type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
++		<field name="snmpAgentTest" type="mil.navy.lcs.mvcs.common.config.model.SnmpAgentTest">
+ 			<bind-xml name="snmpAgentTest" node="element" />
+ 		</field>
+ 	</class>
+@@ -229,8 +225,7 @@
+ 		<field name="ipAddress" type="string">
+ 			<bind-xml name="ipAddress" node="element" />
+ 		</field>
+-		<field name="connectionType"
+-			type="mil.navy.lcs.mvcs.common.config.model.ConnectionType">
++		<field name="connectionType" type="mil.navy.lcs.mvcs.common.config.model.ConnectionType">
+ 			<bind-xml name="connectionType" node="element" />
+ 		</field>
+ 		<field name="connectionPort" type="integer">
+@@ -300,6 +295,9 @@
+ 		<field name="encrypterTypeId" type="string">
+ 			<bind-xml name="encrypterTypeId" node="element" />
+ 		</field>
++		<field name="encrypterRedIp" type="string">
++			<bind-xml name="encrypterRedIp" node="element" />
++		</field>
+ 		<field name="ampId" type="string">
+ 			<bind-xml name="ampId" node="element" />
+ 		</field>
+@@ -434,8 +432,7 @@
+ 		<field name="reverseLogicAdapter" type="boolean">
+ 			<bind-xml name="reverseLogicAdapter" node="element" />
+ 		</field>
+-		<field name="listOfCircuitBreakers"
+-			type="mil.navy.lcs.mvcs.common.config.model.CircuitBreaker"
++		<field name="listOfCircuitBreakers" type="mil.navy.lcs.mvcs.common.config.model.CircuitBreaker"
+ 			collection="arraylist">
+ 			<bind-xml name="circuitBreaker" node="element" />
+ 		</field>
+@@ -599,22 +596,22 @@
+ 			<bind-xml name="testing" node="element" />
+ 		</field>
+ 	</class>
+-   <class name="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
+-      <map-to xml="crossDomain" />
+-      <field name="name" type="string">
+-         <bind-xml name="name" node="element" />
+-      </field>
+-      <field name="ipAddress" type="string">
+-         <bind-xml name="ipAddress" node="element" />
+-      </field>
+-   </class>
+-   <class name="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
+-      <map-to xml="othAmpController" />
+-      <field name="ipAddress" type="string">
+-         <bind-xml name="ipAddress" node="element" />
+-      </field>
+-      <field name="port" type="int">
+-         <bind-xml name="port" node="element" />
+-      </field>
+-   </class>
++	<class name="mil.navy.lcs.mvcs.common.config.model.CrossDomain">
++		<map-to xml="crossDomain" />
++		<field name="name" type="string">
++			<bind-xml name="name" node="element" />
++		</field>
++		<field name="ipAddress" type="string">
++			<bind-xml name="ipAddress" node="element" />
++		</field>
++	</class>
++	<class name="mil.navy.lcs.mvcs.common.config.model.OthAmpController">
++		<map-to xml="othAmpController" />
++		<field name="ipAddress" type="string">
++			<bind-xml name="ipAddress" node="element" />
++		</field>
++		<field name="port" type="int">
++			<bind-xml name="port" node="element" />
++		</field>
++	</class>
+ </mapping>
+\ No newline at end of file
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(revision 9593)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(working copy)
+@@ -98,19 +98,14 @@
+       {
+          handler.setOthAmplifierHandler(new PRC117RadioSwitchHandler(new NorthStarTcpComms(ampAddress.toString())));
+       }
+-      // Create FilterDevice to be used by the ship
+ 
+-      // Populate Filter device with it's settings
+-      CrossDomain haf = config.getCrossDomain();
+-      FilterDevice filterDevices = node.getFilterDevice();
+-      filterDevices.setFilterId(haf.getName());
+-      filterDevices.setIpAddress(haf.getIpAddress());
+-      node.setFilterDevice(filterDevices);
+-      CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
+-      StringBuilder snmpSetting = new StringBuilder();
+-      snmpSetting.append(userPass.getUserName()).append(":").append(userPass.getPassword());
++      // Create a handler for filter device in the ship
+       if (!rfConfig.isTesting())
+-         handler.setFilterDeviceHandler(new ScaFilterDeviceHandler(node, snmpSetting.toString()));
++      {
++         CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
++         String hafCredential = userPass.getUserName() + ":" + userPass.getPassword();
++         handler.setFilterDeviceHandler(new ScaFilterDeviceHandler(node, hafCredential));
++      }
+ 
+       ScaSafetyManager safetyManager = new ScaSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);
+#P mvcs-interface
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsLinkType.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsLinkType.java	(revision 9588)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/MvcsLinkType.java	(working copy)
+@@ -21,7 +21,8 @@
+    PRC117F(true, true, true, "PRC-117F"), //
+    RT1944(false, false, false, "RT-1944"), //
+    RT1988(false, true, true, "RT-1988"), //
+-   HFGW(true, false, true, "HFGW"); //
++   HFGW(true, false, true, "HFGW"), //
++   MCG101(false, true, true, "MCG-101"); //
+    // @formatter:on
+ 
+    // Characteristics of each link type.
+Index: src/main/java/mil/navy/lcs/mvcs/iface/encryption/EncryptionDevice.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/encryption/EncryptionDevice.java	(revision 0)
++++ src/main/java/mil/navy/lcs/mvcs/iface/encryption/EncryptionDevice.java	(working copy)
+@@ -0,0 +1,46 @@
++
++
++package mil.navy.lcs.mvcs.iface.encryption;
++
++
++import java.io.Serializable;
++
++/**
++ * This class represents an encryption device. Currently only encryption device the MVCS is using is
++ * IPS250
++ */
++public class EncryptionDevice implements Serializable
++{
++
++   /** Serial version */
++   private static final long serialVersionUID = 1L;
++
++   /** Denotes the red side IP address of the device */
++   private String redIpAddress = null;
++
++
++   /** Default constructor take a red side IP address */
++   public EncryptionDevice( String redIpAddress)
++   {
++      this.redIpAddress = redIpAddress;
++   }
++
++
++   /**
++    * @return the red IP address
++    */
++   public String getRedIpAddress()
++   {
++      return this.redIpAddress;
++   }
++
++
++   /**
++    * @param redIpAddress the red IP address to set
++    */
++   public void setRedIpAddress(String redIpAddress)
++   {
++      this.redIpAddress = redIpAddress;
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/iface/encryption/EncryptionDevice.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/encryption/EncryptionDevice.java	(revision 0)
++++ src/main/java/mil/navy/lcs/mvcs/iface/encryption/EncryptionDevice.java	(working copy)
+@@ -0,0 +1,46 @@
++
++
++package mil.navy.lcs.mvcs.iface.encryption;
++
++
++import java.io.Serializable;
++
++/**
++ * This class represents an encryption device. Currently only encryption device the MVCS is using is
++ * IPS250
++ */
++public class EncryptionDevice implements Serializable
++{
++
++   /** Serial version */
++   private static final long serialVersionUID = 1L;
++
++   /** Denotes the red side IP address of the device */
++   private String redIpAddress = null;
++
++
++   /** Default constructor take a red side IP address */
++   public EncryptionDevice( String redIpAddress)
++   {
++      this.redIpAddress = redIpAddress;
++   }
++
++
++   /**
++    * @return the red IP address
++    */
++   public String getRedIpAddress()
++   {
++      return this.redIpAddress;
++   }
++
++
++   /**
++    * @param redIpAddress the red IP address to set
++    */
++   public void setRedIpAddress(String redIpAddress)
++   {
++      this.redIpAddress = redIpAddress;
++   }
++
++}
+Index: src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(revision 9588)
++++ src/main/java/mil/navy/lcs/mvcs/iface/model/node/RadioLink.java	(working copy)
+@@ -10,6 +10,7 @@
+ import java.util.SortedSet;
+ import java.util.TreeSet;
+ 
++import mil.navy.lcs.mvcs.iface.encryption.EncryptionDevice;
+ import mil.navy.lcs.mvcs.iface.power.PowerOutput;
+ import mil.navy.lcs.mvcs.iface.rf.RFDevice;
+ import mil.navy.lcs.mvcs.iface.rf.RFOutputType;
+@@ -58,7 +59,10 @@
+    /** List of valid frequency in ascending order */
+    private SortedSet<Integer> frequencyList = new TreeSet<Integer>();
+ 
++   /** Denotes the encryption device (IPS250) for the radio */
++   private EncryptionDevice encryptionDevice;
+ 
++
+    public RadioLink( final String linkId, final String nodeId, final int linkNumber, final MvcsLinkType mvcsLinkType, final CommsType commsType, final PowerOutput power, final Map<RFOutputType, PowerOutput> ampPower, final RFDevice rfDevice, Integer maxRange)
+    {
+       super(linkId, nodeId, linkNumber, mvcsLinkType, commsType, maxRange);
+@@ -231,4 +235,22 @@
+    {
+       this.antennaOverride = manualMode;
+    }
++
++
++   /**
++    * @return the encryption device (IPS250).
++    */
++   public EncryptionDevice getEncryptionDevice()
++   {
++      return this.encryptionDevice;
++   }
++
++
++   /**
++    * @param encryptionDevice the encryption device (IPS250) to set.
++    */
++   public void setEncryptionDevice(EncryptionDevice encryptionDevice)
++   {
++      this.encryptionDevice = encryptionDevice;
++   }
+ }
+\ No newline at end of file

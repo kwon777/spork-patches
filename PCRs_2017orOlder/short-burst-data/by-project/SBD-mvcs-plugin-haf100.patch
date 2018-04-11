@@ -1,0 +1,133 @@
+Index: src/java/mil/navy/lcs/mvcs/haf100plugin/main/HAF100Plugin.java
+===================================================================
+--- src/java/mil/navy/lcs/mvcs/haf100plugin/main/HAF100Plugin.java	(revision 9607)
++++ src/java/mil/navy/lcs/mvcs/haf100plugin/main/HAF100Plugin.java	(working copy)
+@@ -3,7 +3,6 @@
+ package mil.navy.lcs.mvcs.haf100plugin.main;
+ 
+ 
+-import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
+ import mil.navy.lcs.mvcs.haf100plugin.configs.ConfigManager;
+ import mil.navy.lcs.mvcs.haf100plugin.logger.HAF100Logger;
+ import mil.navy.lcs.mvcs.haf100plugin.network.LogServer;
+@@ -12,16 +11,12 @@
+  * 
+  * @author Wai Lee
+  * 
+- * This plugin can be ran as a standalone application or as part of the MVCS plugin
++ *         This plugin can be ran as a standalone application or as part of the MVCS plugin
+  * 
+- * As part of the MVCS plugin, it must implement the IEncryptorPlugin methods
+- *
+  */
+-public class HAF100Plugin implements IEncryptorPlugin
++public class HAF100Plugin
+ {
+ 
+-   /** The name of the encryptor */
+-   private String encryptorName;
+ 
+    /** IP Address for the HAF-100 device */
+    private String ipAddress = "";
+@@ -33,7 +28,6 @@
+    /**
+     * Method to start the plugin
+     */
+-   @Override
+    public void startPlugin()
+    {
+       try
+@@ -56,7 +50,6 @@
+    /**
+     * Method to stop the plugin
+     */
+-   @Override
+    public void stopPlugin()
+    {
+       logServer.stopServer();
+@@ -66,17 +59,6 @@
+    /**
+     * Not used
+     */
+-   @Override
+-   public boolean hasIPAddress()
+-   {
+-      return false;
+-   }
+-
+-
+-   /**
+-    * Not used
+-    */
+-   @Override
+    public void setIPAddress(String ipAddress)
+    {
+       this.ipAddress = ipAddress;
+@@ -86,67 +68,9 @@
+    /**
+     * Not used
+     */
+-   @Override
+    public String getIPAddress()
+    {
+       return this.ipAddress;
+    }
+ 
+-
+-   /**
+-    * Not used
+-    */
+-   @Override
+-   public void setEncryptorName(String name)
+-   {
+-      this.encryptorName = name;
+-   }
+-
+-
+-   /**
+-    * Not used
+-    */
+-   @Override
+-   public String getEncryptorName()
+-   {
+-      return this.encryptorName;
+-   }
+-
+-
+-   /**
+-    * Not used
+-    */
+-   @Override
+-   public boolean zeroize()
+-   {
+-      return false;
+-   }
+-
+-
+-   /**
+-    * Not used
+-    */
+-   @Override
+-   public boolean isKeyed()
+-   {
+-      return true;
+-   }
+-
+-
+-   /**
+-    * Not used
+-    */
+-   @Override
+-   public boolean sanitize()
+-   {
+-      return false;
+-   }
+-
+-
+-   @Override
+-   public boolean setHeartbeatMonitoring(boolean enableMonitoring)
+-   {
+-      // NA
+-      return true;
+-   }
+ }

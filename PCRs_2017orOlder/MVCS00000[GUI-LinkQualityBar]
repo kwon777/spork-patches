@@ -1,0 +1,28 @@
+Index: WebContent/css/colors-background.css
+===================================================================
+--- WebContent/css/colors-background.css	(revision 9876)
++++ WebContent/css/colors-background.css	(working copy)
+@@ -1,14 +1,14 @@
+ 
+ 
+-.linkQuality[quality="10"] .qualityBar,
+-.linkQuality[quality="9"] .qualityBar,
+-.linkQuality[quality="8"] .qualityBar:nth-child(3),
+-.linkQuality[quality="8"] .qualityBar:nth-child(2),
+-.linkQuality[quality="7"] .qualityBar:nth-child(3),
+-.linkQuality[quality="7"] .qualityBar:nth-child(2),
+-.linkQuality[quality="6"] .qualityBar:nth-child(2),
+-.linkQuality[quality="5"] .qualityBar:nth-child(2),
+-.linkQuality:not([quality="0"]):not([quality="1"]):not([quality="2"]) .qualityBar:nth-child(1),
++.linkQuality[quality="100"] .qualityBar,
++.linkQuality[quality="90"] .qualityBar,
++.linkQuality[quality="80"] .qualityBar:nth-child(3),
++.linkQuality[quality="80"] .qualityBar:nth-child(2),
++.linkQuality[quality="70"] .qualityBar:nth-child(3),
++.linkQuality[quality="70"] .qualityBar:nth-child(2),
++.linkQuality[quality="60"] .qualityBar:nth-child(2),
++.linkQuality[quality="50"] .qualityBar:nth-child(2),
++.linkQuality:not([quality="0"]):not([quality="10"]):not([quality="20"]) .qualityBar:nth-child(1),
+ .navButton[selected="true"] {
+ 	background-color: rgb(220, 220, 220);
+ }

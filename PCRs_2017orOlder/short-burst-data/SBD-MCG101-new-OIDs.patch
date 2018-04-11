@@ -1,0 +1,683 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-plugin-mcg101
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java	(working copy)
+@@ -3,8 +3,8 @@
+ package mil.navy.lcs.mvcs.plugins.mcg101.radioStatus;
+ 
+ 
+-import java.util.HashMap;
+-import java.util.Map;
++import java.util.ArrayList;
++import java.util.List;
+ 
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+@@ -11,7 +11,7 @@
+ 
+ import mil.navy.lcs.mvcs.plugins.mcg101.MCG101Plugin;
+ import mil.navy.lcs.mvcs.plugins.mcg101.snmp.SnmpOperation;
+-import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants;
++import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants.MCG101Command;
+ 
+ 
+ /**
+@@ -29,8 +29,8 @@
+    /** The logger */
+    private static Logger logger = LoggerFactory.getLogger(RadioStatusMonitor.class);
+ 
+-   /** SNMP commands to the radio with status name as key */
+-   private static Map<String, String> snmpCommandToRadioCommand = new HashMap<String, String>();
++   /** commands to the radio */
++   private static List<MCG101Command> commandsToRadio = new ArrayList<MCG101Command>();
+ 
+    /** The SNMP function manager */
+    private SnmpOperation snmp_op = new SnmpOperation();
+@@ -56,10 +56,12 @@
+     */
+    private void populateCommands()
+    {
+-      snmpCommandToRadioCommand.put(Constants.RIM_STATE_NAME, Constants.RIM_STATE_SNMP_STRING);
+-      snmpCommandToRadioCommand.put(Constants.RADIO_DIALING_STATUS_NAME, Constants.RADIO_DIALING_STATUS_SNMP_STRING);
+-      snmpCommandToRadioCommand.put(Constants.RADIO_STATUS_NAME, Constants.RADIO_STATUS_SNMP_STRING);
+-      snmpCommandToRadioCommand.put(Constants.RADIO_POLLING_STATUS_NAME, Constants.RADIO_POLLING_STATUS_SNMP_STRING);
++      // add statuses to monitor periodically
++      commandsToRadio.add(MCG101Command.REALTIMECLOCK);
++      commandsToRadio.add(MCG101Command.EMCONSTATUS);
++      commandsToRadio.add(MCG101Command.LOCKSTATUS);
++      commandsToRadio.add(MCG101Command.ERRORSTATUS);
++      commandsToRadio.add(MCG101Command.LINKQUALITY);
+    }
+ 
+ 
+@@ -124,27 +126,23 @@
+     */
+    public void pollRadioStatus()
+    {
+-      String rim_state = snmp_op.getItem(Constants.RIM_STATE_SNMP_STRING);
+-
+-      logger.debug("MCG-101: IS RIMSTATE up? " + rim_state);
+-
+-      for (String statusName : snmpCommandToRadioCommand.keySet())
++      for (MCG101Command command : commandsToRadio)
+       {
+-         String snmpCommand = snmpCommandToRadioCommand.get(statusName);
+-         String snmpResponse = snmp_op.getItem(snmpCommand);
++         String snmpResponse = snmp_op.getItem(command.snmpOid);
+ 
+-         logger.debug("Polling status: " + statusName + " " + snmpResponse);
++         logger.debug("MCG-101 polling status: " + command + " " + snmpResponse);
+ 
+          // error getting SNMP
+          if (snmp_op.hasSnmpGetError())
+          {
+-            radioStatus.put(statusName, "error");
++            radioStatus.put(command, "error");
+          }
+          // successful getting SNMP
+          else
+          {
+-            logger.debug("Status has changed: " + statusName + " " + snmpResponse);
+-            radioStatus.put(statusName, snmpResponse);
++            logger.debug("Status has updated: " + command + " " + snmpResponse);
++            radioStatus.put(command, snmpResponse);
++            radioStatus.setLastStatusCheck(true);
+          }
+ 
+       } // end of for
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/utils/SnmpConstants.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/utils/SnmpConstants.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/utils/SnmpConstants.java	(working copy)
+@@ -12,8 +12,8 @@
+  */
+ public class SnmpConstants
+ {
+-   public static final String COMMANDS = ".1.3.6.1.4.1.16150.1.1";
+-   public static final String DISCONNECT = ".1.3.6.1.4.1.16150.1.1.2.0";
++   // public static final String COMMANDS = ".1.3.6.1.4.1.16150.1.1";
++   // public static final String DISCONNECT = ".1.3.6.1.4.1.16150.1.1.2.0";
+    public static final String RIMPOLLINGSUCCESSFUL = ".1.3.6.1.4.1.16150.1.20.5.0";
+    public static final String ORG = ".1.3";
+    public static final String RIMMODULE = ".1.3.6.1.4.1.16150.1";
+@@ -30,4 +30,11 @@
+    public static final String CONNECT = ".1.3.6.1.4.1.16150.1.1.1.0";
+    public static final String RIMSTATE = ".1.3.6.1.4.1.16150.1.20.2.0";
+ 
++   /* MCG-101 radio commands via HAF-100 */
++   public static final String REALTIMECLOCK = "1.3.6.1.4.1.38040.11.6.0";
++   public static final String EMCONSTATUS = "1.3.6.1.4.1.38040.11.7.0";
++   public static final String LOCKSTATUS = "1.3.6.1.4.1.38040.11.13.0";
++   public static final String LINKQUALITY = "1.3.6.1.4.1.38040.11.15.0";
++   public static final String ERRORSTATUS = "1.3.6.1.4.1.38040.11.16.0";
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java	(working copy)
+@@ -6,7 +6,7 @@
+ import java.util.HashMap;
+ import java.util.Map;
+ 
+-import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants;
++import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants.MCG101Command;
+ 
+ /**
+  * This class holds the current radio status.
+@@ -14,19 +14,22 @@
+ public class RadioStatus
+ {
+    /** The radio status information */
+-   private static Map<String, String> radioStatusData;
++   private static Map<MCG101Command, String> radioStatusData;
+ 
++   /** Denotes the last polling status */
++   private boolean lastPollingStatus = false;
+ 
++
+    /**
+     * The default constructor initializes storage to host radio status information.
+     */
+    public RadioStatus()
+    {
+-      radioStatusData = new HashMap<String, String>();
+-      radioStatusData.put(Constants.RIM_STATE_NAME, "");
+-      radioStatusData.put(Constants.RADIO_DIALING_STATUS_NAME, "");
+-      radioStatusData.put(Constants.RADIO_STATUS_NAME, "");
+-      radioStatusData.put(Constants.RADIO_POLLING_STATUS_NAME, "");
++      radioStatusData = new HashMap<MCG101Command, String>();
++      for (MCG101Command command : MCG101Command.values())
++      {
++         radioStatusData.put(command, "");
++      }
+    }
+ 
+ 
+@@ -34,10 +37,10 @@
+     * 
+     * To get the current radio status
+     * 
+-    * @param hashKey the string key of of the status
++    * @param hashKey the key of of the status
+     * @return a string containing the current status
+     */
+-   public String get(String hashKey)
++   public String get(MCG101Command hashKey)
+    {
+       return radioStatusData.get(hashKey);
+    }
+@@ -50,10 +53,32 @@
+     * @param hashKey the value of the status key
+     * @param value the value of the new status
+     */
+-   public void put(String hashKey, String value)
++   public void put(MCG101Command hashKey, String value)
+    {
+       radioStatusData.put(hashKey, value);
+    }
+ 
+ 
++   /**
++    * To get the last polling status.
++    * 
++    * @return true if the last polling status was successful
++    */
++   public boolean isLastPollingStatus()
++   {
++      return this.lastPollingStatus;
++   }
++
++
++   /**
++    * To set the last polling status
++    * 
++    * @param lastStatusCheck the last polling status to set.
++    */
++   protected void setLastStatusCheck(boolean lastStatusCheck)
++   {
++      this.lastPollingStatus = lastStatusCheck;
++   }
++
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/MCG101Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/MCG101Plugin.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/MCG101Plugin.java	(working copy)
+@@ -15,6 +15,7 @@
+ import mil.navy.lcs.mvcs.plugins.mcg101.radioStatus.RadioStatusMonitor;
+ import mil.navy.lcs.mvcs.plugins.mcg101.snmp.SnmpOperation;
+ import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants;
++import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants.MCG101Command;
+ 
+ 
+ /**
+@@ -35,15 +36,6 @@
+    /** The SNMP function manager */
+    protected SnmpOperation sfm = new SnmpOperation();
+ 
+-   /** Denotes the EMCON state */
+-   boolean emconState = false;
+-
+-   /** The phone number or unique ID used to connect to the remote radio */
+-   private String remoteRadioNumber = "";
+-
+-   /** The name of the remote node that is/was connected */
+-   private String remoteNodeName = "";
+-
+    /** A object used to hold the current radio status */
+    protected static RadioStatus radioStatus = new RadioStatus();
+ 
+@@ -56,8 +48,6 @@
+     */
+    public MCG101Plugin()
+    {
+-      emconState = false;
+-
+       radioStatusMonitor = new RadioStatusMonitor(radioStatus);
+       statusMonitorThread = new Thread(radioStatusMonitor, "MVCS-MCG101Plugin-statusMonitorThread");
+    }
+@@ -99,73 +89,71 @@
+ 
+ 
+    /**
+-    * This function send a SNMP query to the RIM to determine if the DTR interface is available. It
+-    * the radio is available, the function returns true, false otherwise.
++    * To determine the radio has successfully responded on the last query.
++    * 
++    * @return true if radio has responded on the last command that has sent to the radio.
+     */
+    public boolean isRadioAvailable()
+    {
+-      String radioState = radioStatus.get(Constants.RADIO_STATUS_NAME);
+-      return radioState.equalsIgnoreCase(Constants.RADIO_STATUS_INIT_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_DIAL_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_ANSW_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_WONR_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_CONG_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_COND_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_DCON_STRING) || radioState.equalsIgnoreCase(Constants.RADIO_STATUS_DCND_STRING);
++      return radioStatus.isLastPollingStatus();
+    }
+ 
+ 
+    /**
+-    * This function will perform the SNMP set to start the RIM
++    * Not applicable for MCG-101 radio.
+     * 
+-    * @return a boolean containing true if the set was successful, false otherwise
++    * 
++    * @return true
+     */
+    public boolean start()
+    {
+-      sfm.snmpSet(Constants.RIM_STATE_SNMP_STRING, "s", Constants.RIM_START);
+-      return sfm.hasSnmpGetError();
++      return true;
+    }
+ 
+ 
+    /**
+-    * This function will perform the SNMP set to start the RIM
++    * Not applicable for MCG-101 radio.
+     * 
+-    * @return a boolean containing true if the set was successful, false otherwise
++    * @return true
+     */
+    public boolean stop()
+    {
+-      sfm.snmpSet(Constants.RIM_STATE_SNMP_STRING, "s", Constants.RIM_STOP);
+-      return sfm.hasSnmpGetError();
++      return true;
+    }
+ 
+ 
+    /**
+-    * This function will perform a SNMP GET to determine whether the radio is responsive or not
++    * To determine the radio has successfully responded on the last query.
+     * 
+-    * @return true if the radio is responsive otherwise false
++    * @return true if radio has responded on the last command that has sent to the radio.
+     */
+    public boolean isAvailable()
+    {
+-      String response = radioStatus.get(Constants.RIM_STATE_NAME);
+-      return response.equalsIgnoreCase(Constants.RIMCURRENTSTATE[0]);
++      return radioStatus.isLastPollingStatus();
+    }
+ 
+ 
+    /**
+-    * This function will perform a SNMP GET to determine whether the RIM has started or not
+     * 
+-    * @return a string containing the state of the RIM
++    * @return radio EMCON status
+     */
+    public boolean getEMCONState()
+    {
+-      return this.emconState;
++      String status = radioStatus.get(MCG101Command.EMCONSTATUS);
++      return (status !=null && status.contains("1") )? true: false;
+    }
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * To get the table of link quality from the radio
+     * 
+-    * @return "N/A"
++    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getLinkQuality()
+     */
+    public String[][] getLinkQuality()
+    {
+-      String[][] stuff = new String[1][1];
++      String[][] stuff = new String[][] { { "" } };
+ 
+-      stuff[0][0] = "N/A";
++      stuff[0][0] = radioStatus.get(MCG101Command.LINKQUALITY);
+ 
+       return stuff;
+ 
+@@ -173,21 +161,21 @@
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * To get the table of burst rate quality from the radio
+     * 
+-    * @return "N/A"
++    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getRadioBurstRateQualityTable()
+     */
+    public String[][] getRadioBurstRateQualityTable()
+    {
+-      String[][] stuff = new String[1][1];
++      String[][] stuff = new String[][] { { "", "", "" } };
+ 
+-      stuff[0][0] = "N/A";
++      stuff[0][2] = radioStatus.get(MCG101Command.LINKQUALITY);
+       return stuff;
+    }
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * Not applicable for MCG-101 radio
+     * 
+     * @return false
+     */
+@@ -198,7 +186,7 @@
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * Not applicable for MCG-101 radio
+     * 
+     * @return "N/A"
+     */
+@@ -211,7 +199,7 @@
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * Not applicable for MCG-101 radio
+     * 
+     * @return "N/A"
+     */
+@@ -222,7 +210,7 @@
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * Not applicable for MCG-101 radio
+     * 
+     * @return false
+     */
+@@ -233,7 +221,7 @@
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * Not applicable for MCG-101 radio
+     * 
+     * @return "N/A"
+     */
+@@ -244,7 +232,7 @@
+ 
+ 
+    /**
+-    * Not applicable for SCU radio
++    * Not applicable for MCG-101 radio
+     * 
+     * @return false
+     */
+@@ -309,7 +297,7 @@
+     */
+    public String getRadioMode()
+    {
+-      String response = sfm.getItem(Constants.RADIO_STATUS_SNMP_STRING);
++      String response = radioStatus.get(MCG101Command.LOCKSTATUS);
+       if (!response.equals(""))
+          return response;
+       else
+@@ -352,86 +340,25 @@
+ 
+ 
+    /**
+-    * This function will connect the local point-to-point radio to a remote radio. This will require
+-    * a phone number or IP Address or some radio ID. Note that if the SCU is not available or if the
+-    * SCU data port is not connected, then the connection attempt will fail
++    * Not applicable for MCG-101 radio.
+     * 
+-    * @param remoteNodeID A string containing the name of the remote node to connect to
+-    * @param remoteRadio A phone number, IP address or some kind of unique identifier needed to in
+-    *           order to connect to the remote radio
+-    * @return true if connection set was successful, false otherwise
++    * @return false
+     */
+    public boolean connectToRadio(String remoteNodeID, String remoteRadio)
+    {
+-      // Connect to radio
+-      if (this.isAvailable())
+-      {
+-
+-         if (remoteRadio != null && !remoteRadio.equals(""))
+-         {
+-            String remoteRadioPhoneNumber = remoteRadio;
+-
+-            // System.out.println("Attempting to SNMPSET in connectToRadio " +
+-            // remoteRadioPhoneNumber);
+-            sfm.snmpSet(Constants.RADIO_CONNECT_SNMP_STRING, "s", remoteRadioPhoneNumber);
+-            // System.out.println("Done with SNMPSET in connectToRadio");
+-
+-            if (!sfm.hasSnmpGetError())
+-            {
+-               this.remoteRadioNumber = remoteRadio;
+-               this.setRemoteNodeName(remoteNodeID);
+-               logger.info("Successfully dialed vehicle " + remoteNodeID + " Phone number " + remoteRadioPhoneNumber);
+-               return true;
+-            }
+-            else
+-            {
+-               this.remoteRadioNumber = "";
+-               logger.error("Error connecting to the remote vehicle using the MCG-101.  Error communicating with the radio.");
+-               return false;
+-            }
+-         }
+-         else
+-         {
+-            logger.error("The phone unique identifier for " + remoteNodeID + " radio " + remoteRadio + " is incorrect.");
+-            return false;
+-         }
+-
+-      }
+-      else
+-      {
+-         logger.error("MCG-101 is not available to receive SNMP  " + remoteNodeID + " radio " + remoteRadio);
+-         return false;
+-      }
++      return false;
+    }
+ 
+ 
+    /**
+-    * Return the identification (either in name, phone number or IP Address) of the remote
+-    * point-to-point radio
++    * This radio does not provide interface to disconnect.
+     * 
+-    * @return the identification of the remote radio
++    * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#disconnectFromRadio(String,
++    *      String)
+     */
+-   public String getRemotePointToPointNumber()
+-   {
+-      return remoteRadioNumber;
+-   }
+-
+-
+    public boolean disconnectFromRadio(String remoteNodeID, String remoteRadioID)
+    {
+-      sfm.snmpSet(Constants.RADIO_DISCONNECT_SNMP_STRING, "s", "");
+-
+-      if (!sfm.hasSnmpGetError())
+-      {
+-         logger.info("Successfully disconnected from node:" + remoteNodeID + " radio:" + remoteRadioID);
+-         remoteRadioID = "";
+-         return true;
+-      }
+-      else
+-      {
+-         logger.error("Error disconnecting.  There was an error sending SNMP command, node:" + remoteNodeID + " radio:" + remoteRadioID);
+-         return false;
+-      }
++      return false;
+    }
+ 
+ 
+@@ -522,31 +449,6 @@
+    }
+ 
+ 
+-   /**
+-    * 
+-    * Method Description Get the name of the node currently or was last connected to
+-    * 
+-    * @return a string containing the name of the node
+-    */
+-   public String getRemoteNodeName()
+-   {
+-      return remoteNodeName;
+-   }
+-
+-
+-   /**
+-    * 
+-    * Method Description Set the name of the node currently connected to. This is a private method
+-    * because it should only be set internally by the plugin.
+-    * 
+-    * @param remoteNodeName the name of the remote node that was connected
+-    */
+-   private void setRemoteNodeName(String remoteNodeName)
+-   {
+-      this.remoteNodeName = remoteNodeName;
+-   }
+-
+-
+    @Override
+    public void setAntennaPath(String antennaPath)
+    {
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java	(working copy)
+@@ -264,6 +264,7 @@
+       }
+       catch (Exception e)
+       {
++         snmpError = true;
+          logger.error("SNMP Table Get Error " + _oids + " " + e.toString());
+          return stuff;
+       }
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/utils/Constants.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/utils/Constants.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/utils/Constants.java	(working copy)
+@@ -11,88 +11,30 @@
+ public class Constants
+ {
+ 
+-   public static boolean NO_SNMP_POLLING = false;
++   public enum MCG101Command {
++      REALTIMECLOCK("RealTimeClock", SnmpConstants.REALTIMECLOCK), //
++      EMCONSTATUS("EmconStatus", SnmpConstants.EMCONSTATUS), //
++      LOCKSTATUS("LockStatus", SnmpConstants.LOCKSTATUS), //
++      LINKQUALITY("LinkQuality", SnmpConstants.LINKQUALITY), //
++      ERRORSTATUS("ErrorStatus", SnmpConstants.ERRORSTATUS);
+ 
+-   public static String LOST_ALL_LINKS = "Lost_All_Links";
++      public final String displayText;
+ 
+-   public static String RADIO_CONNECTED = "Radio_Connected";
++      public final String snmpOid;
+ 
+-   public static String SNMP_ENGINE_ID = "mvcs";
+ 
+-   public static String RADIO_EMCON_STATE_NAME = "EMCON State";
++      private MCG101Command( String displayText, String snmpOid)
++      {
++         this.displayText = displayText;
++         this.snmpOid = snmpOid;
++      }
+ 
+-   public static String RIM_STATE_NAME = "RIM State";
+-   public static String RIM_STATE_SNMP_STRING = SnmpConstants.RIMSTATE;
+ 
+-   public static String SNMP_RESPONSE_RADIO_CONNECTED = "active";
+-   public static String SNMP_RESPONSE_RADIO_DISCONNECTED = "inactive";
+-
+-   public static String RADIO_STATUS_NAME = "RadioStatus";
+-   public static String RADIO_STATUS_SNMP_STRING = SnmpConstants.RADIOSTATUS;
+-
+-   public static String RADIO_CONNECT_NAME = "Connect";
+-   public static String RADIO_CONNECT_SNMP_STRING = SnmpConstants.CONNECT;
+-
+-   public static String RADIO_DISCONNECT_NAME = "Disconnect";
+-   public static String RADIO_DISCONNECT_SNMP_STRING = SnmpConstants.DISCONNECT;
+-
+-   public static String RADIO_DIALING_STATUS_NAME = "Radio Dialing Status";
+-   public static String RADIO_DIALING_STATUS_SNMP_STRING = SnmpConstants.DIALINGSTATUS;
+-
+-   public static String RADIO_POLLING_STATUS_NAME = "Serial Polling Status";
+-   public static String RADIO_POLLING_STATUS_SNMP_STRING = SnmpConstants.RIMPOLLINGSUCCESSFUL;
+-
+-   public static String GO_STATE_STRING = "GO";
+-   public static String NO_GO_STATE_STRING = "NO-GO";
+-
+-
+-   // SCU RIM Dialing status response
+-   public static String RADIO_DIALING_STATUS_WAITING = "waiting";
+-   public static String DIALING_STATUS_SENDING = "sending";
+-   public static String DIALING_STATUS_SENT = "sent";
+-
+-   // SCUS response
+-   public static String RADIO_STATUS_INIT_STRING = "INIT";
+-   public static String RADIO_STATUS_DIAL_STRING = "DIAL";
+-   public static String RADIO_STATUS_ANSW_STRING = "ANSW";
+-   public static String RADIO_STATUS_WONR_STRING = "WONR";
+-   public static String RADIO_STATUS_CONG_STRING = "CONG";
+-   public static String RADIO_STATUS_COND_STRING = "COND";
+-   public static String RADIO_STATUS_DCON_STRING = "DCON";
+-   public static String RADIO_STATUS_DCND_STRING = "DCND";
+-
+-
+-   public static String RADIO_STATUS_INIT_NANE = "Initializing";
+-   public static String RADIO_STATUS_DIAL_NANE = "Dialing";
+-   public static String RADIO_STATUS_ANSW_NANE = "Answer";
+-   public static String RADIO_STATUS_WONR_NANE = "Wait On Ring";
+-   public static String RADIO_STATUS_CONG_NANE = "Connecting";
+-   public static String RADIO_STATUS_COND_NANE = "Connected";
+-   public static String RADIO_STATUS_DCON_NANE = "Disconnect";
+-   public static String RADIO_STATUS_DCND_NANE = "Disconnected";
+-
+-   public static String ERROR_CLOSING_SERIAL_PORT = "Error closing serial port";
+-   public static String SUCCESS_CLOSING_SERIAL_PORT = "Successfully closed serial port";
+-   public static String ERROR_OPENING_SERIAL_PORT = "Error opening serial port";
+-   public static String SUCCESS_OPENING_SERIAL_PORT = "Successfully opened serial port";
+-   public static String ERROR_ENTERING_HEADER_BYPASS_ON_KIV7M = "Error entering HDR-BY-PASS for KIV-7M.";
+-   public static String ERROR_EXECUTING_COMMAND_ON_SERIAL_PORT = "Serial port returned an error while executing a command";
+-   public static String SUCCESSFULLY_DIALED = "Successfully dialed ";
+-   public static String FAILED_TO_DIALED = "Failed to dial ";
+-   public static String ATTEMPTING_TO_DIAL = "Attempting to dial ";
+-   public static String SUCCESSFULLY_DISCONNECTED = "Successfully disconnected the SCU with remote SCU";
+-   public static String FAILED_TO_DISCONNECT = "Failed to disconnected the SCU with remote ";
+-   public static String SUCCESSFULLY_CONNECTED_TO_SCU = "Successfully connected to SCU";
+-   public static String FAILED_TO_CONNECT_TO_SCU = "Failed to connect to SCU";
+-
+-   public static String[] RIMCURRENTSTATE = { "started", "stopped" };
+-   public static String RIM_START = "start";
+-   public static String RIM_STOP = "stop";
+-
+-
+-   /** Creates a new instance of Constants */
+-   public Constants()
+-   {
++      @Override
++      public String toString()
++      {
++         return displayText;
++      }
+    }
+ 
+ }
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(revision 9645)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(working copy)
+@@ -103,8 +103,8 @@
+ 
+    /**
+     * 
+-    * This function sends a SNMP query to the RIM to determine if the radio is available. It the
+-    * radio is available, the function returns true, false otherwise.
++    * This function sends a SNMP query to the radio or RIM to determine if the radio is available.
++    * If the radio is available, the function returns true, false otherwise.
+     * 
+     * @return boolean True if Radio is available, false otherwise
+     */

@@ -1,0 +1,35 @@
+Index: WebContent/js/AlertsTable.js
+===================================================================
+--- WebContent/js/AlertsTable.js	(revision 9554)
++++ WebContent/js/AlertsTable.js	(working copy)
+@@ -74,7 +74,6 @@
+ 		$(obj).attr('selected', 'true');
+ 
+ 		selectedTab = obj;
+-
+ 		filterAlerts('nodeId', filter);
+ 	};
+ 
+@@ -107,9 +106,20 @@
+ 
+ 	var insertAlertRow = function(insertPoint, item) {
+ 		var matchesFilter = true;
++		for ( var key in filterExpressions){
++			// no id filter (allows all nodes)
++			if ( filterExpressions[key].exec(item[key])=='')
++				;// do not filter
++			
++			// filter item with exact matching (id or level)
++			else if( filterExpressions[key].exec(item[key])!=(item[key]) )
++				matchesFilter = false; 
++		}
++
++        /* the original code here
+ 		for ( var key in filterExpressions)
+-			if (!(filterExpressions[key].test(item[key])))
+-				matchesFilter = false;
++            if (!(filterExpressions[key].test(item[key])))
++                matchesFilter = false; */
+ 
+ 		if (matchesFilter == true)
+ 			$(insertPoint).after(createTableRow(item));

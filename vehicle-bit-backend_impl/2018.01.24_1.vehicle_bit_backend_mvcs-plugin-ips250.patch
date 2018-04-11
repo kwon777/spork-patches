@@ -1,0 +1,834 @@
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java	(revision 9934)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java	(working copy)
+@@ -6,10 +6,8 @@
+ import java.io.IOException;
+ import java.util.LinkedList;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+-import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
+-import mil.navy.lcs.mvcs.ips250plugin.constants.ConstantValues;
+-import mil.navy.lcs.mvcs.ips250plugin.snmp.SNMPOperations;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ import com.ireasoning.protocol.TimeoutException;
+ import com.ireasoning.protocol.snmp.SnmpDataType;
+@@ -16,6 +14,10 @@
+ import com.ireasoning.protocol.snmp.SnmpTableModel;
+ import com.ireasoning.protocol.snmp.SnmpVarBind;
+ 
++import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
++import mil.navy.lcs.mvcs.ips250plugin.constants.ConstantValues;
++import mil.navy.lcs.mvcs.ips250plugin.snmp.SNMPOperations;
++
+ /**
+  * This class is responsible of handle commands to IPS-250 device.
+  */
+@@ -24,7 +26,9 @@
+    /** Instance of this object */
+    private static IPS250Commands instance;
+ 
++   private static final Logger logger = LoggerFactory.getLogger(IPS250Commands.class);
+ 
++
+    /**
+     * Method to get an instance of this object.
+     * 
+@@ -42,7 +46,7 @@
+             }
+             catch (Exception e)
+             {
+-               LoggingManager.getPrimaryLogger().error("Error: ", e);
++               logger.error("Error: ", e);
+             }
+          }
+       }
+@@ -70,11 +74,11 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("A timeout error occured while attempting to zeroize at " + ipAddress);
++         logger.error("A timeout error occured while attempting to zeroize at " + ipAddress);
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("An error has occurred while attempting to zeroize crypto at " + ipAddress);
++         logger.error("An error has occurred while attempting to zeroize crypto at " + ipAddress);
+ 
+       }
+       return result;
+@@ -90,9 +94,50 @@
+     */
+    public LinkedList<String> getKeyStatus(String ipAddress) throws IOException
+    {
+-      String tableName = "hPreplacedKeyTable";
+-      SnmpTableModel table = SNMPOperations.getInstance().getTable(tableName, ipAddress);
+-      return processTable(table);
++      // TODO remove extra code after successful test.
++      LinkedList<String> keys = null;
++      
++      try
++      {
++         logger.debug("Get table using tableName... ");
++         String tableName = "hPreplacedKeyTable";
++         SnmpTableModel keyTable = SNMPOperations.getInstance().getTable(tableName, ipAddress);
++         processTable(keyTable);
++      }
++      catch (Exception e)
++      {
++         logger.error("Error: ", e);
++      }
++
++      try
++      {
++         logger.debug("Get table using OID... ");
++         SnmpTableModel table = SNMPOperations.getInstance().getTable(ConstantValues.SNMP_OID_PREPLACED_KEY_TABLE, ipAddress);
++         keys = processTable(table);
++      }
++      catch (Exception e)
++      {
++         logger.error("Error: ", e);
++      }
++
++      try
++      {
++         logger.debug("Get table using multiple getnext... ");
++         String nextOid = ConstantValues.SNMP_OID_PREPLACED_KEY_TABLE;
++         for (int i = 0; i < 10; i++)
++         {
++            String[] nextValues = SNMPOperations.getInstance().snmpGetNext(nextOid, ipAddress);
++            logger.debug("Next OID => {} ", nextValues[0]);
++            logger.debug("Value    => {}", nextValues[1]);
++            nextOid = nextValues[0];
++         }
++      }
++      catch (Exception e)
++      {
++         logger.error("Error: ", e);
++      }
++
++      return keys;
+    }
+ 
+ 
+@@ -99,17 +144,21 @@
+    /**
+     * Stores the values in the PrePlacedKey Table into a linked list.
+     * 
+-    * @param table
+-    * @return
++    * @param table the SNMP table model
++    * @return The list of values from the table.
+     */
+    private LinkedList<String> processTable(SnmpTableModel table)
+    {
+       LinkedList<String> resultList = new LinkedList<String>();
+-      for (int i = 0; i < table.getRowCount(); i++)
++      if (table != null)
+       {
+-         SnmpVarBind var = (SnmpVarBind) table.getVarBindAt(i, 0);
+-         SnmpDataType pduValue = var.getValue();
+-         resultList.add(pduValue.toString());
++         for (int i = 0; i < table.getRowCount(); i++)
++         {
++            SnmpVarBind var = (SnmpVarBind) table.getVarBindAt(i, 0);
++            SnmpDataType pduValue = var.getValue();
++            resultList.add(pduValue.toString());
++            logger.debug("At row[{}]: ", i, pduValue.toString());
++         }
+       }
+       return resultList;
+    }
+@@ -150,7 +199,7 @@
+          keyLoaded = false;
+       }
+ 
+-      LoggingManager.getPrimaryLogger().info("key loaded value = " + keyLoaded);
++      logger.info("key loaded value = " + keyLoaded);
+ 
+       return keyLoaded;
+    }
+@@ -173,7 +222,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+ 
+ 
+@@ -198,7 +247,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+       return result;
+ 
+@@ -218,7 +267,7 @@
+ 
+       if (timeout < 1 || timeout > 600)
+       {
+-         LoggingManager.getPrimaryLogger().info("Invalid timeout value " + timeout);
++         logger.info("Invalid timeout value " + timeout);
+          return false;
+       }
+ 
+@@ -229,7 +278,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+ 
+       return result;
+@@ -249,18 +298,18 @@
+       {
+          // obtain the MIB OID.
+          String[] results = SNMPOperations.getInstance().snmpGet(ConstantValues.SNMP_OID_HEARTBEAT_TIMEOUT, ipAddress, port);
+-         LoggingManager.getPrimaryLogger().info("Result size:" + results.length);
++         logger.info("Result size:" + results.length);
+          for (int i = 0; i < results.length; i++)
+          {
+             if (results[i] != null)
+             {
+-               LoggingManager.getPrimaryLogger().info("Result [" + i + "]: " + results[i].toString());
++               logger.info("Result [" + i + "]: " + results[i].toString());
+             }
+          }
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -297,7 +346,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+       return result;
+    }
+@@ -315,18 +364,18 @@
+       {
+          // obtain the MIB OID.
+          String[] results = SNMPOperations.getInstance().snmpGet(ConstantValues.SNMP_OID_ZEROIZE_FUNCTION, ipAddress, port);
+-         LoggingManager.getPrimaryLogger().info("Result size:" + results.length);
++         logger.info("Result size:" + results.length);
+          for (int i = 0; i < results.length; i++)
+          {
+             if (results[i] != null)
+             {
+-               LoggingManager.getPrimaryLogger().info("Result [" + i + "]: " + results[i].toString());
++               logger.info("Result [" + i + "]: " + results[i].toString());
+             }
+          }
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -344,7 +393,7 @@
+ 
+       if (port < 1 || port > 65535)
+       {
+-         LoggingManager.getPrimaryLogger().info("Invalid port value " + port);
++         logger.info("Invalid port value " + port);
+          return false;
+       }
+ 
+@@ -355,7 +404,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+ 
+       return result;
+@@ -374,18 +423,18 @@
+       {
+          // obtain the MIB OID.
+          String[] results = SNMPOperations.getInstance().snmpGet(ConstantValues.SNMP_OID_HEARTBEAT_PORT, ipAddress, port);
+-         LoggingManager.getPrimaryLogger().info("Result size:" + results.length);
++         logger.info("Result size:" + results.length);
+          for (int i = 0; i < results.length; i++)
+          {
+             if (results[i] != null)
+             {
+-               LoggingManager.getPrimaryLogger().info("Result [" + i + "]: " + results[i].toString());
++               logger.info("Result [" + i + "]: " + results[i].toString());
+             }
+          }
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -397,24 +446,25 @@
+     * @param ipAddress - the IPAddress
+     * @param port - the Port
+     */
+-   public String[] getSubTree(String oid, String ipAddress, int port)
++   public LinkedList<String> getSubTree(String oid, String ipAddress, int port)
+    {
+-      String[] results = null;
++      LinkedList<String> results = new LinkedList<String>();
+       try
+       {
+          // obtain the MIB OID and its type.
+-         results = SNMPOperations.getInstance().snmpGetSubTree(oid, ipAddress, port);
++         String[] tree = SNMPOperations.getInstance().snmpGetSubTree(oid, ipAddress, port);
+ 
+-         LoggingManager.getPrimaryLogger().info("Results size:" + results.length + " for OID: " + oid);
++         logger.info("Results size:" + tree.length + " for OID: " + oid);
+ 
+-         for (int i = 0; i < results.length; i++)
++         for (int i = 0; i < tree.length; i++)
+          {
+-            LoggingManager.getPrimaryLogger().info("Result [" + i + "]: " + results[i]);
++            logger.info("Result [" + i + "]: " + tree[i]);
++            results.add(tree[i]);
+          }
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+ 
+       return results;
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/constants/ConstantValues.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/constants/ConstantValues.java	(revision 9934)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/constants/ConstantValues.java	(working copy)
+@@ -22,7 +22,6 @@
+ 
+ 
+    /* SNMP OIDs */
+-   public static final String SNMP_OID_PREPLACED_KEY_TABLE = ".1.3.6.1.4.1.8698.3.4.2.2.2.1.4.0";
+    public static final String SNMP_OID_HEARTBEAT_TIMEOUT = ".1.3.6.1.4.1.8698.3.1.1.4.0";
+    public static final String SNMP_OID_ZEROIZE_FUNCTION = ".1.3.6.1.4.1.8698.3.1.1.5.0";
+    public static final String SNMP_OID_HEARTBEAT_PORT = ".1.3.6.1.4.1.8698.3.1.1.6.0";
+@@ -30,4 +29,5 @@
+    public static final String SNMP_OID_SANITIZE_DEVICE = ".1.3.6.1.4.1.21079.4.3.3.2.0";
+    public static final String SNMP_OID_KEY_LOADED = ".1.3.6.1.4.1.21079.4.1.2.2.2.1.1.0";
+    public static final String SNMP_OID_ZEROIZED_ALL_KEYS = ".1.3.6.1.4.1.21079.4.1.2.1.1.0";
++   public static final String SNMP_OID_PREPLACED_KEY_TABLE = ".1.3.6.1.4.1.21079.4.1.2.2.2.1.4";
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(revision 9934)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(working copy)
+@@ -7,8 +7,10 @@
+ import java.util.LinkedList;
+ import java.util.List;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.utils.LinuxSystemUtils;
+ import mil.navy.lcs.mvcs.ips250plugin.commands.IPS250Commands;
+ import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
+@@ -20,6 +22,9 @@
+  */
+ public class IPS250Plugin implements IEncryptorPlugin
+ {
++
++   private static final Logger logger = LoggerFactory.getLogger(IPS250Plugin.class);
++
+    /** The name of the encryptor */
+    private String encryptorName;
+ 
+@@ -48,7 +53,7 @@
+    @Override
+    public void startPlugin(String ip)
+    {
+-      LoggingManager.getPrimaryLogger().info("Starting IPS-250 plugin...");
++      logger.info("Starting IPS-250 plugin...");
+ 
+       int heartbeatPort = 0;
+ 
+@@ -67,12 +72,12 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error reading IPS250 configurations: ", e);
++         logger.error("Error reading IPS250 configurations: ", e);
+       }
+ 
+       try
+       {
+-         LoggingManager.getPrimaryLogger().info("IPS-250: IP=" + ipAddress + " PORT=" + heartbeatPort);
++         logger.info("IPS-250: IP=" + ipAddress + " PORT=" + heartbeatPort);
+ 
+          // initialize the sender and send HBs.
+          this.keepAliveHeartbeatSender = new UnicastHbSender(ipAddress, heartbeatPort);
+@@ -81,7 +86,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -129,7 +134,7 @@
+    public boolean isKeyed()
+    {
+       boolean keyed = false;
+-      LoggingManager.getPrimaryLogger().debug("Attempting to call isKeyed() from IPS250 Plugin.");
++      logger.debug("Attempting to call isKeyed() from IPS250 Plugin.");
+       keyed = encryptorCommands.getKeyLoaded(this.ipAddress);
+       return keyed;
+    }
+@@ -139,7 +144,7 @@
+    public boolean zeroize()
+    {
+       boolean zeroized = false;
+-      LoggingManager.getPrimaryLogger().warn("Attempting to call zeroize() from IPS250 Plugin. IP:" + this.ipAddress);
++      logger.warn("Attempting to call zeroize() from IPS250 Plugin. IP:" + this.ipAddress);
+       zeroized = encryptorCommands.zeroizeAllKeys(this.ipAddress);
+       return zeroized;
+    }
+@@ -149,7 +154,7 @@
+    public boolean sanitize()
+    {
+       boolean sanitized = false;
+-      LoggingManager.getPrimaryLogger().warn("Attempting to call sanitize() from IPS250 Plugin. IP:" + this.ipAddress);
++      logger.warn("Attempting to call sanitize() from IPS250 Plugin. IP:" + this.ipAddress);
+       sanitized = encryptorCommands.sanitizeDevice(this.ipAddress);
+       return sanitized;
+    }
+@@ -189,7 +194,7 @@
+    public List<String> getPreplacedKeyInfo()
+    {
+       LinkedList<String> ppkeys = new LinkedList<String>();
+-      LoggingManager.getPrimaryLogger().debug("Attempting to call isKeyed() from IPS250 Plugin.");
++      logger.debug("Attempting to call isKeyed() from IPS250 Plugin.");
+       try
+       {
+          ppkeys = encryptorCommands.getKeyStatus(this.ipAddress);
+@@ -196,7 +201,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error getting Preplaced key information: ", e);
++         logger.error("Error getting Preplaced key information: ", e);
+       }
+       return ppkeys;
+    }
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/snmp/SNMP.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/snmp/SNMP.java	(revision 9934)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/snmp/SNMP.java	(working copy)
+@@ -36,8 +36,8 @@
+  * 
+  * @author Joshua.Nelson
+  * 
+- *         $LastChangedBy: /C=US/O=U.S. Government/OU=DoD/OU=PKI/OU=USN/CN=KWON.DAE.AM.1160638016
+- *         $<br/>
++ *         $LastChangedBy$
++ *         <br/>
+  *         $LastChangedDate$<br/>
+  *         $LastChangedRevision$<br/>
+  * 
+@@ -111,9 +111,9 @@
+ 
+ 
+    /**
+-    * Method Description Needed.
++    * To load MIB files for SNMP session.
+     * 
+-    * @param mibString
++    * @param mibString - the string contains required MIB files.
+     */
+    public void loadMib(String mibString)
+    {
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/snmp/SNMPOperations.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/snmp/SNMPOperations.java	(revision 9934)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/snmp/SNMPOperations.java	(working copy)
+@@ -8,8 +8,8 @@
+ import java.util.LinkedList;
+ import java.util.Vector;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+-import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ import com.ireasoning.protocol.TimeoutException;
+ import com.ireasoning.protocol.snmp.MibUtil;
+@@ -28,16 +28,10 @@
+ import com.ireasoning.util.MibParseException;
+ import com.ireasoning.util.MibTreeNode;
+ 
++import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
++
+ /**
+- * Class Description Needed.
+- * 
+- * @author Joshua.Nelson
+- * 
+- *         $LastChangedBy: /C=US/O=U.S. Government/OU=DoD/OU=PKI/OU=USN/CN=KWON.DAE.AM.1160638016
+- *         $<br/>
+- *         $LastChangedDate$<br/>
+- *         $LastChangedRevision$<br/>
+- * 
++ * Class contains various methods to perform SNMP operations.
+  */
+ public class SNMPOperations extends SNMP
+ {
+@@ -44,6 +38,8 @@
+    /** Variable Description Needed */
+    private static SNMPOperations instance = null;
+ 
++   private static final Logger logger = LoggerFactory.getLogger(SNMPOperations.class);
++
+    /** Variable Description Needed */
+    String readCommunity = ConfigManager.getInstance().getRadioSelected().getCommunityRead();
+ 
+@@ -74,11 +70,7 @@
+    private String taclaneSelected = ConfigManager.getInstance().getRadioSelected().getVehicleName();
+ 
+ 
+-   /**
+-    * Method Description Needed.
+-    * 
+-    * @return
+-    */
++   /** To get the singleton class */
+    public static SNMPOperations getInstance()
+    {
+       {
+@@ -88,7 +80,7 @@
+             {
+                try
+                {
+-                  LoggingManager.getPrimaryLogger().debug("Getting new instance for SnmpOperations...");
++                  logger.debug("Getting new instance for SnmpOperations...");
+ 
+                   instance = new SNMPOperations();
+                }
+@@ -104,10 +96,10 @@
+    }
+ 
+ 
+-   public SNMPOperations()
++   /** The default constructor */
++   private SNMPOperations()
+    {
+       initialize();
+-
+    }
+ 
+ 
+@@ -121,7 +113,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("There was an error while setting up the SNMP Fucntions", e);
++         logger.error("There was an error while setting up the SNMP Fucntions", e);
+       }
+ 
+    }
+@@ -144,13 +136,13 @@
+       writeCommunity = ConfigManager.getInstance().getRadioSelected().getCommunityWrite();
+       taclaneSelected = ConfigManager.getInstance().getRadioSelected().getVehicleName();
+       _isSnmpV3 = ((version == SnmpConst.SNMPV3) ? true : false);
+-      // loadMib(ConfigManager.getInstance().getRadioSelected().getMibFile());
++      loadMib(ConfigManager.getInstance().getRadioSelected().getMibFile());
+ 
+    }
+ 
+ 
+    /************************************************************************************************
+-    * Functions to perform a get to the agent*************
++    * Functions to perform a get to the agent
+     * 
+     * @param oid - the OID
+     * @param ipAddress - the IP address
+@@ -160,7 +152,7 @@
+    public synchronized String[] snmpGet(String oid, String ipAddress, int port) throws TimeoutException, IOException
+    {
+       System.out.println("Attempting to get OID:" + oid + " at " + ipAddress + ":" + port);
+-      LoggingManager.getPrimaryLogger().info("Attempting to get OID:" + oid + " at " + ipAddress + ":" + port);
++      logger.info("Attempting to get OID:" + oid + " at " + ipAddress + ":" + port);
+ 
+       updateValues();
+       String[] return_val = new String[2];
+@@ -170,19 +162,16 @@
+       session.setTimeout(session_timeout);
+       session.setRetries(session_retries);
+ 
+-      // printOptions();
+-
+       if (version == SnmpConst.SNMPV3)
+       {
+          session.setV3Params(_user, _authProtocol, _authPassword, _privProtocol, _privPassword, _context, null);
+-
+       }
+ 
+ 
+       // NewCode
+-      SnmpOID New_oid = MibUtil.lookupOID(oid);
++      SnmpOID new_oid = MibUtil.lookupOID(oid);
+ 
+-      SnmpPdu retPdu = session.snmpGetRequest(New_oid);
++      SnmpPdu retPdu = session.snmpGetRequest(new_oid);
+ 
+       /********* Catch SNMP Data error ******/
+       error = snmpFailure(retPdu);
+@@ -200,6 +189,51 @@
+    }
+ 
+ 
++   /************************************************************************************************
++    * Functions to perform a getnext to the agent
++    * 
++    * @param oid - the OID
++    * @param ipAddress - the IP address
++    * @return Returns array at[0]= OID, at[1]= return value..
++    ***********************************************************************************************/
++   public synchronized String[] snmpGetNext(String oid, String ipAddress) throws TimeoutException, IOException
++   {
++      logger.info("Attempting to getnext OID:" + oid + " at " + ipAddress + ":" + _port);
++
++      updateValues();
++      String[] return_val = new String[2];
++      String error = null;
++
++      SnmpSession session = new SnmpSession(ipAddress, _port, readCommunity, writeCommunity, version);
++      session.setTimeout(session_timeout);
++      session.setRetries(session_retries);
++
++      if (version == SnmpConst.SNMPV3)
++      {
++         session.setV3Params(_user, _authProtocol, _authPassword, _privProtocol, _privPassword, _context, null);
++      }
++
++      // NewCode
++      SnmpOID new_oid = MibUtil.lookupOID(oid);
++
++      SnmpPdu retPdu = session.snmpGetNextRequest(new_oid);
++
++      /********* Catch SNMP Data error ******/
++      //error = snmpFailure(retPdu);
++      /********* Catch SNMP Data error ******/
++
++      SnmpVarBind[] var = retPdu.getVarBinds();
++      SnmpDataType PDUValue = var[0].getValue();
++
++      session.close();
++
++      return_val[0] = var[0].getName().getTypeString();
++      return_val[1] = PDUValue.toString();
++
++      return return_val;
++   }
++
++
+    public synchronized String snmpGetFromRouter(String oid, String address, int port) throws IOException, TimeoutException
+    {
+       String Return_val = null;
+@@ -212,9 +246,9 @@
+ 
+ 
+       // NewCode
+-      SnmpOID New_oid = MibUtil.lookupOID(oid);
++      SnmpOID new_oid = MibUtil.lookupOID(oid);
+ 
+-      SnmpPdu retPdu = session.snmpGetRequest(New_oid);
++      SnmpPdu retPdu = session.snmpGetRequest(new_oid);
+ 
+       /********* Catch SNMP Data error ******/
+       snmpFailure(retPdu);
+@@ -272,9 +306,9 @@
+       SnmpError error = new SnmpError();
+ 
+       // NewCode, to translate the given string into a ireasoning friendly oid.
+-      SnmpOID New_oid = MibUtil.lookupOID(oid);
++      SnmpOID new_oid = MibUtil.lookupOID(oid);
+ 
+-      SnmpVarBind[] varbinds = session.snmpGetSubtree(New_oid, error);
++      SnmpVarBind[] varbinds = session.snmpGetSubtree(new_oid, error);
+       if (error.getErrorStatus() != 0)
+       {
+          System.out.println(SnmpPdu.getErrorStatusString(error.getErrorStatus()));
+@@ -332,13 +366,13 @@
+       SnmpError error = new SnmpError();
+ 
+       // NewCode, to translate the given string into a ireasoning friendly oid.
+-      SnmpOID New_oid = MibUtil.lookupOID(oid);
++      SnmpOID new_oid = MibUtil.lookupOID(oid);
+ 
+-      SnmpVarBind[] varbinds = session.snmpGetSubtree(New_oid, error);
++      SnmpVarBind[] varbinds = session.snmpGetSubtree(new_oid, error);
+       if (error.getErrorStatus() != 0)
+       {
+          System.out.println(SnmpPdu.getErrorStatusString(error.getErrorStatus()));
+-         LoggingManager.getPrimaryLogger().error(SnmpPdu.getErrorStatusString(error.getErrorStatus()));
++         logger.error(SnmpPdu.getErrorStatusString(error.getErrorStatus()));
+       }
+       else
+       {
+@@ -398,9 +432,8 @@
+     */
+    public boolean snmpset(String _oids, String valueType, String value, String remoteIpAddress) throws IOException
+    {
++      logger.debug("Attempting to set OID:" + _oids + " at " + remoteIpAddress);
+ 
+-      LoggingManager.getPrimaryLogger().debug("Attempting to set OID:" + _oids + " at " + remoteIpAddress);
+-
+       SnmpVarBindList vbList = new SnmpVarBindList();
+       SnmpSession session = new SnmpSession(remoteIpAddress, _port, readCommunity, writeCommunity, version);
+ 
+@@ -418,19 +451,19 @@
+          // snmp su = new snmp();
+          value = value.toLowerCase();
+          System.out.println("Before translation: " + value);
+-         LoggingManager.getPrimaryLogger().debug("Before translation: " + value);
++         logger.debug("Before translation: " + value);
+          SnmpDataType t = SNMP.translate(valueType, value);
+          System.out.println("After translation: " + t);
+-         LoggingManager.getPrimaryLogger().debug("After translation: " + t);
++         logger.debug("After translation: " + t);
+ 
+          // NewCode, to translate the given string into a ireasoning friendly oid.
+-         SnmpOID New_oid = MibUtil.lookupOID(_oids);
++         SnmpOID new_oid = MibUtil.lookupOID(_oids);
+          System.out.println("Original OID: " + _oids);
+-         LoggingManager.getPrimaryLogger().debug("Original OID: " + _oids);
+-         System.out.println("New OID: " + New_oid);
+-         LoggingManager.getPrimaryLogger().debug("New OID: " + New_oid);
++         logger.debug("Original OID: " + _oids);
++         System.out.println("New OID: " + new_oid);
++         logger.debug("New OID: " + new_oid);
+ 
+-         SnmpVarBind vb = new SnmpVarBind(new SnmpOID(New_oid), t);
++         SnmpVarBind vb = new SnmpVarBind(new SnmpOID(new_oid), t);
+          vbList.add(vb);
+ 
+ 
+@@ -479,7 +512,7 @@
+       String error = null;
+ 
+       System.out.println("Sending SNMP " + oid + " to " + address + "on port " + port + " value " + newval);
+-      LoggingManager.getPrimaryLogger().debug("Sending SNMP " + oid + " to " + address + "on port " + port + " value " + newval);
++      logger.debug("Sending SNMP " + oid + " to " + address + "on port " + port + " value " + newval);
+ 
+       SnmpSession session = new SnmpSession(address, port, "mvcs", "mvcs", 3);
+       session.setTimeout(5);
+@@ -497,9 +530,9 @@
+       SnmpDataType myVal = new SnmpOctetString(newval);
+ 
+       // NewCode, to translate the given string into a ireasoning friendly oid.
+-      SnmpOID New_oid = MibUtil.lookupOID(oid);
++      SnmpOID new_oid = MibUtil.lookupOID(oid);
+ 
+-      SnmpVarBind vbvalue = new SnmpVarBind(new SnmpOID(New_oid), myVal);
++      SnmpVarBind vbvalue = new SnmpVarBind(new SnmpOID(new_oid), myVal);
+ 
+       pdu.addVarBind(vbvalue);
+ 
+@@ -585,7 +618,7 @@
+ 
+          if (!retPdu.hasMore())
+          {
+-            LoggingManager.getPrimaryLogger().debug("End of mib view reached");
++            logger.debug("End of mib view reached");
+             return null;
+          }
+ 
+@@ -596,7 +629,7 @@
+             retPdu = session.snmpGetNextRequest(retPdu.getFirstVarBind().getName());
+             if (!retPdu.hasMore())
+             {
+-               LoggingManager.getPrimaryLogger().debug("End of mib view reached");
++               logger.debug("End of mib view reached");
+                break;
+             }
+             print(retPdu);
+@@ -628,11 +661,11 @@
+       if (retPdu.getErrorStatus() > 0)
+       {// Error occurs or end of mib view reached.
+          error = "PDU error status = " + retPdu.getErrorStatusString();
+-         LoggingManager.getPrimaryLogger().debug(error);
++         logger.debug(error);
+       }
+       if (retPdu.isSnmpV3AuthenticationFailed())
+       {
+-         LoggingManager.getPrimaryLogger().debug("Authentication failure");
++         logger.debug("Authentication failure");
+          error = printAuthFailReason(retPdu);
+ 
+       }
+@@ -648,24 +681,24 @@
+     */
+    protected void printOptions()
+    {
+-      LoggingManager.getPrimaryLogger().debug("Options:");
+-      LoggingManager.getPrimaryLogger().debug("_____________________________________");
+-      LoggingManager.getPrimaryLogger().debug("host =\t\t\t" + _host);
+-      LoggingManager.getPrimaryLogger().debug("port =\t\t\t" + _port);
+-      LoggingManager.getPrimaryLogger().debug("isSnmpV3 =\t\t\t" + _isSnmpV3);
+-      LoggingManager.getPrimaryLogger().debug("authProtocol =\t\t" + _authProtocol);
+-      LoggingManager.getPrimaryLogger().debug("authPassword =\t\t" + _authPassword);
+-      LoggingManager.getPrimaryLogger().debug("privProtocol =\t\t" + _privProtocol);
+-      LoggingManager.getPrimaryLogger().debug("privPassword =\t\t" + _privPassword);
+-      LoggingManager.getPrimaryLogger().debug("readcommunity =\t\t" + readCommunity);
+-      LoggingManager.getPrimaryLogger().debug("wrtiecommunity =\t\t" + writeCommunity);
+-      LoggingManager.getPrimaryLogger().debug("user =\t\t\t" + _user);
+-      LoggingManager.getPrimaryLogger().debug("mib files =\t\t" + _mibString);
+-      LoggingManager.getPrimaryLogger().debug("context =\t\t\t" + _context);
+-      LoggingManager.getPrimaryLogger().debug("Engine ID =\t\t" + new String(_engineID));
+-      LoggingManager.getPrimaryLogger().debug("SNMP Version =\t\t" + version);
+-      LoggingManager.getPrimaryLogger().debug("Vehicle = " + taclaneSelected);
+-      LoggingManager.getPrimaryLogger().debug("_____________________________________");
++      logger.debug("Options:");
++      logger.debug("_____________________________________");
++      logger.debug("host =\t\t\t" + _host);
++      logger.debug("port =\t\t\t" + _port);
++      logger.debug("isSnmpV3 =\t\t\t" + _isSnmpV3);
++      logger.debug("authProtocol =\t\t" + _authProtocol);
++      logger.debug("authPassword =\t\t" + _authPassword);
++      logger.debug("privProtocol =\t\t" + _privProtocol);
++      logger.debug("privPassword =\t\t" + _privPassword);
++      logger.debug("readcommunity =\t\t" + readCommunity);
++      logger.debug("wrtiecommunity =\t\t" + writeCommunity);
++      logger.debug("user =\t\t\t" + _user);
++      logger.debug("mib files =\t\t" + _mibString);
++      logger.debug("context =\t\t\t" + _context);
++      logger.debug("Engine ID =\t\t" + new String(_engineID));
++      logger.debug("SNMP Version =\t\t" + version);
++      logger.debug("Vehicle = " + taclaneSelected);
++      logger.debug("_____________________________________");
+    }
+ 
+ 
+@@ -818,7 +851,7 @@
+ 
+          if (table == null)
+          {
+-            LoggingManager.getPrimaryLogger().error("Table not found in loaded MIBs");
++            logger.error("Table not found in loaded MIBs");
+             // return;
+          }
+ 

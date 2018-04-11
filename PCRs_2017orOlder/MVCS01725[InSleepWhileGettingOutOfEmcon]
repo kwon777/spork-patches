@@ -1,0 +1,60 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/safety/VcaSafetyManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/safety/VcaSafetyManager.java	(revision 9831)
++++ src/main/java/mil/navy/lcs/mvcs/vca/safety/VcaSafetyManager.java	(working copy)
+@@ -12,10 +12,13 @@
+ 
+ import com.google.common.collect.Sets;
+ 
++import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsNode;
+ import mil.navy.lcs.mvcs.iface.model.node.PowerConservation;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
++import mil.navy.lcs.mvcs.iface.model.node.RmmvNode;
++import mil.navy.lcs.mvcs.iface.model.node.SleepState;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+ import mil.navy.lcs.mvcs.iface.power.PowerDevice;
+ import mil.navy.lcs.mvcs.iface.power.PowerOutput;
+@@ -179,10 +182,40 @@
+ 
+    /**
+     * To exit EMCON condition for HW. Turn all radios on if FULL or FAILSAFE808 otherwise just
+-    * recover the EMCON radios.
++    * recover the EMCON radios. For the RMMV vehicle, must consider the sleep state when exiting
++    * EMCON.
+     */
+    private void emconExit()
+    {
++      SleepState sleepState = node.getSleepState();
++      logger.info("Vehicle is in sleep {} mode as getting out of EMCON.", sleepState);
++
++      // As getting out of EMCON, RMMV is in sleepAtRest
++      if (node instanceof RmmvNode && sleepState == SleepState.ATREST)
++      {
++         // Leave the radios in EMCON mode which is the same as sleepAtRest mode in RMMV
++         logger.info("Radios remain unchanged. ");
++         return;
++      }
++
++      // As getting out of EMCON, RMMV is in sleepEnergized
++      else if (node instanceof RmmvNode && sleepState == SleepState.ENERGIZED)
++      {
++         // Ensure only the sleep radio to be in transmit mode.
++         String sleepRadio = VcaLinkManager.findHighestPrioritySleepRadio();
++         logger.info("Radio {} is getting energized.", sleepRadio);
++         for (VcaRadioController radioController : VcaLinkManager.getInstance().getRadioControllers().values())
++         {
++            // sleep radio
++            if (radioController.getRadioName().equalsIgnoreCase(sleepRadio))
++            {
++               // make sure powered. go to transmit/receive mode.
++               radioController.setSleep(false);
++            } // end of if (sleep radio)
++         } // end of for
++         return;
++      }
++
+       logger.info("Clearing EMCON state for all radios");
+ 
+       // all radios

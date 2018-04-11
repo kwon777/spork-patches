@@ -1,0 +1,1884 @@
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(working copy)
+@@ -3,9 +3,6 @@
+ package mil.navy.lcs.mvcs.plugins.rt1944;
+ 
+ 
+-import gnu.cajo.utils.CodebaseServer;
+-import gnu.cajo.utils.ItemServer;
+-
+ import java.beans.PropertyChangeEvent;
+ import java.beans.PropertyChangeListener;
+ import java.io.IOException;
+@@ -14,6 +11,13 @@
+ import java.util.Timer;
+ import java.util.TimerTask;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.ireasoning.protocol.TimeoutException;
++
++import gnu.cajo.utils.CodebaseServer;
++import gnu.cajo.utils.ItemServer;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties;
+@@ -27,11 +31,6 @@
+ import mil.navy.lcs.mvcs.plugins.rt1944.radiocommands.RadioCommandsManager;
+ import mil.navy.lcs.mvcs.plugins.rt1944.snmp.trap.SnmpTrapd;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import com.ireasoning.protocol.TimeoutException;
+-
+ /**
+  * Class Description
+  * <p>
+@@ -71,7 +70,10 @@
+ 
+    /** The m constant of quality = (log(snr) - log(b)) / log(m) */
+    private static final double EXP_M_CONSTANT = 1.226089994;
++
++   /** The logger for the plugin */
+    private static final Logger logger = LoggerFactory.getLogger(Rt1944Plugin.class);
++
+    /** Maximum post-scaling quality value */
+    private static final double MAX_QUAL_VAL = 100.0;
+ 
+@@ -90,28 +92,25 @@
+    private final long PATH_SET_INTERVAL = 10000;
+ 
+    private GuiServer guiServer = new GuiServer();
+-   private RadioCommands RadioControl;
++
++   private RadioCommands radioControl = new RadioCommands();
++
+    private RadioProperties radioProperties = new RadioProperties("");
+ 
+-   /**
+-    * The plugin keeps track of a radio by the name of the radio
+-    */
+-   private String myRadioName = "";
++   /** The plugin keeps track of a radio by the name of the radio */
++   private String myRadioName = "RT-1944 Radio";
+ 
+    private Rt1944PluginWorker rt1944PluginWorker;
+-   /**
+-    * The SNMP trap listening object
+-    */
++
++   /** The SNMP trap listening object */
+    private SnmpTrapd snmpTrapd;
+-   /**
+-    * The SNMP trap listening thread
+-    */
+-   Thread snmpTrapThread;
+ 
++   /** The SNMP trap listening thread */
++   protected Thread snmpTrapThread;
+ 
+-   List<SnmpParameters> vehicleList;
++   protected List<SnmpParameters> vehicleList;
+ 
+-   // TimerTask object that will attempt to switch the radio antenna path.
++   /** TimerTask object that will attempt to switch the radio antenna path. */
+    private PathSwitcher pathThread = null;
+ 
+ 
+@@ -136,18 +135,9 @@
+    }
+ 
+ 
++   /** Default constructor for radio plug-in */
+    public Rt1944Plugin()
+    {
+-
+-      this(new RadioCommands(), null);
+-   }
+-
+-
+-   protected Rt1944Plugin( RadioCommands radioControl, Rt1944PluginWorker worker)
+-   {
+-      this.RadioControl = radioControl;
+-      this.rt1944PluginWorker = worker;
+-
+       initialize();
+    }
+ 
+@@ -169,11 +159,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param destinationNodeId
+-    * @param destinationRadio
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#connectToRadio(java.lang.String,
+     *      java.lang.String)
+     */
+@@ -186,11 +171,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param destinationNodeId
+-    * @param destinationRadio
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#disconnectFromRadio(java.lang.String,
+     *      java.lang.String)
+     */
+@@ -210,10 +190,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param ipAddress
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getBitResult(java.lang.String)
+     */
+    @Override
+@@ -244,9 +220,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getLinkQuality()
+     */
+    @Override
+@@ -293,7 +266,6 @@
+ 
+ 
+    /**
+-    *
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getRadioFrequency()
+     */
+    @Override
+@@ -303,7 +275,7 @@
+ 
+       if (isSetInProgress())
+       {
+-         frequency = RadioControl.getRequestedFrequency();
++         frequency = radioControl.getRequestedFrequency();
+       }
+       else
+       {
+@@ -381,7 +353,7 @@
+ 
+    public boolean isRebooting()
+    {
+-      return RadioControl.isRebooting();
++      return radioControl.isRebooting();
+    }
+ 
+ 
+@@ -400,7 +372,7 @@
+ 
+    public boolean isSetInProgress()
+    {
+-      return RadioControl.isSetInProgress();
++      return radioControl.isSetInProgress();
+    }
+ 
+ 
+@@ -434,7 +406,7 @@
+    {
+       try
+       {
+-         RadioControl.saveChangesPermanently();
++         radioControl.saveChangesPermanently();
+       }
+       catch (Exception e)
+       {
+@@ -468,7 +440,7 @@
+             /*
+              * Test whether the selected antenna is the current antenna. To exit the loop.
+              */
+-            if (RadioControl.getPath().contentEquals(antennaSelection))
++            if (radioControl.getPath().contentEquals(antennaSelection))
+             {
+                logger.info("Selected antenna already in use, ignoring switch command.");
+                // If setting the path was successful, cancel the run.
+@@ -475,7 +447,7 @@
+                cancel();
+             }
+ 
+-            RadioControl.setPath(antennaSelection);
++            radioControl.setPath(antennaSelection);
+             logger.debug("RT1944 Radio Antenna is being set to " + antennaSelection);
+ 
+ 
+@@ -556,7 +528,7 @@
+    {
+       try
+       {
+-         RadioControl.setRadioFrequency(newRadioFreq);
++         radioControl.setRadioFrequency(newRadioFreq);
+          return true;
+       }
+       catch (Exception e)
+@@ -579,7 +551,7 @@
+    {
+       try
+       {
+-         RadioControl.setSSID(radioID);
++         radioControl.setSSID(radioID);
+       }
+       catch (IOException e)
+       {
+@@ -616,11 +588,11 @@
+    {
+       try
+       {
+-         RadioControl.setRadioFullPower(powerMode);
++         radioControl.setRadioFullPower(powerMode);
+       }
+-      catch (IOException e)
++      catch (Exception e)
+       {
+-         e.printStackTrace();
++         logger.error("Error setting radio power mode: " + e.getMessage());
+       }
+       return false;
+    }
+@@ -627,10 +599,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param snmpParameters
+-    * @param sendOverToRim
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#setSnmpParameters(mil.navy.lcs.mvcs.common.radios.interfaces.SnmpParameters,
+     *      boolean)
+     */
+@@ -638,7 +606,7 @@
+    public void setSnmpParameters(SnmpParameters snmpParameters, boolean sendOverToRim)
+    {
+ 
+-      this.RadioControl = RadioCommandsManager.getInstance().connectToRadio(snmpParameters.getSnmpIpAddress(), String.valueOf(snmpParameters.getSnmpPort()));
++      radioControl = RadioCommandsManager.getInstance().connectToRadio(snmpParameters.getSnmpIpAddress(), String.valueOf(snmpParameters.getSnmpPort()));
+ 
+       if (rt1944PluginWorker != null)
+       {
+@@ -645,13 +613,13 @@
+          rt1944PluginWorker.interrupt();
+       }
+ 
+-      rt1944PluginWorker = new Rt1944PluginWorker(RadioControl, getRadioProperties());
++      rt1944PluginWorker = new Rt1944PluginWorker(radioControl, getRadioProperties());
+       rt1944PluginWorker.setRadioName(this.myRadioName);
+ 
+-      System.out.println("------------------In setSnmpParameters ");
+-      System.out.println("Plugin radio name is " + this.myRadioName);
+-      System.out.println("Agent IP address is " + snmpParameters.getSnmpIpAddress());
+-      System.out.println("Agent port is " + snmpParameters.getSnmpPort());
++      logger.info("------------------ In setSnmpParameters ");
++      logger.info("Plugin radio name is " + this.myRadioName);
++      logger.info("Agent IP address is " + snmpParameters.getSnmpIpAddress());
++      logger.info("Agent port is " + snmpParameters.getSnmpPort());
+    }
+ 
+ 
+@@ -693,7 +661,7 @@
+          {
+             try
+             {
+-               RadioControl.setEmcon(emconState ? "on" : "off");
++               radioControl.setEmcon(emconState ? "on" : "off");
+                sleep(emconThreadPeriod);
+             }
+             catch (TimeoutException e)
+@@ -853,14 +821,14 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To initialize objects.
+     *
+     */
+    protected void initialize()
+    {
+       this.vehicleList = new ArrayList<SnmpParameters>();
+-      ConfigManager.getInstance();
+-      radioProperties.setRadioName(myRadioName);
++     ConfigManager.getInstance();
++     radioProperties.setRadioName(myRadioName);
+       // guiServer = new GuiServer();
+       startCajoServer();
+    }
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944PluginWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944PluginWorker.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944PluginWorker.java	(working copy)
+@@ -101,19 +101,8 @@
+    {
+       try
+       {
+-         try
+-         {
+-            linkQuality[0][0] = radioCommands.getSNR();
+-         }
+-         catch (IOException e)
+-         {
+-            linkQuality[0][0] = "0";
+-         }
+-         // check for exception from getting the snr
+-         catch (Exception e)
+-         {
+-            linkQuality[0][0] = "0";
+-         }
++         linkQuality[0][0] = "0"; // reset link quality to zero
++         linkQuality[0][0] = radioCommands.getSNR();
+ 
+          antennaPath = radioCommands.getPath();
+          // burstRate = radioCommands.getBurstRate();
+@@ -129,19 +118,14 @@
+          radioResponding = true;
+          radioProperties.setRadioAvailableStatus(true);
+          radioProperties.onSuccessfulRadioConfiguration(radioName);
+-         // System.out.println("Polling successful " + radioName);
+       }
+       catch (IOException e)
+       {
+          radioProperties.setRadioAvailableStatus(false);
+-         LoggingManager.getPrimaryLogger().debug("Timeout while getting radio status for radio " + radioName + ": " + e.getStackTrace()[0]);
++         LoggingManager.getPrimaryLogger().debug("Timeout while getting radio status for radio " + radioName + ": " + e.getMessage());
+          radioProperties.onFailedSnmpPolling(radioName);
+          radioResponding = false;
+       }
+-      catch (Exception e)
+-      {
+-         radioResponding = false;
+-      }
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/gui/GuiServer.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/gui/GuiServer.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/gui/GuiServer.java	(working copy)
+@@ -64,9 +64,7 @@
+     */
+    public GuiServer()
+    {
+-
+       // radioControl = new RadioCommands();
+-
+       this.appletProxy = new Rt1944AppletProxy();
+    }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/misc/ConstantValues.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/misc/ConstantValues.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/misc/ConstantValues.java	(working copy)
+@@ -18,6 +18,12 @@
+ {
+    public static String ENCRYPTION_KEY = "3489rwenvlkvn df9734ngfmdi siucds*&&%%^BJ";
+ 
++
++   public static String SNMP_OID_CHANGE_FREQ = ".1.3.6.1.4.1.1535.2.7.1.3.0";
++   public static String SNMP_OID_SAVE_SESSION = ".1.3.6.1.4.1.1535.2.7.1.26.0";
++   public static String SNMP_OID_SAVE_PERMANENT = ".1.3.6.1.4.1.1535.2.7.4.1.0";
++   public static String SNMP_VALUE_SAVE_SESSION = "commit";
++   public static String SNMP_VALUE_SAVE_PERMANENT = "2";
+    public static String LOST_ALL_LINKS = "Lost_All_Links";
+    public static String RADIO_RF_CONNECTED = "Radio_RF_Connected";
+    public static String COMPLETED_BIT = "Completed_BIT";
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java	(working copy)
+@@ -1,28 +1,3 @@
+-/*************************************************
+- * File History
+- *************************************************
+- *
+- *
+- * May 25, 2010 - AL - Inital Import of RadioCommand.java
+- *
+- * June 3rd, 2010 - AL - Added radioParamater support.
+- *
+- * June 3rd, 2010 AL - Edited function to expect String rather then boolean.
+- *
+- * June 8th, 2010 AL - Created a way for the SNMP functions to take in a radio IPaddress as prt of
+- * it's constructor.
+- *
+- * July, 6th, 2010 AL - Added Comments to Radio functions.
+- *
+- * August 30, 2010 AL - Added method to get and set the radio ip address.
+- *
+- * Sept. 10, 2010 AL - Added the functions to allow the Priority of service to be set in the radio.
+- *
+- * Sep1. 14, 2010 AL - Added function to populate the cosTable.
+- *
+- * Sept. 15, 2010 AL - corrected and added several functions.
+- *
+- */
+ 
+ 
+ package mil.navy.lcs.mvcs.plugins.rt1944.radiocommands;
+@@ -35,30 +10,26 @@
+ import java.util.Vector;
+ import java.util.regex.Pattern;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.ireasoning.protocol.TimeoutException;
++import com.ireasoning.protocol.snmp.SnmpDataType;
++import com.ireasoning.protocol.snmp.SnmpTableModel;
++import com.ireasoning.protocol.snmp.SnmpVarBind;
++
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.graphics.util.SwingWorker;
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.interfaces.KeyEntryMethod;
+ import mil.navy.lcs.mvcs.plugins.rt1944.logger.Rt1944Logger;
++import mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues.QueueList;
+ import mil.navy.lcs.mvcs.plugins.rt1944.snmp.SnmpFunctions;
+ 
+-import com.ireasoning.protocol.TimeoutException;
+-import com.ireasoning.protocol.snmp.SnmpDataType;
+-import com.ireasoning.protocol.snmp.SnmpTableModel;
+-import com.ireasoning.protocol.snmp.SnmpVarBind;
+ 
+-
+ /**
+- * Radio Command interface for the GUI.
+- * <p>
+- * Date Created: May 25, 2010
+- * <p>
+- * $LastChangedBy$ <br>
+- * $LastChangedDate$ <br>
+- * $LastChangedRevision$
++ * Radio Command interface.
+  *
+  * @author Andy Lubin
+- * @version 4.0
+  */
+ public class RadioCommands
+ {
+@@ -70,13 +41,13 @@
+       public boolean requestInProgress = false;
+    }
+ 
++   /** The logger for this class */
++   protected static Logger logger = LoggerFactory.getLogger(RadioCommands.class);
+ 
+    /** How long to wait before applying the changes to the radio */
+    private static final long APPLY_CHANGES_GRACE_PERIOD = 3000;
+ 
+-   /**
+-    * A map of the vehicle queue list and their dscp values.
+-    */
++   /** A map of the vehicle queue list and their dscp values. */
+    private static final Map<QueueList, LinkedList<Integer>> priorityList = new HashMap<QueueList, LinkedList<Integer>>();
+ 
+    private static final long RADIO_SET_GAURD = 10000;
+@@ -87,19 +58,14 @@
+ 
+    private static final int RADIO_TABLE_RX_SNR_OFFSET = 9;
+ 
+-
+    private static final int RADIO_TABLE_TX_SNR_OFFSET = 8;
+ 
+-
+    private static final Map<String, RequestState> requestStateMap = new HashMap<String, RequestState>();
+ 
+    protected static final long APPLY_CHANGES_SET_WAIT_PERIOD = 2500;
+ 
+ 
+-   /**
+-    * Flag used to determine whether a value in the application portion of the radio has been
+-    * modified.
+-    */
++   /** Flag denotes whether a value in the application portion of the radio has been modified. */
+    static boolean appFlag = false;
+ 
+ 
+@@ -109,70 +75,34 @@
+       return IP_PATTERN.matcher(iPaddress).matches();
+    }
+ 
+-
+    private boolean appSessionFlag = false;
+-
+-
+    private String burstRate;
+-
+    private SnmpTableModel cosTable;
+    private String emcon;
+-
+    private String frequency;
+-
+    private String gateway;
+-
+    private String initialPowerLevel;
+-
+    private String ipAddress = "NA";
+-
+    private String keyEntry;
+-
+    private String msStatus;
+-
+    private boolean networkSessionFlag = false;
+-
+    private String nodeName;
+-
+    private boolean posEnabled = false;
+-
+    private LinkedList<Integer>[] posList = new LinkedList[6];
+-
+    private String powerLevel;
+-
+    private String radioIpAddress = "NA";
+-
+    private int radioPort;
+-
+-
+    private String rt1944_Snmp_Suffix = ".0";
+-
+    private String securityType;
+-
+    private boolean selackSessionFlag = false;
+-
+    private String snmpAgentIpAddress = "";
+-
+-
+    private String snmpAgentPort = "";
+    private String SSID;
+-
+-   /**
+-    * Flag used to determine whether the network section of the radio has been modified.
+-    */
++   /** Flag to denote the network section of the radio has been modified. */
+    boolean networkFlag = false;
+-
+-
+-   /**
+-    * Flag used to determine whether a value in the selack portion has been modified, so that the
+-    * proper value can be set.
+-    **/
++   /** Flag denotes a value in the selack portion has been modified. **/
+    boolean selackFlag = false;
+-
+-
+    SnmpFunctions SnmpCommands = null;
+-
+-
+    SwingWorker worker;
+ 
+ 
+@@ -180,16 +110,13 @@
+    {
+       String defaultRadioIpAddress = "172.16.102.130";
+       SnmpCommands = new SnmpFunctions(defaultRadioIpAddress);
+-
+    }
+ 
+ 
+-   //
+    public RadioCommands( String ipAddress)
+    {
+       this.ipAddress = ipAddress;
+       SnmpCommands = new SnmpFunctions(ipAddress);
+-
+    }
+ 
+ 
+@@ -197,8 +124,6 @@
+     * This function will save the most recently set radio configurations.
+     *
+     * @throws Exception
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public void _saveChangesForSession() throws Exception
+    {
+@@ -228,9 +153,6 @@
+          Rt1944Logger.getInstance().getLogger().debug("No network configurations have been made!");
+       }
+ 
+-      // Compares the new radio values with the previous settings
+-      // to verify that the changes were updated to the radio.
+-      // compareValues();
+       resetSessionFlags();
+    }
+ 
+@@ -273,9 +195,7 @@
+       {
+          Rt1944Logger.getInstance().getLogger().debug("No network configurations have been saved!");
+       }
+-      // Compares the new radio values with the previous settings
+-      // to verify that the changes were updated to the radio.
+-      // compareValues();
++
+       resetFlags();
+    }
+ 
+@@ -292,46 +212,11 @@
+          up = false;
+       }
+       return up;
+-
+    }
+ 
+ 
+-   public void compareValues() throws Exception
+-   {
+-      if (!(this.frequency.contentEquals(getRadioFrequency())))
+-      {
+-         throw new Exception("The frequency did not get set.");
+-      }
+-      if (!(this.SSID.contentEquals(getSSID())))
+-      {
+-         throw new Exception("The SSID did not get set.");
+-      }
+-      if (!(this.emcon.contentEquals(getEmcon())))
+-      {
+-         throw new Exception("The frequency did not get set.");
+-      }
+-      if (!(this.powerLevel.contentEquals(getPowerLevel())))
+-      {
+-         throw new Exception("The power level did not get set.");
+-      }
+-      if (!(this.msStatus.contentEquals(getCommandStatus())))
+-      {
+-         throw new Exception("The master/slave did not get set.");
+-      }
+-      if (!(this.burstRate.contentEquals(getBurstRate())))
+-      {
+-         throw new Exception("The burst rate did not get set.");
+-      }
+-      if (!(this.radioIpAddress.contentEquals(getRadioIpAddress())))
+-      {
+-         throw new Exception("The Radio Ip address did not get set.");
+-      }
+-
+-   }
+-
+-
+    /**
+-    * Used to connect to Set the IpAddress of the radio to Connect to
++    * To establish connection to the radio
+     *
+     * @param ipAddress
+     */
+@@ -342,17 +227,18 @@
+ 
+ 
+    /**
+-    * Used to connect to Set the IpAddress of the radio to Connect to
++    * To establish connection to the radio
+     *
+-    * @param ipAddress
++    * @param ipAddress the IP address 
++    * @param port the port
+     */
+    public void connectToRadio(String ipAddress, String port)
+    {
++      logger.info("Establishing a connection to the RT1944 radio with IP:{} Port:{}", ipAddress, port );
+       this.ipAddress = ipAddress;
+       this.radioPort = Integer.parseInt(port);
+       SnmpCommands = new SnmpFunctions(ipAddress);
+       SnmpCommands.setPort(radioPort);
+-
+    }
+ 
+ 
+@@ -359,9 +245,7 @@
+    public String getBurstRate() throws IOException
+    {
+       String burstRate = "NA";
+-
+       burstRate = SnmpCommands.snmpget("iciSelackOperRssiMapRate" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return burstRate;
+    }
+ 
+@@ -375,9 +259,7 @@
+    public String getCommandStatus() throws IOException
+    {
+       String msStatus = "NA";
+-
+       msStatus = SnmpCommands.snmpget("iciSelackOperOpMode" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return msStatus;
+    }
+ 
+@@ -442,10 +324,8 @@
+    /**
+     * This function returns the current status of the emcon status.
+     *
+-    * @return
++    * @return the EMCON status
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getEmcon() throws IOException
+    {
+@@ -459,7 +339,7 @@
+    /**
+     * Gets the Gateway value for the radio.
+     *
+-    * @return
++    * @return the gateway
+     * @throws IOException
+     */
+    public String getGateway() throws IOException
+@@ -477,8 +357,6 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getHPA1BitResult() throws IOException
+    {
+@@ -495,15 +373,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getHPA2BitResult() throws IOException
+    {
+       String HPA2Result = "NA";
+-
+       HPA2Result = SnmpCommands.snmpget("iciAppRssslRadioHpaTwoBit" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return HPA2Result;
+    }
+ 
+@@ -511,7 +385,7 @@
+    /**
+     * Gets the current IP Address.
+     *
+-    * @return
++    * @return the IP address
+     */
+    public String getIpAddress()
+    {
+@@ -522,9 +396,7 @@
+    public String getKeyEntry() throws IOException
+    {
+       String keyEntry = null;
+-
+       keyEntry = SnmpCommands.snmpget("iciAppRssslRadioKeyEntryMethod" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return keyEntry;
+    }
+ 
+@@ -544,9 +416,7 @@
+    public String getPath() throws IOException
+    {
+       String path = "NA";
+-
+       path = SnmpCommands.snmpget("iciAppRssslRadioAntenna" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return path;
+    }
+ 
+@@ -560,9 +430,7 @@
+    public String getPowerLevel() throws IOException
+    {
+       String powerLevel = "NA";
+-
+       powerLevel = SnmpCommands.snmpget("iciAppRssslRadioFullRadioPower" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return powerLevel;
+    }
+ 
+@@ -570,9 +438,7 @@
+    public String getPriorityOfServiceEnable() throws IOException
+    {
+       String posEnabled = "NA";
+-
+       posEnabled = SnmpCommands.snmpget("iciAppRssslNpmOperCosEnabling" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return posEnabled;
+    }
+ 
+@@ -581,7 +447,6 @@
+    {
+       // TODO: Add logic
+       return null;
+-
+    }
+ 
+ 
+@@ -590,15 +455,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioFrequency() throws IOException
+    {
+       String frequency = "NA";
+-
+       frequency = SnmpCommands.snmpget("iciAppRssslRadioFrequency" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return frequency;
+    }
+ 
+@@ -608,15 +469,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioFullPower() throws IOException
+    {
+       String fullPower = "NA";
+-
+       fullPower = SnmpCommands.snmpget("iciAppRssslRadioFullRadioPower" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return fullPower;
+    }
+ 
+@@ -626,15 +483,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioHWVersion() throws IOException
+    {
+       String hwVersion = null;
+-
+       hwVersion = SnmpCommands.snmpget("iciAppRssslRadioHwVerBIT" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return hwVersion;
+    }
+ 
+@@ -642,9 +495,7 @@
+    public String getRadioIpAddress() throws IOException
+    {
+       String radioIpAddress = "0.0.0.0";
+-
+       radioIpAddress = SnmpCommands.snmpget("iciAppRssslNpmOperIpAddr" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return radioIpAddress;
+    }
+ 
+@@ -654,15 +505,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getRadioSWVersion() throws IOException
+    {
+       String swVersion = null;
+-
+       swVersion = SnmpCommands.snmpget("iciAppRssslRadioSwVerBIT" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return swVersion;
+    }
+ 
+@@ -676,9 +523,7 @@
+    public String getSecurityType() throws IOException
+    {
+       String securityType = "NA";
+-
+       securityType = SnmpCommands.snmpget("iciAppRssslRadioAuthentication" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+       return securityType;
+    }
+ 
+@@ -689,7 +534,6 @@
+       int numOfRadio = 0;
+       Vector<Vector<String>> listOfRadios = new Vector<Vector<String>>();
+ 
+-
+       // selackRadioTable = SnmpCommands.getTable("iciSelackDestStatTable", this.ipAddress);
+       selackRadioTable = SnmpCommands.getRadioTable(this.ipAddress);
+ 
+@@ -703,8 +547,8 @@
+       else
+       {
+ 
+-         System.out.println("Row Count = " + selackRadioTable.getRowCount());
+-         System.out.println("Column Count = " + selackRadioTable.getColumnCount());
++         logger.debug("Row Count = " + selackRadioTable.getRowCount());
++         logger.debug("Column Count = " + selackRadioTable.getColumnCount());
+          numOfRadio = selackRadioTable.getRowCount();
+          Rt1944Logger.getInstance().getLogger().debug("Number of Radios: " + numOfRadio);
+          for (int i = 0; i < numOfRadio; i++)
+@@ -734,7 +578,6 @@
+          }
+       }
+       return listOfRadios;
+-
+    }
+ 
+ 
+@@ -755,24 +598,11 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws Exception
+-    * @throws TimeoutException
+     */
+-   public String getSNR() throws Exception
++   public String getSNR() throws IOException
+    {
+-      String snr = "NA";
+-      try
+-      {
+-
+-         snr = SnmpCommands.snmpget("iciAppRssslRadioRssi" + rt1944_Snmp_Suffix, this.ipAddress);
+-
+-      }
+-      catch (IOException exceptionIO)
+-      {
+-         snr = "0";
+-         throw new Exception("No Snr value available. Please Check Radio Connection.");
+-      }
+-
++      String snr = "0";
++      snr = SnmpCommands.snmpget("iciAppRssslRadioRssi" + rt1944_Snmp_Suffix, this.ipAddress);
+       return snr;
+    }
+ 
+@@ -782,7 +612,6 @@
+     *
+     * @return
+     * @throws IOException
+-    * @throws TimeoutException
+     */
+    public String getSSID() throws IOException
+    {
+@@ -859,14 +688,11 @@
+    {
+       try
+       {
+-
+          SnmpCommands.snmpset("iciAppRssslNpmConfigAction" + rt1944_Snmp_Suffix, "i", Value, this.ipAddress);
+-
+       }
+       catch (TimeoutException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+ 
+    }
+@@ -874,15 +700,7 @@
+ 
+    public void radioModifier(String Value) throws IOException
+    {
+-      try
+-      {
+-         SnmpCommands.snmpset("iciAppRssslRadioAction" + rt1944_Snmp_Suffix, "s", Value, this.ipAddress);
+-      }
+-      catch (TimeoutException e)
+-      {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
+-      }
++      SnmpCommands.snmpset("iciAppRssslRadioAction" + rt1944_Snmp_Suffix, "s", Value, this.ipAddress);
+    }
+ 
+ 
+@@ -902,8 +720,7 @@
+       }
+       catch (TimeoutException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+ 
+    }
+@@ -929,18 +746,11 @@
+       }
+       catch (Exception e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+    }
+ 
+ 
+-   /**
+-    * Set the Operator Mode of the radio to "Master/Slave"
+-    *
+-    * @param msStatus
+-    * @throws IOException
+-    */
+    public void setBurstRate(String burstRate) throws IOException
+    {
+       try
+@@ -953,7 +763,6 @@
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the burst rate.");
+          throw new TimeoutException("The system timed out while trying to set the burst rate.");
+-
+       }
+    }
+ 
+@@ -968,7 +777,7 @@
+    {
+       try
+       {
+-         System.out.println("Setting command status to: " + msStatus.toLowerCase());
++         logger.info("Setting command status to: " + msStatus.toLowerCase());
+          SnmpCommands.snmpset("iciSelackConfigOpMode" + rt1944_Snmp_Suffix, "s", msStatus.toLowerCase(), this.ipAddress);
+          setSelackFlags(true);
+          this.msStatus = msStatus;
+@@ -977,7 +786,6 @@
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the Master/Slave status.");
+          throw new TimeoutException("The system timed out while trying to set the Master/Slave status.");
+-
+       }
+    }
+ 
+@@ -1032,10 +840,8 @@
+    /**
+     * This function is to set the Emcon status to true or false.
+     *
+-    * @param string
++    * @param emconStr
+     * @throws IOException
+-    * @throws TimeoutException
+-    * @throws IOException
+     */
+    public void setEmcon(String emconStr) throws IOException
+    {
+@@ -1073,7 +879,6 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the gateway.");
+-
+       }
+ 
+    }
+@@ -1098,7 +903,6 @@
+ 
+    public void setKeyEntryMethod(KeyEntryMethod keyEntryMethod) throws IOException
+    {
+-
+       try
+       {
+          String keyValue = null;
+@@ -1116,8 +920,7 @@
+       }
+       catch (TimeoutException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+ 
+    }
+@@ -1135,7 +938,8 @@
+     * radio.
+     *
+     * @param path
+-    * @throws Exception
++    * @throws IOException
++    * @throws TimeoutException
+     */
+    public void setPath(String path) throws IOException, TimeoutException
+    {
+@@ -1163,9 +967,7 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the antenna path.");
+-
+       }
+-
+    }
+ 
+ 
+@@ -1203,32 +1005,23 @@
+ 
+ 
+    /**
+-    * This function is to set the frequency for the current radio.
++    * To permanently set a frequency for current radio.
+     *
+-    * @param frequency
++    * @param frequency - the frequency to set
+     * @throws IOException
+-    * @throws TimeoutException
+-    * @throws IOException
+     */
+    public void setRadioFrequency(String frequency) throws IOException
+    {
+-      try
+-      {
+-         System.out.println("Setting radio Frequency " + this.ipAddress + " " + this.radioPort);
+-         getRequestState().requestedFrequency = frequency;
++      logger.info("Setting radio Frequency " + this.ipAddress + " " + this.radioPort);
++      getRequestState().requestedFrequency = frequency;
+ 
+-         SnmpCommands.snmpset("iciAppRssslRadioFrequency" + rt1944_Snmp_Suffix, "s", frequency, this.ipAddress);
+-         setAppFlags(true);
++      SnmpCommands.snmpset(ConstantValues.SNMP_OID_CHANGE_FREQ, "s", frequency);
++      setAppFlags(true);
+ 
+-         // Save the frequency changes to the radio.
+-         saveChangesPermanently();
+-         this.frequency = frequency;
+-      }
+-      catch (TimeoutException e)
+-      {
+-         throw new TimeoutException("The system timed out while trying to set the frequency.");
+-
+-      }
++      // Save the frequency changes to the radio.
++      SnmpCommands.snmpset(ConstantValues.SNMP_OID_SAVE_SESSION, "s", ConstantValues.SNMP_VALUE_SAVE_SESSION);
++      SnmpCommands.snmpset(ConstantValues.SNMP_OID_SAVE_PERMANENT, "i", ConstantValues.SNMP_VALUE_SAVE_PERMANENT);
++      this.frequency = frequency;
+    }
+ 
+ 
+@@ -1236,11 +1029,9 @@
+     * This function will allow the programmer to set the max allowable power for the radio.
+     *
+     * @param powerLevel
+-    * @throws IOException
+     * @throws TimeoutException
+-    * @throws IOException
+     */
+-   public void setRadioFullPower(String initialPowerLevel) throws IOException
++   public void setRadioFullPower(String initialPowerLevel) throws TimeoutException
+    {
+       try
+       {
+@@ -1248,11 +1039,10 @@
+          setAppFlags(true);
+          this.initialPowerLevel = initialPowerLevel;
+       }
+-      catch (TimeoutException e)
++      catch (Exception e)
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the Power status.");
+          throw new TimeoutException("The system timed out while trying to set the Power status.");
+-
+       }
+    }
+ 
+@@ -1308,9 +1098,7 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the Radio Power Level");
+-
+       }
+-
+    }
+ 
+ 
+@@ -1325,9 +1113,7 @@
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the Authentication");
+-
+       }
+-
+    }
+ 
+ 
+@@ -1392,14 +1178,12 @@
+             returnVal = true;
+          }
+       }
+-
+       return returnVal;
+-
+    }
+ 
+ 
+    /**
+-    * These actions are effective immediately, no system reboot is required. Committ modification
++    * These actions are effective immediately, no system reboot is required. Commit modification
+     * that were made to the app section of the radio.
+     *
+     * @throws IOException
+@@ -1408,7 +1192,6 @@
+    {
+       String Value = Integer.toString(mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues.RADIO_COMMIT);
+       networkModifier(Value);
+-
+    }
+ 
+ 
+@@ -1435,9 +1218,7 @@
+     */
+    private void populateCosQueue()
+    {
+-
+       Rt1944Logger.getInstance().getLogger().debug("Table Row count = " + cosTable.getRowCount());
+-
+       // This initializes the array values so that they can be read.
+       for (int j = 0; j < QueueList.values().length; j++)
+       {
+@@ -1481,8 +1262,6 @@
+             posList[QueueList.LOW.ordinal()].add(i);
+          }
+       }
+-
+-
+    }
+ 
+ 
+@@ -1493,10 +1272,8 @@
+       for (QueueList queueId : QueueList.values())
+       {
+          removedValue = posList[queueId.ordinal()].remove(dscpVal);
+-
+       }
+       return removedValue;
+-
+    }
+ 
+ 
+@@ -1526,17 +1303,10 @@
+       {
+          radioModifier("commit");
+       }
+-      catch (TimeoutException e)
+-      {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
+-      }
+       catch (IOException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+-
+    }
+ 
+ 
+@@ -1547,7 +1317,6 @@
+     */
+    private void saveChanges(final boolean session)
+    {
+-
+       worker = new SwingWorker()
+       {
+          public Object construct()
+@@ -1554,16 +1323,8 @@
+          {
+             return doWork(session);
+          }
+-
+-
+-         public void finished()
+-         {
+-
+-         }
+       };
+       worker.start();
+-
+-
+    }
+ 
+ 
+@@ -1586,10 +1347,8 @@
+     */
+    private void saveSelackChanges()
+    {
+-
+       String Value = Integer.toString(mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues.RADIO_SAVE);
+       selackModifier(Value);
+-
+    }
+ 
+ 
+@@ -1597,29 +1356,23 @@
+    {
+       appFlag = flag;
+       appSessionFlag = flag;
+-
+    }
+ 
+ 
+    private String setCosDscp(int dscpVal, int queueValue) throws IOException
+    {
+-
+       String oid = "iciAppRssslNpmConfigCosMark." + dscpVal;
+       try
+       {
+          SnmpCommands.snmpset(oid, "i", Integer.toString(queueValue), this.ipAddress);
+          setNetworkFlags(true);
+-
+       }
+       catch (TimeoutException e)
+       {
+          throw new TimeoutException("The system timed out while trying to set the priotiy of service");
+-
+       }
+       String oidToCheck = "iciAppRssslNpmOperCosMark." + dscpVal;
+       return oidToCheck + ":" + dscpVal;
+-
+-
+    }
+ 
+ 
+@@ -1627,7 +1380,6 @@
+    {
+       networkFlag = flag;
+       networkSessionFlag = flag;
+-
+    }
+ 
+ 
+@@ -1635,7 +1387,6 @@
+    {
+       selackFlag = flag;
+       selackSessionFlag = flag;
+-
+    }
+ 
+ 
+@@ -1667,7 +1418,6 @@
+ 
+    Object doWork(final boolean session)
+    {
+-      // System.out.println("_---------------------Doing work");
+       RequestState reqState = getRequestState();
+ 
+       // synchronize around reqState so that there can only be one request in
+@@ -1676,17 +1426,17 @@
+       {
+          try
+          {
+-            LoggingManager.getPrimaryLogger().debug("starting apply settings delay");
++            logger.debug("starting apply settings delay");
+ 
+             reqState.requestInProgress = true;
+             Thread.sleep(APPLY_CHANGES_GRACE_PERIOD);
+ 
+-            LoggingManager.getPrimaryLogger().debug("applying settings");
++            logger.debug("applying settings");
+             reqState.radioRebooting = false;
+             radioControlSaveChanges(session);
+             reqState.radioRebooting = true;
+             // make sure the radio has entered the reboot phase
+-            LoggingManager.getPrimaryLogger().debug("waiting for radio reboot");
++            logger.debug("waiting for radio reboot");
+             // add a guard here in case the radio never reboots so we don't lock up
+ 
+             long setStartTime = System.currentTimeMillis();
+@@ -1694,25 +1444,25 @@
+                Thread.sleep(200);
+ 
+             // wait for the radio to become available
+-            LoggingManager.getPrimaryLogger().debug("waiting for radio to become available");
++            logger.debug("waiting for radio to become available");
+             reqState.radioRebooting = true;
+             while (!isRadioResponding())
+                Thread.sleep(200);
+ 
+-            LoggingManager.getPrimaryLogger().debug("radio is available");
++            logger.debug("radio is available");
+             reqState.radioRebooting = false;
+          }
+          catch (InterruptedException e)
+          {
+-            LoggingManager.getPrimaryLogger().warn("Unexpected interrupt, exiting");
++            logger.warn("Unexpected interrupt, exiting");
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getSystemErrorLogger().error("Exception while saving radio settings: ", e);
++            logger.error("Exception while saving radio settings: ", e);
+          }
+          finally
+          {
+-            LoggingManager.getPrimaryLogger().debug("completed apply settings thread");
++            logger.debug("completed apply settings thread");
+             // make sure to cancel the request in progress status no matter
+             // how the request ends
+             reqState.requestInProgress = false;
+@@ -1721,5 +1471,4 @@
+       return "All Done";
+    }
+ 
+-
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/snmp/SnmpFunctions.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/snmp/SnmpFunctions.java	(revision 9849)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/snmp/SnmpFunctions.java	(working copy)
+@@ -8,11 +8,8 @@
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+-import mil.navy.lcs.mvcs.plugins.rt1944.configuration.ConfigManager;
+-import mil.navy.lcs.mvcs.plugins.rt1944.configuration.ConfigStore;
+-import mil.navy.lcs.mvcs.plugins.rt1944.logger.Rt1944Logger;
+-import mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+ import com.ireasoning.protocol.Session;
+ import com.ireasoning.protocol.TimeoutException;
+@@ -27,42 +24,22 @@
+ import com.ireasoning.protocol.snmp.SnmpVarBind;
+ import com.ireasoning.protocol.snmp.SnmpVarBindList;
+ 
++import mil.navy.lcs.mvcs.plugins.rt1944.configuration.ConfigManager;
++import mil.navy.lcs.mvcs.plugins.rt1944.configuration.ConfigStore;
++import mil.navy.lcs.mvcs.plugins.rt1944.misc.ConstantValues;
++
+ /**
+- * This class will perform basic snmp functions.
+- * <p>
+- * Date Created: June 10, 2010
+- * <p>
+- * $LastChangedBy$ <br>
+- * $LastChangedDate$ <br>
+- * $LastChangedRevision$
++ * This class will perform basic SNMP functions.
+  * 
+  * @author Andy Lubin
+- * @version 1.0
+  */
+-/*************************************************
+- * File History
+- ************************************************* 
+- * 
+- * 
+- * May 25, 2010 - AL - Added the ability to import to import mib files and dynamic resolve the OID
+- * from the Mib Node Name.
+- * 
+- * June 3rd AL - Changed the snmp sets and gets from string [] to String.
+- * 
+- * Sept. 14, 2010 AL - Added getTable function.
+- * 
+- * Sept. 15, 2010 AL - Added some throws clauses.
+- * 
+- */
+-
+-
+ public class SnmpFunctions
+ {
+-
++   protected static Logger logger = LoggerFactory.getLogger(SnmpFunctions.class);
+    protected boolean _numericalOID = false;
+    protected boolean _isSnmpV3 = false;
+    protected boolean snmpError;
+-   protected boolean useTcp = true; // Flag to set whether to use TCP or UDP(Default)
++   protected boolean useTcp = true; // Flag to use TCP (Default) or UDP
+    String readString = "";
+    String writeString = "";
+    int _version;
+@@ -77,7 +54,7 @@
+ 
+    SnmpSession session;
+    private String encryption;
+-   private int transportType;
++   private int transportType = Session.UDP; // Defaults UDP
+    SnmpUtils snmpUtility = new SnmpUtils();
+ 
+ 
+@@ -100,11 +77,10 @@
+ 
+    public void getConfiguration()
+    {
+-      LoggingManager.getPrimaryLogger().debug("Getting Snmp Configurations!");
++      logger.debug("Getting Snmp Configurations!");
+ 
+       try
+       {
+-
+          ConfigStore cs = ConfigManager.getInstance().getConfigStore();
+ 
+          readString = cs.getCommunityRead();
+@@ -136,16 +112,16 @@
+             _isSnmpV3 = false;
+          }
+ 
+-         System.out.println("********************************** Fields in SnmpFunctions **********************************");
+-         LoggingManager.getPrimaryLogger().debug("Encryption:" + encryption);
+-         LoggingManager.getPrimaryLogger().debug("IP address: " + ipAddress);
+-         LoggingManager.getPrimaryLogger().debug("Port: " + port);
+-         System.out.println("******************************** End Fields in SnmpFunctions ********************************");
++         logger.debug("************************* Defaults in RT1944 SnmpFunctions ***************************");
++         logger.debug("Encryption:" + encryption);
++         logger.debug("Default IP address: " + ipAddress);
++         logger.debug("Default port: " + port);
++         logger.debug("**************************************************************************************");
+ 
+       }
+       catch (Exception ex)
+       {
+-
++         logger.error("Error while getting configurations: ", ex);
+       }
+    }
+ 
+@@ -162,9 +138,8 @@
+ 
+ 
+    /**
++    * To perform the SNMP SET.
+     * 
+-    * Method Description
+-    * 
+     * @param _oids
+     * @param valueType
+     * @param value
+@@ -179,24 +154,25 @@
+ 
+ 
+    /**
+-    * This function performs snmpset using the iReasoning library
++    * To perform the SNMP SET.
+     * 
+     * @param _oids the OID of the SNMP set
+     * @param valueType value type of the SNMP set
+     * @param value the value to set
+-    * @return remoteIpAddress the IP address of the remote SNMP agent
++    * @return ipAddress the IP address of the SNMP agent
+     * @throws IOException
+     */
+-   public boolean snmpset(String _oids, String valueType, String value, String remoteIpAddress) throws IOException
++   public boolean snmpset(String _oids, String valueType, String value, String ipAddress) throws IOException
+    {
+       SnmpSession session = null;
+       try
+       {
+-
+          SnmpVarBindList vbList = new SnmpVarBindList();
+-         session = new SnmpSession(remoteIpAddress, port, readString, writeString, _version, transportType);
++         session = new SnmpSession(ipAddress, port, readString, writeString, _version, transportType);
++         session.setTimeout(snmpTimeout);
+ 
+-         session.setTimeout(snmpTimeout);
++         logger.info("SNMP SET version:" + _version + " OID:" + _oids + " to:" + ipAddress + " port:" + port + " value:" + value + " TCP:" + useTcp);
++
+          if (_isSnmpV3)
+          {
+             session.setV3Params(snmpV3User, strAuthProtocol, _authPassword, intPrivProtocol, _privPassword);
+@@ -203,8 +179,6 @@
+          }
+ 
+          SnmpPdu pdu = new SnmpPdu(SnmpConst.SET);
+-
+-
+          value = value.toLowerCase();
+          SnmpDataType t = SnmpUtils.translate(valueType, value);
+ 
+@@ -212,14 +186,11 @@
+          SnmpOID New_oid = MibUtil.lookupOID(_oids);
+          SnmpVarBind vb = new SnmpVarBind(new SnmpOID(New_oid), t);
+          vbList.add(vb);
+-
+-
+          pdu.addVarBinds(vbList);
+ 
+          SnmpPdu retPdu = session.snmpSetRequest(pdu);
+          snmpUtility.getOIDValue(retPdu);
+ 
+-
+          errorString = "";
+          snmpError = false;
+       }
+@@ -226,11 +197,11 @@
+       catch (IOException e)
+       {
+          throw new IOException("Connection to the agent could not be made.");
+-
+       }
+       finally
+       {
+-         session.close();
++         if (session != null)
++            session.close();
+       }
+       return true;
+    }
+@@ -237,20 +208,20 @@
+ 
+ 
+    /**
+-    * This function performs snmpset using the iReasoning library
++    * To perform the SNMP SET.
+     * 
+     * @param _oids the OID of the SNMP set
+     * @param valueType value type of the SNMP set
+     * @param value the value to set
+-    * @return remoteIpAddress the IP address of the remote SNMP agent
++    * @param ipAddress the IP address of the remote SNMP agent
+     */
+-   public boolean snmpset(String _oids, String valueType, byte[] value, String remoteIpAddress) throws TimeoutException, IOException
++   public boolean snmpset(String _oids, String valueType, byte[] value, String ipAddress) throws TimeoutException, IOException
+    {
+       SnmpSession session = null;
+       try
+       {
+          SnmpVarBindList vbList = new SnmpVarBindList();
+-         session = new SnmpSession(remoteIpAddress, port, readString, writeString, _version, transportType);
++         session = new SnmpSession(ipAddress, port, readString, writeString, _version, transportType);
+          session.setTimeout(snmpTimeout);
+          if (_isSnmpV3)
+          {
+@@ -258,27 +229,20 @@
+          }
+ 
+          SnmpPdu pdu = new SnmpPdu(SnmpConst.SET);
+-
+-
+          SnmpDataType t = new SnmpOctetString(value);
+-
+-
+          SnmpVarBind vb = new SnmpVarBind(_oids, t);
+          vbList.add(vb);
+-
+-
+          pdu.addVarBinds(vbList);
+ 
+          SnmpPdu retPdu = session.snmpSetRequest(pdu);
+          snmpUtility.getOIDValue(retPdu);
+ 
+-
+          errorString = "";
+          snmpError = false;
+       }
+       catch (IOException e)
+       {
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+       finally
+       {
+@@ -291,7 +255,7 @@
+ 
+ 
+    /**
+-    * Wrapper for snmpgetsubtree(String _oids, String ipAddress) that passes in local IP address.
++    * To get SNMP SubTree.
+     * 
+     * @param _oids
+     * @return
+@@ -303,25 +267,15 @@
+ 
+ 
+    /**
+-    * This function performs snmpgettree using the iReasoning library
++    * To get SNMP SubTree.
+     * 
+-    * @param _host the IP address of the SNMP agent
+-    * @param _port the port number of the SNMP agent
+     * @param _oids the OID for the SNMP query
+-    * @param valueType the type of value being set, this include string (s), integer (i), etc. (See
+-    *           the translate function in SnmpUtils class)
+-    * @param value the value being set
+-    * @param _user if using SNMPv3, a user name is needed to authenticate
+-    * @param _authProtocol if using SNMPv3, a protocol is needed to authenticate
+-    * @param _authPassword if using SNMPv3, a authenication password is needed to authenticate
+-    * @param _privProtocol if using SNMPv3, a prototol is needed to authenticate
+-    * @param _privPassword if using SNMPv3, a password is needed to authenticate
++    * @param ipAddress the IP address of the SNMP agent
+     * @return a string array containing the value of the subtree
+     */
+    public String snmpgetsubtree(String _oids, String ipAddress) throws IOException
+    {
+       String stuff = new String();
+-      // FileUtils fu = new FileUtils();
+       SnmpSession session = null;
+ 
+       try
+@@ -335,10 +289,8 @@
+             session.setV3Params(snmpV3User, strAuthProtocol, _authPassword, intPrivProtocol, _privPassword);
+          }
+ 
+-
+          SnmpVarBind[] retPdu = session.snmpGetSubtree(_oids);
+ 
+-
+          stuff = SnmpUtils.getVarBindValues(retPdu)[0];
+ 
+          errorString = "";
+@@ -346,7 +298,7 @@
+       }
+       catch (IOException e)
+       {
+-         e.printStackTrace();
++         logger.error("Error configuring radio: ", e);
+       }
+       finally
+       {
+@@ -359,7 +311,7 @@
+ 
+ 
+    /**
+-    * Wrapper for snmpget(String _oids, String ipAddress) that passes in local IP address.
++    * To perform SNMP GET.
+     * 
+     * @param _oids
+     * @return
+@@ -371,30 +323,17 @@
+ 
+ 
+    /**
+-    * This function performs snmpget using the iReasoning library
++    * To performs SNMP GET.
+     * 
+-    * @param _host the IP address of the SNMP agent
+-    * @param _port the port number of the SNMP agent
+     * @param _oids the OID for the SNMP query
+-    * @param valueType the type of value being set, this include string (s), integer (i), etc. (See
+-    *           the translate function in SnmpUtils class)
+-    * @param value the value being set
+-    * @param _user if using SNMPv3, a user name is needed to authenticate
+-    * @param _authProtocol if using SNMPv3, a protocol is needed to authenticate
+-    * @param _authPassword if using SNMPv3, a authenication password is needed to authenticate
+-    * @param _privProtocol if using SNMPv3, a prototol is needed to authenticate
+-    * @param _privPassword if using SNMPv3, a password is needed to authenticate
+-    * @return a string array containing the value of the snmpget
++    * @param ipAddress the IP address to query
+     * @throws IOException
+     */
+    public String snmpget(String _oids, String ipAddress) throws IOException
+    {
+-
+       String stuff = new String();
+       SnmpSession session = null;
+ 
+-      // FileUtils fu = new FileUtils();
+-
+       try
+       {
+          session = new SnmpSession(ipAddress, port, readString, writeString, _version, transportType);
+@@ -408,9 +347,7 @@
+          }
+ 
+          SnmpOID New_oid = MibUtil.lookupOID(_oids);
+-
+          SnmpPdu retPdu = session.snmpGetRequest(New_oid);
+-
+          stuff = snmpUtility.getOIDValue(retPdu)[0];
+ 
+          errorString = "";
+@@ -418,8 +355,7 @@
+       }
+       catch (IOException e)
+       {
+-         throw new IOException("Connection to the agent could not be made.");
+-
++         throw new IOException("Connection to the agent could not be made.", e);
+       }
+       finally
+       {
+@@ -432,9 +368,9 @@
+ 
+ 
+    /**
+-    * Method Description
++    * To get IP address
+     * 
+-    * @return
++    * @return the IP address
+     */
+    public String getIpAddress()
+    {
+@@ -478,8 +414,7 @@
+       }
+       catch (SocketException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         logger.error("Error: ", e);
+       }
+       catch (IOException e)
+       {
+@@ -546,8 +481,7 @@
+             }
+             catch (IOException e)
+             {
+-               Rt1944Logger.getInstance().getLogger().debug("Error While getting DSCP table", e);
+-               e.printStackTrace();
++               logger.error("Error While getting DSCP table", e);
+             }
+ 
+             dscpTable.addRow(retPdu.getVarBinds());
+@@ -559,12 +493,11 @@
+       }
+       catch (SocketException e1)
+       {
+-         Rt1944Logger.getInstance().getLogger().debug("Error While getting DSCP table", e1);
+-         e1.printStackTrace();
++         logger.error("Error While getting DSCP table", e1);
+       }
+       catch (IOException e1)
+       {
+-         Rt1944Logger.getInstance().getLogger().debug("Error While getting DSCP table", e1);
++         logger.error("Error While getting DSCP table", e1);
+          e1.printStackTrace();
+       }
+       finally
+@@ -630,13 +563,12 @@
+             }
+             catch (TimeoutException e)
+             {
+-               System.out.println("SnmpTimeout, exiting loop");
++               logger.error("SnmpTimeout, exiting loop. ", e);
+                break;
+             }
+             catch (Exception e)
+             {
+-               // TODO Auto-generated catch block
+-               e.printStackTrace();
++               logger.error("Error: ", e);
+                break;
+             }
+          }
+@@ -643,7 +575,7 @@
+       }
+       catch (Exception e)
+       {
+-         Rt1944Logger.getInstance().getLogger().debug("Error While getting connected radio table", e);
++         logger.error("Error While getting connected radio table", e);
+       }
+ 
+       return radioTable;
+Index: src/main/test/mil/navy/lcs/mvcs/plugins/rt1944/configuration/ConfigWorkerTest.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/plugins/rt1944/configuration/ConfigWorkerTest.java	(revision 9849)
++++ src/main/test/mil/navy/lcs/mvcs/plugins/rt1944/configuration/ConfigWorkerTest.java	(working copy)
+@@ -27,13 +27,14 @@
+       ConfigWorker cw = new ConfigWorker();
+       cw.readConfig();
+       ConfigStore cs = cw.getConfigStore();
++      System.out.println("Read: " + cs.getCommunityRead() + " Write: " + cs.getCommunityWrite());
+ 
+       assertEquals("PBEWithMD5AndDES", cs.getCredentialsAlgorithm());
+-      assertEquals("192.168.40.102", cs.getSnmpAgentIpAddress());
++      assertEquals("192.168.1.32", cs.getSnmpAgentIpAddress());
+       assertEquals(161, cs.getSnmpAgentPort());
+       assertEquals(2, cs.getSnmpVersion());
+-      assertEquals("public", cs.getCommunityRead());
+-      assertEquals("private", cs.getCommunityWrite());
++      assertEquals("ici_rw", cs.getCommunityRead());
++      assertEquals("ici_rw", cs.getCommunityWrite());
+       assertEquals("mvcssrv", cs.getSnmpV3User());
+       assertEquals("MD5", cs.getAuthAlgorithm());
+       assertEquals("AES", cs.getPrivacyAlgorithm());

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<mission>
+   <title>Factory Mission Configuration For UUV</title>
+   <name>default-mission-uuv.xml</name>
+   <author>MVCS Administrator</author>
+   <description>This mission is responsible for managing a Vehicle (UUV). The radios on-board is
+      RT-1988.</description>
+   <dateCreated>2013-03-12T14:32:00-06:00</dateCreated>
+   <ship>
+      <id>100</id>
+      <name>LCS1</name>
+      <typeId>lcs1</typeId>
+      <type>LCS1</type>
+      <ipAddress>172.20.10.2</ipAddress>
+      <rmsDliIpAddress>10.30.28.219</rmsDliIpAddress>
+      <snmpAgentPort>1460</snmpAgentPort>
+      <snmpTrapPort>1462</snmpTrapPort>
+      <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.10.3</ipAddress>
+      </crossDomain>
+      <othAmpController>
+         <ipAddress>172.20.10.3</ipAddress>
+         <port>4008</port>
+      </othAmpController>      
+      <radio>
+         <id>rt1944-00</id>
+         <typeId>rt1944</typeId>
+         <linkType>RT-1944</linkType>
+         <networkId>1</networkId>
+         <lnrFrequency>2367</lnrFrequency>
+         <missionFrequency>2212</missionFrequency>
+         <relayFrequency>3000</relayFrequency>
+      </radio>
+      <radio>
+         <id>prc117-0</id>
+         <typeId>prc117</typeId>
+         <linkType>PRC-117</linkType>
+         <networkId>1</networkId>
+      </radio>
+      <radio>
+         <id>iridiumScu-0</id>
+         <typeId>iridium</typeId>
+         <linkType>Iridium SCU</linkType>
+         <networkId>1</networkId>
+      </radio>
+      <radio>
+         <id>rt1988-0</id>
+         <typeId>rt1988</typeId>
+         <linkType>RT-1988</linkType>
+         <networkId>1</networkId>
+      </radio>
+      <snmp>
+         <timeout>10000</timeout>
+         <numberOfRetries>1</numberOfRetries>
+         <version>3</version>
+      </snmp>
+   </ship>
+   <vehicle>
+      <id>6</id>
+      <name>UUV6</name>
+      <typeId>uuv</typeId>
+      <type>UUV</type>
+      <ipAddress>172.20.16.2</ipAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>UUV6</mpsName>
+      <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+      <depthLimit>30.5</depthLimit>
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.16.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-85</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>true</testing>
+         <ipAddress>172.20.16.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>LAN</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+      </lanBypass>
+      <radio>
+         <id>SATCOM</id>
+         <typeId>rt1988</typeId>
+         <linkType>RT-1988</linkType>
+         <linkNumber>3</linkNumber>
+         <priority>3</priority>
+         <networkId>1</networkId>
+         <encrypterTypeId>ips250</encrypterTypeId>
+		 <encrypterRedIp>172.20.16.18</encrypterRedIp>
+         <ampId></ampId>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>30</heartbeatFrequency>
+         <heartbeatWindowSize>600</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>2000</losRange>
+         <losLowerGuardLine>2</losLowerGuardLine>
+         <lrRange>50</lrRange>
+         <lrLowerGuardLine>2</lrLowerGuardLine>
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>127.0.0.1</snmpAgentIpAddress>
+         <snmpAgentPortNumber>4161</snmpAgentPortNumber>
+      </radio>
+      <matrixSwitch>
+         <id>ms-60</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>true</testing>
+         <serialPort>172.20.16.3</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId></radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-6</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>true</testing>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>SATCOM</id>
+            <devNumber>1</devNumber>
+            <devName>RT-1988</devName>
+         </circuitBreaker>
+      </power>
+      <!-- <acl> <state>Mission</state> <priority>Low</priority> <access>permit</access> <trafficType>udp</trafficType> 
+         <sourceType>host</sourceType> <source>10.30.28.1</source> <destinationType>host</destinationType> <destination>10.30.30.1</destination> 
+         <portMatching>eq</portMatching> <port>1111</port> </acl> -->
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+</mission>

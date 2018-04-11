@@ -1,0 +1,718 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-interface
+Index: src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java	(revision 9806)
++++ src/main/java/mil/navy/lcs/mvcs/iface/alerts/AlertType.java	(working copy)
+@@ -121,6 +121,7 @@
+    SLEEP_MODE_CHANGED("The sleep mode has changed to %s", LOW, OTHER), //
+    SLEEP_NORMAL_RADIO_IN_USE("Cannot set sleep normal since higher priority vehicle, %s, is using the P2P radio", MEDIUM, OTHER), //
+    SLEEP_WHILE_EMCON("Cannot set sleep state while ship is in EMCON", MEDIUM, OTHER), //
++   UPS_CONNECTION_SUCCESSFUL("Successfully connected to UPS device via serial port %s", MEDIUM, POWER), //
+    UPS_POWER_RESTORED("UPS AC power restored, aborting shutdown", MEDIUM, POWER), //
+    UPS_REMAINING_TIME("UPS AC power disrupted, %s minutes until shutdown", HIGH, POWER), //
+    UPS_SHUTODWN("Shutting down due to extended power loss", HIGH, POWER), //
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(revision 9806)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(working copy)
+@@ -7,17 +7,12 @@
+ import java.util.Hashtable;
+ import java.util.StringTokenizer;
+ 
+-import javax.sound.midi.MidiDevice.Info;
+-
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+-import mil.navy.lcs.mvcs.common.config.exception.DataAccessException;
+ import mil.navy.lcs.mvcs.common.config.model.PowerUps;
+ import mil.navy.lcs.mvcs.common.db.DatabaseManager;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.misc.ListenerValues;
+ import mil.navy.lcs.mvcs.common.misc.serialUtilities.SerialComms;
+ import mil.navy.lcs.mvcs.common.misc.serialUtilities.SerialReceivedDataListenerInterface;
+@@ -25,7 +20,6 @@
+ import mil.navy.lcs.mvcs.iface.alerts.AlertsManager;
+ import mil.navy.lcs.mvcs.iface.app.ExitAction;
+ import mil.navy.lcs.mvcs.sca.main.ShipMain;
+-import mil.navy.lcs.mvcs.sca.pmfl.PmflComponentData;
+ 
+ /**
+  * Handles the serial communications and maintains the information for the Uninterruptable Power
+@@ -43,17 +37,12 @@
+    public static final String UPS_OVERLOAD = "UPS OVERLOAD";
+    public static final String UPS_TEMPERATURE = "UPS OVERTEMPERATURE";
+    public static final String UTILITY_POWER = "UTILITY OFF";
+-   
++
+    private static final Logger logger = LoggerFactory.getLogger(UpsManager.class);
+ 
+    /** The single instance of the ScaPowerManager. */
+    private static volatile UpsManager instance = null;
+ 
+-   /**
+-    * boolean that represents the stat of the ups configuration.
+-    * 
+-    */
+-
+    private static final int ONE = 0;
+ 
+    /** Variable Description */
+@@ -66,8 +55,6 @@
+ 
+    private Boolean goodUpsPower;
+ 
+-   private volatile boolean isPolling = true;
+-
+    /** used to indicate if this is a warm start. */
+    private boolean isWarmStart;
+ 
+@@ -84,13 +71,9 @@
+     */
+    private boolean testing;
+ 
+-   /**
+-    * a reference to the SerialComms object.
+-    */
++   /** a reference to the SerialComms object. */
+    private SerialComms upsComms;
+ 
+-   private Integer upsPollRate;
+-
+    /**
+     * A (defaulted) reference to the ups serial port. Typically the default is overwritten by
+     * reading the UPS_SERIAL_DEVICE property defined within the configs file property in order to
+@@ -105,9 +88,16 @@
+     */
+    private Hashtable<String, UpsHardwareData> upsSettingsHashtable = null;
+ 
+-   Thread BackUpPowerThread = null;
++   /** Thread polling UPS status. */
++   protected Thread upsStatusPollingThread = null;
+ 
++   /** checking communication to UPS device and polling status. */
++   protected UpsConnectionAndStatus upsConnectionAndPollStatus = null;
+ 
++   /** Denotes ups device connection status. */
++   protected boolean upsConnected = false;
++
++
+    /**
+     * Returns the single instance of the UPS power manager.
+     * 
+@@ -123,7 +113,7 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getSystemErrorLogger().error("*** An exception occurred while trying" + "to initialize UPS manager & Serial Port " + e.getMessage());
++            logger.error("*** An exception occurred while trying" + "to initialize UPS manager & Serial Port " + e.getMessage());
+             instance = null;
+          }
+       return instance;
+@@ -142,35 +132,24 @@
+    }
+ 
+ 
+-   /**
+-    * Private constructor. Do not make public or add any other constructors.
+-    * 
+-    */
++   /** Private constructor. Do not make public or add any other constructors. */
+    private UpsManager()
+    {
++      logger.info("Initializing new instanceof: {} ", this.getClass().getName());
+       try
+       {
+          initialize();
+       }
+-      catch (ConfigException e)
+-      {
+-         LoggingManager.getSystemErrorLogger().error(e.getMessage());
+-      }
+-      catch (DataAccessException e)
+-      {
+-         LoggingManager.getSystemErrorLogger().error(e.getMessage());
+-
+-      }
+       catch (Exception e)
+       {
+-         LoggingManager.getSystemErrorLogger().error(e.getMessage());
++         logger.error(e.getMessage());
+       }
+    }
+ 
+ 
+    /**
+-    * Method Description This method provides an external interface to add property listeners in the
+-    * PowerOutputData object
++    * This method provides an external interface to add property listeners in the PowerOutputData
++    * object
+     * 
+     * @param listener The PropertyChangeListener to be added.
+     */
+@@ -183,7 +162,7 @@
+ 
+    /**
+     * Add a PropertyChangeListener for a specific property. This function provides an external
+-    * interface to add a propertylistener in the PowerOutputData object
++    * interface to add a property listener in the PowerOutputData object
+     * 
+     * @param propertyName The name of the property to listen on.
+     * @param listener The PropertyChangeListener to be added.
+@@ -235,7 +214,7 @@
+ 
+       if (serialPortId.startsWith(upsSerialPort))
+       {
+-         LoggingManager.getPrimaryLogger().debug("Got UPS response: " + data);
++         logger.debug("Got UPS response: " + data);
+ 
+          processUpsStatus(data);
+ 
+@@ -255,14 +234,12 @@
+       int remainingTime;
+       int countdownTime;
+ 
+-      // NOTE - right now there is only one UPS, so we go to the hash table
+-      // and get item zero (0).
+-      // If there are more than one then this all needs to be revisited, both
+-      // here and in the
+-      // calling method (it must stipulate which UPS).
++      /*
++       * NOTE - right now there is only one UPS, so we go to the hash table and get item zero (0).
++       * If there are more than one then this all needs to be revisited, both here and in the
++       * calling method (it must stipulate which UPS).
++       */
+ 
+-      // upsSettingsHashtable.get(0).setPowered(tempBoolean.booleanValue());
+-
+       goodUpsPower = tempBoolean.booleanValue();
+ 
+       if (!goodUpsPower)
+@@ -270,7 +247,7 @@
+          countdownFlag = true;
+ 
+          // min time = pollrate/1000 msec/60 sec
+-         countdownTime = (upsPollRate / 60000) * shutdownCnt++;
++         countdownTime = (UPS_POLL_RATE / 60000) * shutdownCnt++;
+          remainingTime = shutdownTime - countdownTime; // minutes
+          AlertsManager.getInstance().addAlert(shipId, AlertType.UPS_REMAINING_TIME, remainingTime);
+          // call shutdown
+@@ -311,13 +288,11 @@
+ 
+ 
+    /**
+-    * Initializes the class.
++    * Initializes connection to UPS device.
+     * 
+-    * @throws Exception
+     */
+-   private void initialize() throws Exception
++   private void initialize()
+    {
+-
+       this.testing = ConfigManager.getInstance().getShip().getPowerUps().isTesting();
+ 
+       shipId = ConfigManager.getInstance().getShip().getId();
+@@ -324,38 +299,27 @@
+ 
+       isWarmStart = DatabaseManager.getInstance().getShipInfoDao().find(shipId).isWarmStart();
+ 
+-      // initialize the UPS settings hash table and populate it with the
+-      // initial data from
+-      // configs
++      PowerUps localUps = ConfigManager.getInstance().getShip().getPowerUps();
++      upsSerialPort = localUps.getSerialPort();
++      shutdownTime = localUps.getShutdownTime().intValue();
+ 
++      // initialize the UPS settings hash table and populate it with the initial data from configs
+       upsSettingsHashtable = new Hashtable<String, UpsHardwareData>();
+-      loadUpsDevicesData();
++      loadUpsDevicesData(localUps);
+ 
+-      PowerUps localPower = ConfigManager.getInstance().getShip().getPowerUps();
++      logger.info("Starting UPS Manager with serial port " + upsSerialPort + ". Warm start is " + isWarmStart);
+ 
+-      upsSerialPort = localPower.getSerialPort();
+-
+-      shutdownTime = localPower.getShutdownTime().intValue();
+-
+-      upsPollRate = localPower.getPollRate().intValue();
+-
+       if (testing)
++      {
++         logger.info("UpsManager is in testing mode! No need of connection to UPS device.");
+          return;
+-
+-      try
+-      {
+-         upsComms = new SerialComms(upsSerialPort, UPS_BAUD_RATE);
+-         upsComms.addSerialReceivedDataListener(this);
+       }
+-      catch (Exception e)
+-      {
+-         LoggingManager.getSystemErrorLogger().error("Failed to get UPS port ", e);
+-         throw e;
+-      }
+ 
+-      LoggingManager.getPrimaryLogger().info("Starting UPS Manager with serial port " + upsSerialPort + ". Warm start is " + isWarmStart);
+-
+-      pollBackUpPower(UPS_POLL_RATE);
++      /*
++       * initialize serial communication to the UPS device. If unsuccessful, note it and setup a
++       * periodic check to see if the communication becomes available.
++       */
++      startUpsConnectionAndStatusPollThread();
+    }
+ 
+ 
+@@ -364,18 +328,14 @@
+     * should only be called once and at class initialization.
+     * 
+     */
+-   private void loadUpsDevicesData()
++   private void loadUpsDevicesData(PowerUps powerUps)
+    {
+       try
+       {
+-         // There is only one UPS at this time, but in theory there could be
+-         // more. If we go to
+-         // > 1 then this method's calls to the config manager will need to
+-         // be changed in that it
+-         // will need to loop though a list of them.
++         // There is only one UPS at this time, but in theory there could be more. If we go to > 1
++         // then this method's calls to the config manager will need to be changed in that it will
++         // need to loop though a list of them.
+ 
+-         PowerUps powerUps = ConfigManager.getInstance().getShip().getPowerUps();
+-
+          String hardwareId = powerUps.getId();
+          String hardwareType = powerUps.getType();
+          int outputNumber = ONE;
+@@ -398,48 +358,23 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("*** Error loading the UPS data. Error was: " + e.getMessage());
++         logger.error("*** Error loading the UPS data. Error was: " + e.getMessage());
+       }
+    }
+ 
+ 
+    /**
+-    * A method that will set up a thread to poll the UPS unit for status at a specified periodic
+-    * rate.
++    * To initialize serial communication to the UPS device. If not successful, note it and
++    * periodically re-check to see if the communication becomes available. If successful, add the
++    * given serial data listener then start a periodic polling thread.
+     * 
+-    * @param rateOfPoll - the rate in miliseconds at which the UPS unit will be polled for status.
+-    * 
+     */
+-   private void pollBackUpPower(final int rateOfPoll)
++   private void startUpsConnectionAndStatusPollThread()
+    {
+-      BackUpPowerThread = new Thread(new Runnable()
+-      {
+-         public void run()
+-         {
+-            try
+-            {
+-               while (isPolling)
+-               {
+-
+-                  requestBackupPowerStatus();
+-                  try
+-                  {
+-                     Thread.sleep(rateOfPoll);
+-                  }
+-                  catch (Exception e)
+-                  {
+-                     // ignore
+-                  }
+-               } // while
+-            }
+-            catch (Exception e)
+-            {
+-               LoggingManager.getSystemErrorLogger().warn("Unable to poll UPS", e);
+-            }
+-         }
+-      }, "MVCS-" + this.getClass().getSimpleName() + "-upsPollThread");
+-      BackUpPowerThread.setDaemon(true);
+-      BackUpPowerThread.start();
++      upsConnectionAndPollStatus = new UpsConnectionAndStatus(this);
++      Thread th = new Thread(upsConnectionAndPollStatus, "MVCS-" + this.getClass().getSimpleName() + "-upsConnectionAndStatusThread");
++      th.setDaemon(true);
++      th.start();
+    }
+ 
+ 
+@@ -453,9 +388,8 @@
+     */
+    private void processUpsStatus(String inputData)
+    {
++      logger.debug("In processUpsStatus where status = " + inputData);
+ 
+-      LoggingManager.getPrimaryLogger().debug("In processUpsStatus where status = " + inputData);
+-
+       for (UpsHardwareData upsData : upsSettingsHashtable.values())
+       {
+          StringTokenizer st = new StringTokenizer(inputData, "\n");
+@@ -502,13 +436,11 @@
+                }
+ 
+             } // if
+-         } // while
++         } // end of while
++      } // end of for
++   }// end of method
+ 
+-      } // while
+ 
+-   }
+-
+-
+    /**
+     * A method that will request the current status of the UPS unit via it's serial interface. This
+     * method is used in the polling process and should not be called externally (private) to avoid
+@@ -517,12 +449,12 @@
+     */
+    private boolean requestBackupPowerStatus()
+    {
+-      boolean results = false;
+       if (upsComms != null)
+       {
+-         results = upsComms.write("ALARM?\n\r");
++         return upsComms.write("ALARM?\n\r");
+       }
+-      return results;
++
++      return false;
+    }
+ 
+ 
+@@ -533,25 +465,20 @@
+    {
+       try
+       {
+-         // set polling to false, then interrupt the thread so it checks it
+-         isPolling = false;
+-         BackUpPowerThread.interrupt();
+-         // wait for thread to exit, but move on if it doesn't, since it was set
+-         // as a daemon anyway
+-         BackUpPowerThread.join(UPS_POLL_RATE);
++         // terminate the connection and status
++         if (upsConnectionAndPollStatus != null)
++         {
++            logger.info(" UPS manager is attempting to release serial communications port");
++            upsConnectionAndPollStatus.shutdownConnection();
++         }
+       }
+       catch (Exception e)
+       {
+          // ignore
+       }
++   }
+ 
+-      if (this.upsComms != null)
+-      {
+-         LoggingManager.getPrimaryLogger().info(" UPS manager is attempting to release serial communications port");
+-         upsComms.closeSerialPort(); // close port files
+-      }
+-   }
+-   
++
+    /**
+     * Used to retrieve the status of the UPS power supply
+     * 
+@@ -558,27 +485,123 @@
+     */
+    public boolean getRequestUpsPowerOnStatus()
+    {
+-	   
+-       boolean status = false;
+-       
+-       if (upsComms != null)
+-       {
+-    	   try
+-    	   {
+-	          status = upsComms.write("ALARM?\n\r");
+-	          logger.info( "UpsComms (BIT TOOL Message report): " +  status );
+-	          
+-    	   }
+-    	   catch( Exception e )
+-    	   {
+-    		   logger.info( "UpsComms (BIT Tool) Exception: " + e );
+-    	   }
+-                        
+-       }
+-       
+-       return status;                 
+-       
++      boolean results = false;
++
++      if (upsComms != null)
++      {
++         results = upsComms.write("ALARM?\n\r");
++
++         try
++         {
++            upsComms.write("ALARM?\n\r");
++            upsComms.write("FAULT?\n\r");
++            upsComms.write("BATTERY?\n\r");
++            upsComms.write(2);
++
++            logger.info("upsComms (ALARM): " + upsComms.write("ALARM?\n\r"));
++            logger.info("upsComms (FAULT): " + upsComms.write("FAULT?\n\r"));
++            logger.info("upsComms: (BATTERY): " + upsComms.write("BATTERY?\n\r"));
++            logger.info("upsComms: (BATTERY): " + upsComms.write(2));
++         }
++         catch (Exception e)
++         {
++            logger.info("PMFL UPS: (Fail to grab status of UPS:  " + e);
++         }
++      }
++      return results;
+    }
+-   
+-   
+-}
++
++
++   /**
++    * This is a runnable class to check serial connection to UPS device. Runs serial communication
++    * to the UPS device. If not successful, note it and periodically re-check to see if the
++    * communication becomes available. If successful, add the given serial data listener then starts
++    * periodic polling status.
++    */
++   protected class UpsConnectionAndStatus implements Runnable
++   {
++      private SerialReceivedDataListenerInterface serialReceivedDataListener;
++
++      /** Denotes connection to UPS is allowed. Defaults to true */
++      protected boolean connectionAllowed = true;
++      
++
++      /**
++       * Default constructor
++       * 
++       * @param serialDataListener the serial data listener.
++       */
++      public UpsConnectionAndStatus( SerialReceivedDataListenerInterface serialDataListener)
++      {
++         this.serialReceivedDataListener = serialDataListener;
++      }
++
++
++      /**
++       * To gracefully shutdown the serial port connection to UPS device. Sets the connectionAllowed
++       * and upsConnectd flags to false.
++       */
++      public void shutdownConnection()
++      {
++         connectionAllowed = false;
++         upsConnected = false;
++         if (upsComms != null)
++         {
++            upsComms.closeSerialPort();
++         }
++      }
++
++
++      @Override
++      public void run()
++      {
++         // check is allowed and UPS is not connected
++         while (connectionAllowed)
++         {
++            // ups is connected
++            if (upsConnected)
++            {
++               // poll status
++               try
++               {
++                  requestBackupPowerStatus();
++               }
++               catch (Exception e)
++               {
++                  logger.warn("Unable to poll UPS: ", e);
++               }
++            }
++
++            // ups is not connected
++            else
++            {
++               try
++               {
++                  // try to connect
++                  upsComms = new SerialComms(upsSerialPort, UPS_BAUD_RATE, "UpsManager");
++                  upsConnected = true;
++                  logger.info("Successfully connected to UPS device via serial port {}!", upsSerialPort);
++                  AlertsManager.getInstance().addAlert(shipId, AlertType.UPS_CONNECTION_SUCCESSFUL, upsSerialPort);
++                  // add serial received data listener.
++                  upsComms.addSerialReceivedDataListener(serialReceivedDataListener);
++               }
++               catch (Exception e)
++               {
++                  logger.error("Failed to connect the UPS device: ", e);
++               }
++            }
++
++            try
++            {
++               Thread.sleep(UPS_POLL_RATE);
++            }
++            catch (InterruptedException ie)
++            {
++               // ignore
++            }
++         } // while connection is allowed
++      }// end of run
++
++   }// end of UpsConnectionCheck class
++
++}// end of UpsManager class
+Index: src/main/java/mil/navy/lcs/mvcs/sca/corba/MvcsMpsAlerts.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/corba/MvcsMpsAlerts.java	(revision 9806)
++++ src/main/java/mil/navy/lcs/mvcs/sca/corba/MvcsMpsAlerts.java	(working copy)
+@@ -6,13 +6,6 @@
+ import java.util.Hashtable;
+ import java.util.Properties;
+ 
+-import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+-import mil.navy.lcs.mvcs.iface.alerts.AlertsEvent;
+-import mil.navy.lcs.mvcs.iface.alerts.AlertsManager;
+-import mil.navy.lcs.mvcs.iface.alerts.IAlertsListener;
+-
+ import org.omg.CORBA.Any;
+ import org.omg.CosEventChannelAdmin.EventChannelHelper;
+ import org.omg.CosEventChannelAdmin.ProxyPushConsumer;
+@@ -26,6 +19,12 @@
+ import AlertServices.Alert;
+ import AlertServices.AlertHelper;
+ import cssfs.idd.tcAlertDataIf;
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
++import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import mil.navy.lcs.mvcs.iface.alerts.AlertsEvent;
++import mil.navy.lcs.mvcs.iface.alerts.AlertsManager;
++import mil.navy.lcs.mvcs.iface.alerts.IAlertsListener;
+ 
+ 
+ public class MvcsMpsAlerts extends PushSupplierPOA implements IAlertsListener
+@@ -124,7 +123,8 @@
+ 
+    public static void shutdown()
+    {
+-      proxyPushConsumer.disconnect_push_consumer();
++      if (proxyPushConsumer != null)
++         proxyPushConsumer.disconnect_push_consumer();
+    }
+ 
+ 
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(revision 9806)
++++ src/main/java/mil/navy/lcs/mvcs/common/misc/serialUtilities/SerialComms.java	(working copy)
+@@ -24,7 +24,7 @@
+ {
+    private static final int COMM_WORKAROUND_TIME_MS = 10;
+ 
+-   private CommPortIdentifier portId;
++   private CommPortIdentifier portIdentifier;
+    private String portOwner;
+    private InputStream inputStream;
+    private SerialPort serialPort = null;
+@@ -54,27 +54,27 @@
+       boolean portFound = false;
+       while (portList.hasMoreElements())
+       {
+-         portId = (CommPortIdentifier) portList.nextElement();
++         portIdentifier = (CommPortIdentifier) portList.nextElement();
++         LoggingManager.getPrimaryLogger().info("CommPort {} found type is {}", portIdentifier.getName(), portIdentifier.getPortType());
+ 
+          // Get the serial port from the list of ports
+-         if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL && portId.getName().equals(commPort))
++         if (portIdentifier.getPortType() == CommPortIdentifier.PORT_SERIAL && portIdentifier.getName().equalsIgnoreCase(commPort))
+          {
+             portFound = true;
+             break;
+          }
+-
+       }
+ 
+       if (!portFound)
+       {
+-         LoggingManager.getSystemErrorLogger().error("Cannot find serial port " + commPort);
++         LoggingManager.getPrimaryLogger().error("Cannot find serial port " + commPort);
+          throw new Exception("Serial Port not found: " + commPort);
+       }
+ 
+       try
+       {
+-         serialPort = (SerialPort) portId.open(newPortOwner, 3000);
+-         portOwner = portId.getCurrentOwner();
++         serialPort = (SerialPort) portIdentifier.open(newPortOwner, 3000);
++         portOwner = portIdentifier.getCurrentOwner();
+ 
+          serialPort.addEventListener(this);
+ 
+@@ -120,7 +120,7 @@
+          if (serialPort != null)
+             serialPort.close();
+ 
+-         LoggingManager.getSystemErrorLogger().error("Error opening serial port:\n", e);
++         LoggingManager.getPrimaryLogger().error("Error opening serial port: " + e.getMessage());
+ 
+          throw e;
+       }
+@@ -128,15 +128,6 @@
+ 
+ 
+    /**
+-    * Same as other constructor. Kept for compatibility with existing code.
+-    */
+-   public SerialComms( String commPort, int baudRate) throws Exception
+-   {
+-      this(commPort, baudRate, "");
+-   }
+-
+-
+-   /**
+     * Determines the serial event type. If type is DATA_AVAILABLE, this method waits
+     * <i>gatherTime</i> second(s), reads the input stream into the read buffer, then calls
+     * fireSerialReceivedData to notify listeners of the incoming string.
+@@ -178,7 +169,7 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getSystemErrorLogger().error("SerialPortEvent.DATA_AVAILABLE exception", e);
++            LoggingManager.getPrimaryLogger().error("SerialPortEvent.DATA_AVAILABLE exception", e);
+          }
+ 
+       }
+@@ -213,7 +204,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getSystemErrorLogger().error("serial write Error ", e);
++         LoggingManager.getPrimaryLogger().error("serial write Error ", e);
+       }
+ 
+       return results;
+@@ -252,7 +243,7 @@
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getSystemErrorLogger().error("serial write Error ", e);
++         LoggingManager.getPrimaryLogger().error("serial write Error ", e);
+       }
+ 
+       return results;

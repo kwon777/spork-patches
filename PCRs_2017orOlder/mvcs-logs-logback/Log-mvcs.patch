@@ -1,0 +1,52 @@
+Index: src/main/resources/logback.xml
+===================================================================
+--- src/main/resources/logback.xml	(revision 9583)
++++ src/main/resources/logback.xml	(working copy)
+@@ -10,8 +10,8 @@
+ 		<file>/var/log/mvcs/primary.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>/var/log/mvcs/primary.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 	    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+             <level>TRACE</level>
+@@ -28,8 +28,8 @@
+ 		<file>/var/log/mvcs/error.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>/var/log/mvcs/error.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+@@ -38,11 +38,11 @@
+ 	</appender>
+ 	<appender name="ACTION"
+ 		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>/var/log/mvcs/actions.log</file>
++		<file>/var/log/mvcs/action.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>60</maxHistory>
++			<fileNamePattern>/var/log/mvcs/action.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<maxHistory>31</maxHistory>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+@@ -54,8 +54,8 @@
+ 		<file>/var/log/mvcs/trace.log</file>
+ 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+ 			<!-- daily rollover -->
+-			<fileNamePattern>logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
+-			<maxHistory>2</maxHistory>
++			<fileNamePattern>/var/log/mvcs/trace.%d{yyyy-MM-dd}.log</fileNamePattern>
++			<maxHistory>1</maxHistory>
+ 		</rollingPolicy>
+ 		<encoder>
+ 			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n

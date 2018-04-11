@@ -1,0 +1,123 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RemoteVehicleNodeHandler.java	(working copy)
+@@ -11,6 +11,7 @@
+ 
+ import mil.navy.lcs.mvcs.common.handler.IMvcsNodeHandler;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import mil.navy.lcs.mvcs.common.messages.RadioConfigureMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.net.receiver.MessageReceiver;
+ import mil.navy.lcs.mvcs.common.net.sender.MessageQueue;
+@@ -602,42 +603,62 @@
+     * 
+     * @param radioId - the radio ID.
+     * @param freq - the frequency to set.
++    * @return true if successful
+     */
+-   public void requestRadioFrequencyChange(String radioId, String frequency)
++   public boolean requestRadioFrequencyChange(String radioId, String frequency)
+    {
+       if (radioId != null && !radioId.equals(""))
+       {
+          IRadioPlugin plugin = VcaRadioPluginsManager.getInstance().getRadioPluginByName(radioId);
+          if (plugin != null)
+-            plugin.setRadioFrequency(frequency);
++            return plugin.setRadioFrequency(frequency);
+       }
++
++      return false;
+    }
+ 
+ 
+    /**
+-    * To request to configure radio to connect. If point-to-point radio, request is sent to connect
+-    * to radio. If not P2P radio, request is sent to the change radio frequency.
++    * To request to configure radio to connect. For point-to-point radio, request is sent to 1.
++    * connect to radio if no frequency is given OR 2. change frequency with the given frequency. For
++    * none P2P radio, request is sent to the change radio frequency.
+     * 
+     * @param radioId - the radio ID.
+-    * @param freq - the frequency to set.
++    * @param frequency - the frequency to set.
+     */
+    public void requestConfigureRadio(String radioId, String frequency)
+    {
+       try
+       {
+-         // P2P radio
++         // P2P radio (such as PRC117)
+          if (node.getLink(radioId).mvcsLinkType.pointToPoint)
+          {
+-            // Set up connection using the frequency from the configuration.
+-            VcaRadioPluginsManager.getInstance().getRadioPluginByName(radioId).connectToRadio(node.getNodeId(), radioId);
++            // frequency is not given or less than 1
++            if (frequency == null || frequency.compareTo("1") < 0)
++               // Set up connection using the frequency from the configuration.
++               VcaRadioPluginsManager.getInstance().getRadioPluginByName(radioId).connectToRadio(node.getNodeId(), radioId);
++
++            // frequency is 1 or greater
++            else
++            {
++               // change frequency
++               if (!requestRadioFrequencyChange(radioId, frequency))
++                  // change unsuccessful
++                  messageQueue.add(new RadioConfigureMessage(radioId, frequency, true));
++            }
+          }
+ 
+-         // not P2P radio
++         // not P2P radio (such as RT1944)
+          else
+          {
+-            // frequency can't be empty
+-            if (frequency != null && frequency.length() >= 1)
+-               requestRadioFrequencyChange(radioId, frequency);
++            // frequency is 1 or greater
++            if (frequency != null && frequency.compareTo("1") > 0)
++            {
++               // change frequency
++               if (!requestRadioFrequencyChange(radioId, frequency))
++                  // change unsuccessful
++                  messageQueue.add(new RadioConfigureMessage(radioId, frequency, true));
++            }
+          }
+       }
+       catch (Exception e)
+Index: src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RmmvHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RmmvHandlerBuilder.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/vca/node/handler/RmmvHandlerBuilder.java	(working copy)
+@@ -75,7 +75,8 @@
+       CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
+       StringBuilder snmpSetting = new StringBuilder();
+       snmpSetting.append(userPass.getUserName()).append(":").append(userPass.getPassword());
+-      handler.setFilterDeviceHandler(new VcaFilterDeviceHandler(node, snmpSetting.toString()));
++      if (!rfConfig.isTesting())
++         handler.setFilterDeviceHandler(new VcaFilterDeviceHandler(node, snmpSetting.toString()));
+ 
+       RmmvSafetyManager safetyManager = new RmmvSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);
+Index: src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java	(revision 9513)
++++ src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java	(working copy)
+@@ -169,7 +169,7 @@
+ 
+    /**
+     * Add a PropertyChangeListener for a specific property. This function provides an external
+-    * interface to add a propertylistener in the MatrixSwitchSettings object
++    * interface to add a property listener in the MatrixSwitchSettings object
+     * 
+     * @param propertyName The name of the property to listen on.
+     * @param listener The PropertyChangeListener to be added.
+@@ -183,7 +183,7 @@
+ 
+    /**
+     * 
+-    * Method Description A public method to get current hardware config status
++    * To get current hardware status.
+     * 
+     * @return a HardwareData object containing the status of the matrix switch
+     */

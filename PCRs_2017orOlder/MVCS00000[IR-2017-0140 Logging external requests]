@@ -1,0 +1,658 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-vca
+Index: src/main/java/mil/navy/lcs/mvcs/vca/hardware/VcaHardwareConfiguredStatus.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/hardware/VcaHardwareConfiguredStatus.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/hardware/VcaHardwareConfiguredStatus.java	(working copy)
+@@ -76,6 +76,8 @@
+     ***********************************************************************************************/
+    private VcaHardwareConfiguredStatus()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
++
+       for (IMvcsHardwareManager manager : managers.keySet())
+          manager.addPropertyChangeListener(ListenerValues.CONFIGURED, this);
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/vca/network/VcaNetworkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/network/VcaNetworkManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/network/VcaNetworkManager.java	(working copy)
+@@ -70,7 +70,7 @@
+    private VcaNetworkManager() throws ConfigException, RouterException, TimeoutException, IOException
+    {
+       super();
+-
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       Vehicle vehicle = ConfigManager.getInstance().getVehicle();
+       Router router = vehicle.getRouter();
+       this.testing = router.isTesting();
+Index: src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java	(working copy)
+@@ -51,6 +51,7 @@
+ 
+    private VehicleTableWorker()
+    {
++      logger.info("Initializing new instanceof: {} ", this.getClass().getName());
+       initialize();
+    }
+ 
+@@ -962,6 +963,8 @@
+    {
+       try
+       {
++         logger.debug("External request to set RF switch [Mode:{}]");
++
+          String[] params = radioRfoutput.split(",");
+          if (params.length != 2)
+          {
+Index: src/main/java/mil/navy/lcs/mvcs/vca/ntp/VcaNtpManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/ntp/VcaNtpManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/ntp/VcaNtpManager.java	(working copy)
+@@ -72,7 +72,9 @@
+ 
+ 
+    private VcaNtpManager()
+-   {
++   {      
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
++
+       ntpPollingThread = new Thread(new Runnable()
+       {
+          public void run()
+Index: src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/radios/VcaRadioPluginsManager.java	(working copy)
+@@ -9,6 +9,9 @@
+ import java.util.Hashtable;
+ import java.util.List;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+@@ -69,6 +72,8 @@
+ 
+    /** Denotes link quality polling */
+    boolean radioPolling = true;
++   
++   private final Logger logger = LoggerFactory.getLogger(VcaRadioPluginsManager.class); 
+ 
+    protected Thread radioPollingThread = new Thread(new Runnable()
+    {
+@@ -103,7 +108,7 @@
+                }
+                catch (Exception e)
+                {
+-                  LoggingManager.getPrimaryLogger().error("An error has occured while polling " + radioName + " :", e);
++                  logger.error("An error has occured while polling " + radioName + " :", e);
+                }
+             }
+ 
+@@ -113,7 +118,7 @@
+             }
+             catch (Exception ex)
+             {
+-               LoggingManager.getPrimaryLogger().error("An error has occurred while polling all radio for link quality: ", ex);
++               logger.error("An error has occurred while polling all radio for link quality: ", ex);
+             }
+ 
+          } // end of while
+@@ -159,10 +164,11 @@
+    private VcaRadioPluginsManager()
+    {
+       super();
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       // get the list of plug-ins from configurations
+       getPluginListFromConfigurationManager();
+       super.instantiatePlugins();
+-      LoggingManager.getPrimaryLogger().debug("Starting plugins");
++      logger.debug("Starting plugins");
+       // perform initial poll and receive notifications
+       startPlugins();
+       startRadioPolling();
+@@ -207,9 +213,9 @@
+          if (!VehicleState.model.node.isPowered(hardwareData.getHardwareId()) || hardwareData.isConfigured())
+             configuredCount++;
+          else
+-            LoggingManager.getPrimaryLogger().debug("Radio powered on and not configured: " + hardwareData.getHardwareId());
++            logger.debug("Radio powered on and not configured: " + hardwareData.getHardwareId());
+       }
+-      LoggingManager.getPrimaryLogger().debug("Radio count: " + hardwareDataItems.size() + " Configured count: " + configuredCount);
++      logger.debug("Radio count: " + hardwareDataItems.size() + " Configured count: " + configuredCount);
+       return configuredCount == hardwareDataItems.size() ? ConfiguredStatus.FULL : configuredCount > 0 ? ConfiguredStatus.PARTIAL : ConfiguredStatus.FAIL;
+    }
+ 
+@@ -242,7 +248,7 @@
+                public void run()
+                {
+                   IRadioPlugin plugin = runtimePluginInstances.get(radioName);
+-                  LoggingManager.getPrimaryLogger().info("Starting radio:" + radioName + ", plugin: " + plugin);
++                  logger.info("Starting radio:" + radioName + ", plugin: " + plugin);
+                   plugin.startPlugin();
+                }
+             };
+@@ -264,16 +270,16 @@
+       try
+       {
+          List<Radio> radioList = ConfigManager.getInstance().getVehicle().getListOfRadios();
+-         LoggingManager.getPrimaryLogger().info("Radio size " + radioList.size());
++         logger.info("Radio size " + radioList.size());
+          for (Radio radio : radioList)
+          {
+             String radioName = radio.getId();
+             String radioType = radio.getLinkType();
+             String radioPluginClass = ConfigManager.getInstance().getRadioCharacteristicsByType(radioType).getPlugin();
+-            LoggingManager.getPrimaryLogger().info("Radio: " + radioName + ", plugin: " + radioPluginClass);
++            logger.info("Radio: " + radioName + ", plugin: " + radioPluginClass);
+             super.addHardwareData(radioName, radioType);
+             super.addRadioNameAndPluginClassPair(radioName, radioPluginClass);
+-            LoggingManager.getPrimaryLogger().debug("Found " + radioName + " " + radioPluginClass);
++            logger.debug("Found " + radioName + " " + radioPluginClass);
+          }
+       }
+       catch (Exception ex)
+Index: src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/vca/encryptor/VcaEncryptorPluginManager.java	(working copy)
+@@ -40,6 +40,7 @@
+    private VcaEncryptorPluginManager()
+    {
+       super();
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       // list of valid encryptor plug-ins from configuration
+       loadListOfEncryptorPlugins();
+       instantiatePlugins(VehicleState.model.node.getRadioLinks());
+Index: src/main/java/mil/navy/lcs/mvcs/vca/snmp/VcaSnmpManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/snmp/VcaSnmpManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/snmp/VcaSnmpManager.java	(working copy)
+@@ -79,6 +79,7 @@
+     */
+    protected VcaSnmpManager()
+    {
++      primaryLog.info("Initializing new instanceof: {} ", this.getClass().getName());
+       this.propertyChangeSupport = new PropertyChangeSupport(this);
+       this.initialize();
+    }
+Index: src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/vca/link/VcaLinkManager.java	(working copy)
+@@ -189,6 +189,7 @@
+     ***********************************************************************************************/
+    private VcaLinkManager()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       this.propertyChangeSupport = new PropertyChangeSupport(this);
+       radioControllers = new Hashtable<String, VcaRadioController>();
+       linkMonitors = new Hashtable<String, LinkMonitor>();
+#P mvcs-sca
+Index: src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/encryptor/ScaEncryptorPluginManager.java	(working copy)
+@@ -74,6 +74,7 @@
+     */
+    private ScaEncryptorPluginManager()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       loadListOfEncryptorPlugins();
+ 
+       instantiatePlugins(ShipState.model.ship.getRadioLinks());
+Index: src/main/java/mil/navy/lcs/mvcs/sca/network/ScaNetworkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/network/ScaNetworkManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/network/ScaNetworkManager.java	(working copy)
+@@ -106,7 +106,7 @@
+    private ScaNetworkManager() throws ConfigException, RouterException, TimeoutException, IOException
+    {
+       super();
+-
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       Router router = ConfigManager.getInstance().getShip().getRouter();
+       this.testing = router.isTesting();
+       this.initializeRouter(router);
+Index: src/main/java/mil/navy/lcs/mvcs/sca/navigation/ScaNavigationManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/navigation/ScaNavigationManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/navigation/ScaNavigationManager.java	(working copy)
+@@ -535,6 +535,7 @@
+ 
+    private ScaNavigationManager() throws Exception
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       initialize();
+    }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/ntp/ScaNtpManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/ntp/ScaNtpManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/ntp/ScaNtpManager.java	(working copy)
+@@ -70,6 +70,7 @@
+ 
+    private ScaNtpManager()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       ntpPollingThread = new Thread(new Runnable()
+       {
+          public void run()
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/ScaSnmpManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/ScaSnmpManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/ScaSnmpManager.java	(working copy)
+@@ -341,6 +341,7 @@
+     */
+    private ScaSnmpManager()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       this.initialize();
+    }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/link/ScaLinkManager.java	(working copy)
+@@ -344,6 +344,7 @@
+     ***********************************************************************************************/
+    private ScaLinkManager()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       this.propertyChangeSupport = new PropertyChangeSupport(this);
+       this.linkController = new ScaLinkController();
+       this.radioControllers = new Hashtable<String, ScaRadioController>();
+Index: src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/radios/ScaRadioPluginsManager.java	(working copy)
+@@ -130,6 +130,7 @@
+    private ScaRadioPluginsManager()
+    {
+       super();
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       // get a list of radio plug-in from configuration
+       getPluginListFromConfigurationManager();
+       // instantiate plug-in objects
+Index: src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/powerUps/UpsManager.java	(working copy)
+@@ -140,6 +140,7 @@
+     */
+    private UpsManager()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       try
+       {
+          initialize();
+Index: src/main/java/mil/navy/lcs/mvcs/sca/corba/CorbaManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/corba/CorbaManager.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/corba/CorbaManager.java	(working copy)
+@@ -14,23 +14,18 @@
+ import java.net.UnknownHostException;
+ import java.util.Properties;
+ 
+-import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+-
+ import org.slf4j.Logger;
+ 
+ import com.aactech.JavaCorbaComms.AACBaseOrb;
+ import com.aactech.JavaCorbaComms.AACPortableServer;
+ 
++import mil.navy.lcs.mvcs.common.config.ConfigManager;
++import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
++import mil.navy.lcs.mvcs.common.log.LoggingManager;
++
+ /**
+- * Main Class for MVCS on SCA.
+  * <p>
+  * Date Created: Aug 20, 2009
+- * <p>
+- * $LastChangedBy$ <br>
+- * $LastChangedDate$ <br>
+- * $LastChangedRevision$
+  * 
+  * @author andy.lubin
+  * @version 1.0
+@@ -39,7 +34,6 @@
+  * @author andy.lubin
+  * 
+  */
+-@SuppressWarnings("static-access")
+ public class CorbaManager
+ {
+ 
+@@ -60,12 +54,12 @@
+    /**
+     * A reference to the Primary Logger.
+     */
+-   private static final Logger primaryLog = LoggingManager.getInstance().getPrimaryLogger();
++   private static final Logger primaryLog = LoggingManager.getPrimaryLogger();
+ 
+    /**
+     * A reference to the System Error Logger class.
+     */
+-   private static final Logger systemErrorLog = LoggingManager.getInstance().getSystemErrorLogger();
++   private static final Logger systemErrorLog = LoggingManager.getSystemErrorLogger();
+ 
+    /**
+     * A reference to the CORBA vehicle connection.
+@@ -172,11 +166,11 @@
+       }
+       catch (UnknownHostException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("There was an error pinging the requested host.", e);
++         primaryLog.error("There was an error pinging the requested host.", e);
+       }
+       catch (IOException e)
+       {
+-         LoggingManager.getPrimaryLogger().error("There was a IOException in Corba Pinger.", e);
++         primaryLog.error("There was a IOException in Corba Pinger.", e);
+       }
+       return connectionUp;
+    }
+@@ -294,7 +288,7 @@
+    {
+       if (ConfigManager.getInstance().getShip().getCorba().isTesting())
+       {
+-         LoggingManager.getPrimaryLogger().info("Corba in testing mode!!!");
++         primaryLog.info("Corba in testing mode!!!");
+          return;
+       }
+ 
+@@ -364,6 +358,8 @@
+ 
+    private CorbaManager()
+    {
++      primaryLog.info("Initializing new instanceof: {} ", this.getClass().getName());
++
+       try
+       {
+          initialize();
+@@ -370,8 +366,7 @@
+       }
+       catch (ConfigException e)
+       {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
++         primaryLog.error("Error: ", e);
+       }
+    }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/filter/ScaFilterDeviceHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/filter/ScaFilterDeviceHandler.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/filter/ScaFilterDeviceHandler.java	(working copy)
+@@ -3,9 +3,11 @@
+ package mil.navy.lcs.mvcs.sca.filter;
+ 
+ 
+-import java.io.IOException;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ 
+-import mil.navy.lcs.mvcs.common.config.exception.ConfigException;
++import com.ireasoning.protocol.snmp.SnmpConst;
++
+ import mil.navy.lcs.mvcs.common.filter.FilterDeviceHandler;
+ import mil.navy.lcs.mvcs.iface.filter.FilterDevice;
+ import mil.navy.lcs.mvcs.iface.filter.FilterStatus;
+@@ -12,12 +14,6 @@
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsNode;
+ import mil.navy.lcs.mvcs.sca.snmp.ScaSnmpManager;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import com.ireasoning.protocol.TimeoutException;
+-import com.ireasoning.protocol.snmp.SnmpConst;
+-
+ /**
+  * This class is responsible for providing function to obtain status of filter device such as
+  * HAF-100 via SNMP.
+@@ -54,22 +50,11 @@
+          logger.debug("Filter Device Status currently reported as: " + status);
+          device.setStatus(status.contains("UP") ? "UP" : status);
+       }
+-      catch (TimeoutException e)
++      catch (Exception e)
+       {
+          device.setStatus(FilterStatus.UNKNOWN.toString());
+-         logger.error("Timeout while attempting to access the filter device.", e);
++         logger.error("Error while accessing the filter device (" + device.getFilterId() + "): ", e.getMessage());
+       }
+-      catch (ConfigException e)
+-      {
+-         device.setStatus(FilterStatus.UNKNOWN.toString());
+-         logger.error("Config Error while attempting to access the filter device.", e);
+-      }
+-      catch (IOException e)
+-      {
+-         device.setStatus(FilterStatus.UNKNOWN.toString());
+-         logger.error("IO Error while attempting to access the filter device.", e);
+-      }
+-
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/hardware/ScaHardwareConfiguredStatus.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/hardware/ScaHardwareConfiguredStatus.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/hardware/ScaHardwareConfiguredStatus.java	(working copy)
+@@ -84,6 +84,7 @@
+     ***********************************************************************************************/
+    private ScaHardwareConfiguredStatus()
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       for (IMvcsHardwareManager manager : managers.keySet())
+          manager.addPropertyChangeListener(ListenerValues.CONFIGURED, this);
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/VehicleTableWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/VehicleTableWorker.java	(revision 9754)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/VehicleTableWorker.java	(working copy)
+@@ -13,7 +13,6 @@
+ import com.google.common.collect.Ordering;
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.iface.model.node.CommsType;
+ import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
+@@ -1101,10 +1100,12 @@
+    {
+       try
+       {
++         logger.debug("External request to set RF switch [Node:{} Mode:{}] ", nodeId, radioRfoutput);
++
+          String[] params = radioRfoutput.toUpperCase().split(",");
+          if (params.length != 2)
+          {
+-            LoggingManager.getPrimaryLogger().error("Invalid value {} to change RF switch.", radioRfoutput);
++            logger.error("Invalid value {} to change RF switch.", radioRfoutput);
+             return;
+          }
+ 
+@@ -1117,7 +1118,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error change matrix switch mode: ", e);
++         logger.error("Error change matrix switch mode: ", e);
+       }
+    }
+ 
+@@ -1176,7 +1177,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -1338,7 +1339,7 @@
+          String[] values = radioTestPortCommaOnOff.split(",");
+          if (values == null || values.length != 2)
+          {
+-            LoggingManager.getPrimaryLogger().info("In setRequestTestRadioOverRfTestPort(), invalid parameter {} for vehicle {}.", radioTestPortCommaOnOff, vehicleId);
++            logger.info("In setRequestTestRadioOverRfTestPort(), invalid parameter {} for vehicle {}.", radioTestPortCommaOnOff, vehicleId);
+             return;
+          }
+ 
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/db/DatabaseManager.java	(working copy)
+@@ -53,6 +53,7 @@
+     */
+    private DatabaseManager()
+    {
++      primaryLog.info("Initializing new instanceof: {} ", this.getClass().getName());
+       try
+       {
+          isShip = ConfigManager.getInstance().isPrimaryVesselShip();
+Index: src/main/java/mil/navy/lcs/mvcs/common/net/receiver/MessageReceiver.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/net/receiver/MessageReceiver.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/net/receiver/MessageReceiver.java	(working copy)
+@@ -133,8 +133,12 @@
+          categoryTransactionIdMap.clear();
+ 
+       // No need to process, already processed this message or a newer one of the same category
+-      if (tid <= getLastTransactionId(category))
++      long lastTransIdOfCategory = getLastTransactionId(category);
++      if (tid <= lastTransIdOfCategory)
++      {
++         logger.info("TransactionId: {} of this category has already processed. Ignoring: {} ", lastTransIdOfCategory, message);
+          return;
++      }
+ 
+       updateLastTransactionId(category, tid);
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/common/net/sender/MessageQueue.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/net/sender/MessageQueue.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/net/sender/MessageQueue.java	(working copy)
+@@ -195,7 +195,10 @@
+       MessageQueueEntry entry = categoryToEntryMap.get(category);
+ 
+       if (entry != null)
++      {
++         logger.info("Category: {} is already in the message queue. Invalidating: {} ", category, entry.getMessage());
+          entry.invalidate();
++      }
+    }
+ 
+ 
+@@ -246,8 +249,7 @@
+             }
+ 
+             // PCR 1408
+-            // Do not add this message to the queue again, if no retires are
+-            // requested.
++            // Do not add this message to the queue again, if no retires are requested.
+             if (entry.getMessage().getAcknowledgmentCategory().compareTo(AcknowledgmentCategory.NO_ACK_NO_RETRY.name()) != 0)
+             {
+                entry.updateNextTransmitTime(entry.getNextTransmitTime());
+@@ -262,8 +264,7 @@
+          }
+          catch (InterruptedException e)
+          {
+-            // If an interruption occurs this iteration, better luck next go
+-            // round.
++            // If an interruption occurs this iteration, better luck next go round.
+             logger.info(e.getMessage());
+             continue;
+          }
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/RadioPluginsManager.java	(working copy)
+@@ -87,7 +87,6 @@
+    /** A map holding the radio plug-in Java class with the name of the radio as the key. */
+    protected Hashtable<String, String> radioNamesAndPluginClasses;
+ 
+-
+    /** The hardware status of radios. */
+    protected Hashtable<String, HardwareData> radioHardwareStatus;
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/common/hardware/HardwareManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/hardware/HardwareManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/hardware/HardwareManager.java	(working copy)
+@@ -12,6 +12,7 @@
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
++import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.iface.filter.IFilterDeviceHandler;
+ import mil.navy.lcs.mvcs.iface.model.node.MvcsNode;
+ import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+@@ -68,6 +69,7 @@
+ 
+    public HardwareManager( MvcsNode node)
+    {
++      LoggingManager.getPrimaryLogger().info("Initializing new instanceof: {} ", this.getClass().getName());
+       this.node = node;
+    }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/config/ConfigManager.java	(working copy)
+@@ -99,8 +99,8 @@
+ 
+ 
+    // Get a logger
+-   private static final Logger errorLog = LoggingManager.getInstance().getSystemErrorLogger();
+-   private static final Logger primaryLog = LoggingManager.getInstance().getPrimaryLogger();
++   private static final Logger errorLog = LoggingManager.getSystemErrorLogger();
++   private static final Logger primaryLog = LoggingManager.getPrimaryLogger();
+ 
+ 
+    /**
+@@ -111,6 +111,7 @@
+     */
+    private ConfigManager() throws ConfigException
+    {
++      primaryLog.info("Initializing new instanceof: {} ", this.getClass().getName());
+       loadMissionNames();
+       determineVesselType();
+       loadRadioCharacteristicsConfig();
+@@ -137,12 +138,11 @@
+    {
+       if (instance == null)
+       {
+-         primaryLog.debug("ConfigManager Singleton (instance) has not been instantiated.");
+          synchronized (ConfigManager.class)
+          {
+             if (instance == null)
+             {
+-               primaryLog.debug("Getting new instance of ConfigManager...");
++               primaryLog.info("Getting new instance of ConfigManager...");
+                instance = new ConfigManager();
+             }
+          }
+Index: src/main/java/mil/navy/lcs/mvcs/common/log/LoggingManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/log/LoggingManager.java	(revision 9752)
++++ src/main/java/mil/navy/lcs/mvcs/common/log/LoggingManager.java	(working copy)
+@@ -34,6 +34,7 @@
+    /** private Constructor prevents any other class from instantiating */
+    private LoggingManager()
+    {
++      primaryLogger.info("Initializing new instanceof: {} ", this.getClass().getName());
+       initialize();
+    }
+ 

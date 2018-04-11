@@ -1,0 +1,27 @@
+Index: src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java	(revision 9847)
++++ src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java	(working copy)
+@@ -27,6 +27,7 @@
+ import mil.navy.lcs.mvcs.iface.rf.RFOutput;
+ import mil.navy.lcs.mvcs.iface.rf.RFOutputType;
+ import mil.navy.lcs.mvcs.iface.status.Status;
++import mil.navy.lcs.mvcs.vca.link.VcaLinkManager;
+ import mil.navy.lcs.mvcs.vca.main.VehicleState;
+ 
+ /**
+@@ -964,6 +965,14 @@
+       try
+       {
+          logger.debug("External request to set RF switch [Mode:{}]");
++         
++         // IR-2017-0176 Block external commands during LOCR
++         if(VcaLinkManager.getInstance().getVcaNodeBean().isInAutoLocRecovery())
++         {
++            // Not allow antenna change. Let the LOCR do the work.
++            logger.info("External command is blocked because the LOC-recovery is in progress.");
++            return;
++         }
+ 
+          String[] params = radioRfoutput.split(",");
+          if (params.length != 2)

@@ -1,0 +1,198 @@
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java	(revision 9931)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/commands/IPS250Commands.java	(working copy)
+@@ -17,14 +17,7 @@
+ import com.ireasoning.protocol.snmp.SnmpVarBind;
+ 
+ /**
+- * Class Description.
+- * 
+- * @author Joshua.Nelson
+- * 
+- *         $LastChangedBy: /C=US/O=U.S. Government/OU=DoD/OU=PKI/OU=USN/CN=LUBIN.ANDY.S.1298740474
+- *         $<br/>
+- *         $LastChangedDate$<br/>
+- *         $LastChangedRevision$<br/>
++ * This class is responsible of handle commands to IPS-250 device.
+  */
+ public class IPS250Commands
+ {
+@@ -91,7 +84,7 @@
+    /**
+     * This function gets the name of the keys loaded in the crypto device.
+     * 
+-    * @param ipAddress
++    * @param ipAddress the IP Address
+     * @return A List of keys in the crypto device.
+     * @throws IOException
+     */
+@@ -231,7 +224,7 @@
+ 
+       try
+       {
+-         // TODO obtain the MIB OID and its type.
++         // obtain the MIB OID and its type.
+          result = SNMPOperations.getInstance().snmpset(ConstantValues.SNMP_OID_HEARTBEAT_TIMEOUT, "g", String.valueOf(timeout), ipAddress);
+       }
+       catch (Exception e)
+@@ -254,7 +247,7 @@
+    {
+       try
+       {
+-         // TODO obtain the MIB OID.
++         // obtain the MIB OID.
+          String[] results = SNMPOperations.getInstance().snmpGet(ConstantValues.SNMP_OID_HEARTBEAT_TIMEOUT, ipAddress, port);
+          LoggingManager.getPrimaryLogger().info("Result size:" + results.length);
+          for (int i = 0; i < results.length; i++)
+@@ -299,7 +292,7 @@
+ 
+       try
+       {
+-         // TODO obtain the MIB OID and its type.
++         // obtain the MIB OID and its type.
+          result = SNMPOperations.getInstance().snmpset(ConstantValues.SNMP_OID_ZEROIZE_FUNCTION, "i", enable ? "1" : "2", ipAddress);
+       }
+       catch (Exception e)
+@@ -320,7 +313,7 @@
+    {
+       try
+       {
+-         // TODO obtain the MIB OID.
++         // obtain the MIB OID.
+          String[] results = SNMPOperations.getInstance().snmpGet(ConstantValues.SNMP_OID_ZEROIZE_FUNCTION, ipAddress, port);
+          LoggingManager.getPrimaryLogger().info("Result size:" + results.length);
+          for (int i = 0; i < results.length; i++)
+@@ -357,7 +350,7 @@
+ 
+       try
+       {
+-         // TODO obtain the MIB OID and its type.
++         // obtain the MIB OID and its type.
+          result = SNMPOperations.getInstance().snmpset(ConstantValues.SNMP_OID_HEARTBEAT_PORT, "g", String.valueOf(port), ipAddress);
+       }
+       catch (Exception e)
+@@ -379,7 +372,7 @@
+    {
+       try
+       {
+-         // TODO obtain the MIB OID.
++         // obtain the MIB OID.
+          String[] results = SNMPOperations.getInstance().snmpGet(ConstantValues.SNMP_OID_HEARTBEAT_PORT, ipAddress, port);
+          LoggingManager.getPrimaryLogger().info("Result size:" + results.length);
+          for (int i = 0; i < results.length; i++)
+@@ -397,14 +390,22 @@
+    }
+ 
+ 
+-   public void getSubTree(String oid, String ipAddress, int port)
++   /**
++    * To get subtree of the OID
++    * 
++    * @param oid - the OID
++    * @param ipAddress - the IPAddress
++    * @param port - the Port
++    */
++   public String[] getSubTree(String oid, String ipAddress, int port)
+    {
++      String[] results = null;
+       try
+       {
+-         // TODO obtain the MIB OID and its type.
+-         String[] results = SNMPOperations.getInstance().snmpGetSubTree(oid, ipAddress, port);
++         // obtain the MIB OID and its type.
++         results = SNMPOperations.getInstance().snmpGetSubTree(oid, ipAddress, port);
+ 
+-         LoggingManager.getPrimaryLogger().info("Results size:" + results.length);
++         LoggingManager.getPrimaryLogger().info("Results size:" + results.length + " for OID: " + oid);
+ 
+          for (int i = 0; i < results.length; i++)
+          {
+@@ -416,6 +417,7 @@
+          LoggingManager.getPrimaryLogger().error("Error: ", e);
+       }
+ 
++      return results;
+    }
+ 
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/constants/ConstantValues.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/constants/ConstantValues.java	(revision 9931)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/constants/ConstantValues.java	(working copy)
+@@ -4,12 +4,7 @@
+ 
+ 
+ /**
+- * Class Description Needed.
+- * 
+- * @author Joshua.Nelson $LastChangedBy: /C=US/O=U.S.
+- *         Government/OU=DoD/OU=PKI/OU=USN/CN=KWON.DAE.AM.1160638016 $<br/>
+- *         $LastChangedDate$<br/>
+- *         $LastChangedRevision$<br/>
++ * Constant values used in IPS-250 Plug-in
+  */
+ public class ConstantValues
+ {
+@@ -27,6 +22,7 @@
+ 
+ 
+    /* SNMP OIDs */
++   public static final String SNMP_OID_PREPLACED_KEY_TABLE = ".1.3.6.1.4.1.8698.3.4.2.2.2.1.4.0";
+    public static final String SNMP_OID_HEARTBEAT_TIMEOUT = ".1.3.6.1.4.1.8698.3.1.1.4.0";
+    public static final String SNMP_OID_ZEROIZE_FUNCTION = ".1.3.6.1.4.1.8698.3.1.1.5.0";
+    public static final String SNMP_OID_HEARTBEAT_PORT = ".1.3.6.1.4.1.8698.3.1.1.6.0";
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(revision 9931)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(working copy)
+@@ -3,6 +3,10 @@
+ package mil.navy.lcs.mvcs.ips250plugin.main;
+ 
+ 
++import java.io.IOException;
++import java.util.LinkedList;
++import java.util.List;
++
+ import mil.navy.lcs.mvcs.common.encryptor.interfaces.IEncryptorPlugin;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.utils.LinuxSystemUtils;
+@@ -11,15 +15,8 @@
+ import mil.navy.lcs.mvcs.ips250plugin.heartbeat.UnicastHbSender;
+ 
+ /**
+- * Class Description Needed.
++ * Main class for IPS-250 Plug-in.
+  * 
+- * @author Joshua.Nelson
+- * 
+- *         $LastChangedBy: /C=US/O=U.S. Government/OU=DoD/OU=PKI/OU=USN/CN=LUBIN.ANDY.S.1298740474
+- *         $<br/>
+- *         $LastChangedDate$<br/>
+- *         $LastChangedRevision$<br/>
+- * 
+  */
+ public class IPS250Plugin implements IEncryptorPlugin
+ {
+@@ -187,4 +184,21 @@
+       return false;
+    }
+ 
++
++   @Override
++   public List<String> getPreplacedKeyInfo()
++   {
++      LinkedList<String> ppkeys = new LinkedList<String>();
++      LoggingManager.getPrimaryLogger().debug("Attempting to call isKeyed() from IPS250 Plugin.");
++      try
++      {
++         ppkeys = encryptorCommands.getKeyStatus(this.ipAddress);
++      }
++      catch (IOException e)
++      {
++         LoggingManager.getPrimaryLogger().error("Error getting Preplaced key information: ", e);
++      }
++      return ppkeys;
++   }
++
+ }

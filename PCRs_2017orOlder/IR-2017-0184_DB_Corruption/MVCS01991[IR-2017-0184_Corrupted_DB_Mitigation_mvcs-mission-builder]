@@ -1,0 +1,12 @@
+Index: src/main/java/mil/navy/lcs/mvcs/mission/server/security/SecurityManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/mission/server/security/SecurityManager.java	(revision 9842)
++++ src/main/java/mil/navy/lcs/mvcs/mission/server/security/SecurityManager.java	(working copy)
+@@ -234,7 +234,6 @@
+     * This method shutsdown the Security Manager.
+     * 
+     * @return a boolean stating whether shutdown was successful or not
+-    * @see mil.navy.lcs.mvcs.common.misc.IMvcsManager#shutdown()
+     */
+    public boolean shutdown()
+    {

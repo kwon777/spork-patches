@@ -1,0 +1,954 @@
+Index: src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/main/MvcsRemoteEngine.java	(working copy)
+@@ -164,14 +164,10 @@
+ 
+       // Sets the radio frequency to the requested frequency.
+       MvcsNode node = ShipState.model.getNode(nodeId);
+-      RadioLink radioLink = (RadioLink) node.getLink(linkId);
+-      if (radioLink.commsType == CommsType.OTH)
+-      {
+-         logger.info("Setting OTH Frequency");
+-         ShipNodeHandler ship = new ShipNodeHandler(ShipState.model.getLocalNode());
+-         // Configure the OTH Radio with the frequency.
+-         ship.requestConfigureRadio(nodeId, linkId, frequency);
+-      }
++      IMvcsNodeHandler handler = ShipState.getNodeHandler(node);
++      
++      // Configure the Radio with new frequency.
++      handler.requestConfigureRadio(linkId, frequency);
+ 
+    }
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/NodeHandlerBuilder.java	(working copy)
+@@ -17,7 +17,6 @@
+ 
+ import mil.navy.lcs.mvcs.common.config.ConfigManager;
+ import mil.navy.lcs.mvcs.common.config.model.CrossDomain;
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.messages.NearShipMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.net.MvcsNetworkConstants;
+@@ -123,9 +122,8 @@
+ 
+       if (haf != null)
+       {
+-         // TODO change the logger to use the class logger
+-         LoggingManager.getPrimaryLogger().debug("Found: " + haf.getName());
+-         LoggingManager.getPrimaryLogger().debug("Found: " + haf.getIpAddress());
++         logger.debug("Found: " + haf.getName());
++         logger.debug("Found: " + haf.getIpAddress());
+ 
+          FilterDevice filterDevices = node.getFilterDevice();
+          filterDevices.setFilterId(haf.getName());
+@@ -134,8 +132,7 @@
+       }
+       else
+       {
+-         // TODO recommend to use the class logger.
+-         LoggingManager.getPrimaryLogger().debug("haf was found to be null!");
++         logger.debug("haf was found to be null!");
+       }
+ 
+    }// end of constructor
+@@ -207,7 +204,7 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getPrimaryLogger().warn("Problem occurred while reading from configurations: ", e);
++            logger.warn("Problem occurred while reading from configurations: ", e);
+          }
+       }
+ 
+@@ -242,7 +239,7 @@
+             // take care of near ship flag
+             if (propertyName.equalsIgnoreCase(VehicleNode.DISTANCE_TO_SHIP) || propertyName.equalsIgnoreCase(MvcsNode.BEARING))
+             {
+-               LoggingManager.getPrimaryLogger().debug("New value received {} for event {}", pce.getNewValue(), pce.getPropertyName());
++               logger.debug("New value received {} for event {}", pce.getNewValue(), pce.getPropertyName());
+                boolean nearShip = vehicleNode.isNearShip();
+ 
+                Object newValue = pce.getNewValue();
+@@ -259,7 +256,7 @@
+                   }
+                   catch (NumberFormatException nfe)
+                   {
+-                     LoggingManager.getPrimaryLogger().error("Warning: ", nfe);
++                     logger.error("Warning: ", nfe);
+                   }
+ 
+                } // end of if (distance changed)
+@@ -276,7 +273,7 @@
+                   }
+                   catch (NumberFormatException nfe)
+                   {
+-                     LoggingManager.getPrimaryLogger().error("Warning: ", nfe);
++                     logger.error("Warning: ", nfe);
+                   }
+ 
+                } // end of if (bearing changed)
+@@ -287,8 +284,8 @@
+                   // near-ship remains the same.
+                }
+ 
+-               LoggingManager.getPrimaryLogger().debug("Bearing " + bearing + " Distance:" + distance + " distanceValid:" + distanceValidity + " bearingValid:" + bearingValidity);
+-               LoggingManager.getPrimaryLogger().debug("NearShip " + nearShip);
++               logger.debug("Bearing " + bearing + " Distance:" + distance + " distanceValid:" + distanceValidity + " bearingValid:" + bearingValidity);
++               logger.debug("NearShip " + nearShip);
+ 
+                // nearShip has changed
+                if (vehicleNode.isNearShip() != nearShip)
+@@ -303,7 +300,7 @@
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getPrimaryLogger().error("Error in ScaStateManager propertyChange(): " + e.getMessage());
++            logger.error("Error in ScaStateManager propertyChange(): " + e.getMessage());
+          }
+ 
+       }// end of method, propertyChange()
+@@ -333,7 +330,7 @@
+          }
+          catch (NumberFormatException nfe)
+          {
+-            LoggingManager.getPrimaryLogger().error(nfe.getMessage());
++            logger.error(nfe.getMessage());
+          }
+ 
+          return false;
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipHandlerBuilder.java	(working copy)
+@@ -31,9 +31,9 @@
+  * object. The build() method is called on and should only be called upon startup as this is
+  * initialization code.
+  * <p>
+- * $LastChangedBy$ <br>
+- * $LastChangedDate$ <br>
+- * $LastChangedRevision$
++ * $LastChangedBy:$ <br>
++ * $LastChangedDate:$ <br>
++ * $LastChangedRevision:$
+  *
+  * @version 1.0
+  */
+@@ -59,6 +59,7 @@
+       Power powerConfig = config.getPower();
+       if (powerConfig.isTesting())
+       {
++         logger.info("Power moudle is in testing mode.");
+          handler.setPowerHandler(new PowerDeviceHandler_28VMidEastern(new MideasternTestComms()));
+       }
+       else
+@@ -70,6 +71,7 @@
+       MatrixSwitch rfConfig = config.getListOfMatrixSwitches().get(0);
+       if (rfConfig.isTesting())
+       {
++         logger.info("RF moudle is in testing mode.");
+          handler.setRfHandler(new RfDeviceHandler_NorthStarMatrixSwitch(new NorthStarTestComms()));
+       }
+       else
+@@ -84,8 +86,14 @@
+       StringBuilder ampAddress = new StringBuilder();
+       // Create values in string format to be sent to the handler.
+       ampAddress.append(othAmp.getIpAddress()).append(':').append(othAmp.getPort());
+-      handler.setOthAmplifierHandler(new PRC117RadioSwitchHandler(new NorthStarTcpComms(ampAddress.toString())));
+-
++      if (rfConfig.isTesting())
++      {
++         handler.setOthAmplifierHandler(new PRC117RadioSwitchHandler(new NorthStarTestComms()));
++      }
++      else
++      {
++         handler.setOthAmplifierHandler(new PRC117RadioSwitchHandler(new NorthStarTcpComms(ampAddress.toString())));
++      }
+       // Create FilterDevice to be used by the ship
+ 
+       // Populate Filter device with it's settings
+@@ -97,7 +105,8 @@
+       CredentialSimple userPass = ConfigManager.getInstance().getSimpleCredentialById("haf");
+       StringBuilder snmpSetting = new StringBuilder();
+       snmpSetting.append(userPass.getUserName()).append(":").append(userPass.getPassword());
+-      handler.setFilterDeviceHandler(new ScaFilterDeviceHandler(node, snmpSetting.toString()));
++      if (!rfConfig.isTesting())
++         handler.setFilterDeviceHandler(new ScaFilterDeviceHandler(node, snmpSetting.toString()));
+ 
+       ScaSafetyManager safetyManager = new ScaSafetyManager(node, handler);
+       handler.setSafetyManager(safetyManager);
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java	(working copy)
+@@ -3,7 +3,10 @@
+ package mil.navy.lcs.mvcs.sca.node.handler;
+ 
+ 
++import java.beans.PropertyChangeEvent;
++import java.beans.PropertyChangeListener;
+ import java.util.Comparator;
++import java.util.Hashtable;
+ import java.util.List;
+ import java.util.SortedMap;
+ import java.util.TreeMap;
+@@ -10,6 +13,13 @@
+ import java.util.concurrent.Future;
+ import java.util.concurrent.TimeUnit;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.google.common.base.Predicate;
++import com.google.common.collect.FluentIterable;
++import com.google.common.collect.ImmutableList;
++
+ import mil.navy.lcs.mvcs.common.handler.IMvcsNodeHandler;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+@@ -40,13 +50,6 @@
+ import mil.navy.lcs.mvcs.sca.main.ShipState;
+ import mil.navy.lcs.mvcs.sca.radios.ScaRadioPluginsManager;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import com.google.common.base.Predicate;
+-import com.google.common.collect.FluentIterable;
+-import com.google.common.collect.ImmutableList;
+-
+ /**
+  * This class is responsible to handle requests for MVCS ship node.
+  * <p>
+@@ -161,10 +164,20 @@
+ 
+    private IFilterDeviceHandler filterDeviceHandler;
+ 
++   /** the frequency change listeners for radios */
++   protected Hashtable<RadioLink, FrequencyChangeListener> frequencyChangeListeners = new Hashtable<RadioLink, FrequencyChangeListener>();
+ 
++
+    public ShipNodeHandler( ShipNode node)
+    {
+       this.node = node;
++
++      // set up radio frequency change listener
++      for (RadioLink radioLink : node.getRadioLinks())
++      {
++         FrequencyChangeListener freqChangeListener = new FrequencyChangeListener(radioLink);
++         frequencyChangeListeners.put(radioLink, freqChangeListener);
++      }
+    }
+ 
+ 
+@@ -593,46 +606,55 @@
+ 
+    /**
+     * To request to configure radio to communicate with the vehicle. This will change local radio
+-    * frequency and remote radio frequency by sending command to the remote vehicle so it pushes the
+-    * frequency to its own radio.
++    * frequency without checking vehicle priorities nor ownership of the link.
+     * 
+-    * @param vehicleId - the vehicle ID.
+     * @param radioId - the radio ID.
+-    * @param freq - the frequency to set.
++    * @param frequency - the frequency to set.
+     */
+-   public void requestConfigureRadio(String vehicleId, String radioId, String freq)
++   public void requestConfigureRadio(String radioId, String frequency)
+    {
+-      LinkModel link = ShipState.model.getVehicle(vehicleId).getLink(radioId);
+-      if (link != null && link.mvcsLinkType.pointToPoint)
++      // Ensure change is NOT in progress
++      if (node.getFrequencyChanging() == LinkModel.NO_LINK)
+       {
+-         ScaLinkManager.getInstance().changeRadioOwnershipOfP2P(vehicleId, radioId);
+-      }
++         RadioLink radioLink = (RadioLink) node.getLink(radioId);
++         // Ensure it is a radio link
++         if (radioLink != null)
++         {
++            // denote frequency changing event.
++            node.setFrequencyChanging(radioLink);
++            // denote the requested frequency is being processed
++            radioLink.setRequestedFrequency((int) Float.parseFloat(frequency));
++            IRadioPlugin plugin = ScaRadioPluginsManager.getInstance().getRadioPluginByName(radioId);
++            if (plugin != null)
++            {
++               try
++               {
++                  // send a command to plug-in.
++                  if (plugin.setRadioFrequency(frequency))
++                  {
++                     // initialize an listener to check the frequency has changed to requested
++                     logger.info("Frequency {} has sent to {} radio.", frequency, radioLink.commsType);
++                     frequencyChangeListeners.get(radioLink).commandDelivered();
++                     return;
++                  }
++               }
++               catch (Exception e)
++               {
++                  logger.error("Error changing frequency: ", e);
++               }
++            }
++            node.setFrequencyChangeSuccessful(false); // failed
++            // make sure to reset the changing event
++            node.setFrequencyChanging(LinkModel.NO_LINK);
++         } // end of if(is radioLink)
++         logger.info("{} Radio frequency could not changed to {} ", radioId, frequency);
++      } // end of if(change NOT in progress)
++        // change is already in progress
+       else
+-         ; /*
+-            * IMPORTANT: not allow to change frequency of local network and one remote vehicle's
+-            * radio at this point because this could cause other vehicles' network radios to be left
+-            * out from the mesh network.
+-            */
+-
+-   }
+-
+-
+-   /**
+-    * To request to change frequency of the ship's radio without checking vehicle priorities nor
+-    * ownership of the link.
+-    * 
+-    * @param radioId - the radio ID.
+-    * @param freq - the frequency to set.
+-    */
+-   public void requestRadioFrequencyChange(String radioId, String freq)
+-   {
+-      if (radioId != null && !radioId.equals(""))
+       {
+-         IRadioPlugin plugin = ScaRadioPluginsManager.getInstance().getRadioPluginByName(radioId);
+-         if (plugin != null)
+-            plugin.setRadioFrequency(freq);
++         logger.info("Changing already in progress! {} Radio frequency could not changed to {} ", radioId, frequency);
+       }
+-   }
++   }// end of method
+ 
+ 
+    /**
+@@ -662,7 +684,102 @@
+          }
+       }
+ 
+-   }
++   }// end of method
+ 
++   /**
++    * To listen for frequency change event of a radio so it can update the progress.
++    */
++   private class FrequencyChangeListener implements PropertyChangeListener, Runnable
++   {
++      /** Denotes whether or not frequency change was successful */
++      private boolean successful = false;
+ 
++      /** Denotes the radio link */
++      private RadioLink radioLink;
++
++      private Future<?> finalCheck = MvcsThreads.getDoneFuture();
++
++
++      /** To construct a frequency change listener for the given radio link. */
++      public FrequencyChangeListener( RadioLink radioLink)
++      {
++         this.radioLink = radioLink;
++         // add frequency change listener
++         radioLink.addPropertyChangeListener(RadioLink.FREQUENCYCHANGED, this);
++      }
++
++
++      /**
++       * To denote the frequency change command has delivered to plug-in. Schedule a final check to
++       * get the result.
++       */
++      protected void commandDelivered()
++      {
++         // need to reset successful since this is member of static listener
++         this.successful = false;
++         // need to check the final result in 3 minutes.
++         this.finalCheck = MvcsThreads.scheduledPool.schedule(this, 180, TimeUnit.SECONDS);
++      }
++
++
++      @Override
++      public void run()
++      {
++         logger.info("Frequency change final check is running for {}!", node.getNodeName());
++
++         // frequency was not successful after waited time
++         if (!successful)
++         {
++            // denote the failure
++            node.setFrequencyChangeSuccessful(false);
++            // reset the frequency change event
++            node.setFrequencyChanging(LinkModel.NO_LINK);
++            logger.warn("Frequency change request was never responded for {}", radioLink.commsType);
++
++         }
++      }
++
++
++      @Override
++      public void propertyChange(PropertyChangeEvent pce)
++      {
++         // get source
++         String newFrequencyStr = (String) pce.getNewValue();
++         logger.info("{} Radio frequency has changed to {} ", radioLink.commsType, newFrequencyStr);
++
++         int newFrequency = -1;
++         try
++         {
++            newFrequency = (int) Float.parseFloat(newFrequencyStr);
++         }
++         catch (Exception e)
++         {
++            logger.info("Unable to convert the new frequency {}!", newFrequency);
++         }
++
++         // frequency changed on requested radio
++         if (node.getFrequencyChanging() == radioLink)
++         {
++            // requested frequency change was successful
++            if (newFrequency == radioLink.getRequestedFrequency())
++            {
++               logger.warn("Frequency change request has successfully completed for {}", radioLink.commsType);
++               successful = true;
++               // denote result
++               node.setFrequencyChangeSuccessful(true);
++               // reset requested frequency
++               radioLink.setRequestedFrequency(-1);
++               // reset frequency changing event
++               node.setFrequencyChanging(LinkModel.NO_LINK);
++               // cancel final check
++               this.finalCheck.cancel(true);
++
++            }
++         }
++
++      }// end of method
++
++   }// end of inner class
++
++
+ }// end of class
+Index: src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/node/handler/VehicleNodeHandler.java	(working copy)
+@@ -3,14 +3,25 @@
+ package mil.navy.lcs.mvcs.sca.node.handler;
+ 
+ 
++import java.beans.PropertyChangeEvent;
++import java.beans.PropertyChangeListener;
+ import java.util.Comparator;
++import java.util.Hashtable;
++import java.util.concurrent.Future;
++import java.util.concurrent.TimeUnit;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
+ import mil.navy.lcs.mvcs.common.events.Callback;
+ import mil.navy.lcs.mvcs.common.handler.IMvcsNodeHandler;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.messages.AcknowledgementMessage;
+ import mil.navy.lcs.mvcs.common.messages.EmconMessage;
++import mil.navy.lcs.mvcs.common.messages.LinkConfigureMessage;
++import mil.navy.lcs.mvcs.common.messages.Message;
+ import mil.navy.lcs.mvcs.common.messages.PowerMessage;
++import mil.navy.lcs.mvcs.common.messages.RadioConfigureMessage;
+ import mil.navy.lcs.mvcs.common.messages.RfMessage;
+ import mil.navy.lcs.mvcs.common.messages.StartMessage;
+ import mil.navy.lcs.mvcs.common.messages.StopMessage;
+@@ -17,11 +28,15 @@
+ import mil.navy.lcs.mvcs.common.messages.ZeroizeMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.net.receiver.MessageReceiver;
++import mil.navy.lcs.mvcs.common.net.receiver.MessageReceiver.IMessageProcessor;
+ import mil.navy.lcs.mvcs.common.net.sender.MessageQueue;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertType;
+ import mil.navy.lcs.mvcs.iface.alerts.AlertsManager;
+ import mil.navy.lcs.mvcs.iface.app.ExitAction;
++import mil.navy.lcs.mvcs.iface.app.MvcsThreads;
+ import mil.navy.lcs.mvcs.iface.model.node.ConstantValues.GpsSource;
++import mil.navy.lcs.mvcs.iface.model.node.LinkModel;
++import mil.navy.lcs.mvcs.iface.model.node.RadioLink;
+ import mil.navy.lcs.mvcs.iface.model.node.SleepState;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleNode;
+ import mil.navy.lcs.mvcs.iface.model.node.VehicleState;
+@@ -31,9 +46,6 @@
+ import mil.navy.lcs.mvcs.sca.link.ScaLinkManager;
+ import mil.navy.lcs.mvcs.sca.network.ScaNetworkManager;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+ /**
+  * A handler to handle all requests for a {@link VehicleNode}
+  */
+@@ -64,7 +76,10 @@
+    /** the vehicle node */
+    private VehicleNode node;
+ 
++   /** the frequency change listeners for radios */
++   protected Hashtable<RadioLink, FrequencyConfigurationListener> frequencyConfigurationListeners = new Hashtable<RadioLink, FrequencyConfigurationListener>();
+ 
++
+    /**
+     * To construct vehicle node handler
+     * 
+@@ -73,6 +88,13 @@
+    public VehicleNodeHandler( VehicleNode node)
+    {
+       this.node = node;
++
++      // set up radio frequency change listener
++      for (RadioLink radioLink : node.getRadioLinks())
++      {
++         FrequencyConfigurationListener freqChangeListener = new FrequencyConfigurationListener(radioLink);
++         frequencyConfigurationListeners.put(radioLink, freqChangeListener);
++      }
+    }
+ 
+ 
+@@ -255,7 +277,7 @@
+       // Ensure the vehicle is in manual switch-over mode
+       if (node.isAutoManagement())
+       {
+-         LoggingManager.getPrimaryLogger().warn("Vehicle " + node.getNodeId() + " is in Auto Switch mode. We cannot perform manual path switches in this mode.");
++         logger.warn("Vehicle " + node.getNodeId() + " is in Auto Switch mode. We cannot perform manual path switches in this mode.");
+       }
+       else
+       {
+@@ -281,12 +303,12 @@
+    {
+       if (node.getPowerConservationMode().index == powerMode)
+       {
+-         LoggingManager.getPrimaryLogger().info("Received request to change power conservation mode of " + node.getNodeId() + " to current power setting.  Ignoring request.");
++         logger.info("Received request to change power conservation mode of " + node.getNodeId() + " to current power setting.  Ignoring request.");
+          return;
+       }
+       else
+       {
+-         LoggingManager.getPrimaryLogger().info("Received request to change power conservation mode of " + node.getNodeId() + " to mode " + powerMode);
++         logger.info("Received request to change power conservation mode of " + node.getNodeId() + " to mode " + powerMode);
+          ScaLinkManager.getInstance().setVehiclePowerConservationMode(node.getNodeId(), powerMode);
+       }
+    }
+@@ -320,8 +342,7 @@
+    {
+       NodeStatusUpdater.start(node, messageReceiver);
+ 
+-      // Let the vehicle know that we have started and that it needs to resend
+-      // status
++      // Let the vehicle know that we have started and that it needs to re-send status
+       messageQueue.add(new StartMessage());
+    }
+ 
+@@ -426,7 +447,7 @@
+       }
+       catch (Exception e)
+       {
+-         LoggingManager.getPrimaryLogger().error("Error: ", e);
++         logger.error("Error: ", e);
+       }
+    }
+ 
+@@ -446,6 +467,67 @@
+    }
+ 
+ 
++   @Override
++   public void requestConfigureRadio(String radioId, String frequency)
++   {
++      RadioLink radioLink = (RadioLink) node.getLink(radioId);
++      if (radioLink == null) // this should never happen
++      {
++         logger.error("Can't change frequency when radioId [{}] is invalid!", radioId);
++         return;
++      }
++
++      // frequency is not given or less than 1
++      if (frequency == null || frequency.compareTo("1") < 0)
++      {
++         if (radioLink.mvcsLinkType.pointToPoint)
++         {
++            ScaLinkManager.getInstance().changeRadioOwnershipOfP2P(node.getNodeId(), radioId);
++         }
++      }
++
++      // frequency is 1 or greater
++      else
++      {
++         // vehicle is not on-board
++         if (node.getState() != VehicleState.ONBOARD)
++         {
++            logger.error("Can't change frequency when vehicle {} is not onboard!", node.getNodeId());
++            return;
++         }
++
++         // radio is not ON
++         if (!radioLink.isPowered())
++         {
++            logger.error("Can't change frequency when the radio {} is not ON!", radioId);
++            return;
++         }
++
++         // Changing is already in progress
++         if (node.getFrequencyChanging() != LinkModel.NO_LINK)
++         {
++            logger.error("Can't change frequency when vehicle {} is already processing a request!", node.getNodeId());
++            return;
++         }
++
++         // denote frequency changing event.
++         node.setFrequencyChanging(radioLink);
++
++         // create a message
++         LinkConfigureMessage message = new LinkConfigureMessage(radioId, frequency);
++
++         // initialize message ACK listener to monitor progress
++         RadioConfigMsgAckCallback ackCallback = new RadioConfigMsgAckCallback(message, radioLink, frequency);
++
++         // ACK listener will check back after 60 seconds
++         MvcsThreads.scheduledPool.schedule(ackCallback, 60, TimeUnit.SECONDS);
++
++         // send a command to vehicle
++         messageQueue.add(message, ackCallback);
++      }
++   }
++
++
+    /**
+     * Responsible of handling the EMCON status and alerts when acknowledgment message has received.
+     */
+@@ -495,4 +577,205 @@
+ 
+    }// end of inner class
+ 
++
++   /**
++    * Responsible of handling the radio configuration status and alerts when acknowledgment message
++    * has received.
++    */
++   private class RadioConfigMsgAckCallback implements Callback<AcknowledgementMessage>, Runnable
++   {
++
++      /** Denotes the requested message. */
++      protected LinkConfigureMessage linkConfigureMessage;
++
++      /** Denotes the radio link. */
++      protected RadioLink radioLink;
++
++      /** Denotes the requested frequency value. */
++      protected int frequency;
++
++      /** Denote successfully delivered message. */
++      private boolean delivered;
++
++
++      /**
++       * Initializes a new radio configuration Callback object with requested message.
++       * 
++       * @param linkConfigMessage - the requested link configuration message
++       */
++      public RadioConfigMsgAckCallback( LinkConfigureMessage linkConfigMessage, RadioLink radioLink, String frequency)
++      {
++         this.linkConfigureMessage = linkConfigMessage;
++         this.radioLink = radioLink;
++         this.frequency = (int) Float.parseFloat(frequency);
++         this.delivered = false;
++      }
++
++
++      @Override
++      public void call(AcknowledgementMessage message)
++      {
++         logger.trace("Got ack {}", message);
++
++         // remove the ACK message from the queue.
++         messageQueue.remove(message);
++
++         logger.info("Radio configuration message has reached to the vehicle {} frequency {}. ", node.getNodeId(), frequency);
++
++         delivered = true;
++
++         // denote the requested frequency is being processed
++         radioLink.setRequestedFrequency(frequency);
++
++         // inform the listener that command message has delivered to vehicle.
++         frequencyConfigurationListeners.get(radioLink).commandDelivered();
++
++      }// end of method
++
++
++      @Override
++      public void run()
++      {
++         // message was never delivered after waited time
++         if (!delivered)
++         {
++            // remove the frequency change message from the queue
++            messageQueue.remove(linkConfigureMessage);
++            // denote the failure
++            node.setFrequencyChangeSuccessful(false);
++            // reset the frequency change event
++            node.setFrequencyChanging(LinkModel.NO_LINK);
++
++            logger.warn("Radio configuration message has never reached to the vehicle {} frequency {}", node.getNodeId(), frequency);
++         }
++
++      }// end of run
++
++   }// end of inner class
++
++
++   /**
++    * To listen for frequency change event and radio configuration message from vehicle so it can
++    * update the progress.
++    */
++   private class FrequencyConfigurationListener implements PropertyChangeListener, Runnable, IMessageProcessor
++   {
++
++      /** Denotes whether or not frequency change was successful */
++      private boolean successful = false;
++
++      /** Denotes the radio link */
++      private RadioLink radioLink;
++
++      private Future<?> finalCheck = MvcsThreads.getDoneFuture();
++
++
++      /** To construct a link configuration listener for the given radio link. */
++      public FrequencyConfigurationListener( RadioLink radioLink)
++      {
++         this.radioLink = radioLink;
++         // add frequency change listener
++         radioLink.addPropertyChangeListener(RadioLink.FREQUENCYCHANGED, this);
++      }
++
++
++      /**
++       * To denote the frequency change command has delivered to vehicle. Register for any failure
++       * massage from vehicle. Schedule a final check to get the result.
++       */
++      protected void commandDelivered()
++      {
++         // need to reset successful since this is member of static listener
++         this.successful = false;
++         // need to check the final result in 3 minutes.
++         this.finalCheck = MvcsThreads.scheduledPool.schedule(this, 180, TimeUnit.SECONDS);
++         // register for radio configuration message
++         messageReceiver.register(RadioConfigureMessage.class, this);
++
++      }
++
++
++      @Override
++      public void process(Message message)
++      {
++         RadioConfigureMessage msg = (RadioConfigureMessage) message;
++         // message for requested radio
++         if (msg.getLinkId().equalsIgnoreCase(node.getFrequencyChanging().getLinkId()))
++         {
++            if (msg.getFailed())
++            {
++               logger.warn("Frequency change request has failed: vehicle {} - {} radio", node.getNodeName(), radioLink.commsType);
++
++               // denote result
++               node.setFrequencyChangeSuccessful(false);
++               // reset requested frequency
++               radioLink.setRequestedFrequency(-1);
++               // reset frequency changing event
++               node.setFrequencyChanging(LinkModel.NO_LINK);
++               // cancel the final check
++               this.finalCheck.cancel(true);
++            }
++         }
++      }
++
++
++      @Override
++      synchronized public void propertyChange(PropertyChangeEvent pce)
++      {
++         // get source
++         String newFrequencyStr = (String) pce.getNewValue();
++         logger.info("{} Radio frequency has changed to {} ", radioLink.mvcsLinkType, newFrequencyStr);
++
++         int newFrequency = -1;
++         try
++         {
++            newFrequency = (int) Float.parseFloat(newFrequencyStr);
++         }
++         catch (Exception e)
++         {
++            logger.info("Unable to convert the new frequency {}!", newFrequency);
++         }
++
++         // frequency changed on requested radio
++         if (node.getFrequencyChanging() == radioLink)
++         {
++            // requested frequency change was successful
++            if (newFrequency == radioLink.getRequestedFrequency())
++            {
++               logger.warn("Frequency change request has successfully completed: vehicle {}", node.getNodeName());
++               successful = true;
++               // denote result
++               node.setFrequencyChangeSuccessful(true);
++               // reset requested frequency
++               radioLink.setRequestedFrequency(-1);
++               // reset frequency changing event
++               node.setFrequencyChanging(LinkModel.NO_LINK);
++               // cancel final check
++               this.finalCheck.cancel(true);
++            }
++         }
++
++      }// end of method
++
++
++      @Override
++      public void run()
++      {
++         logger.info("Frequency change final check is running for vehicle {}!", node.getNodeName());
++
++         // frequency was not successful after waited time
++         if (!successful)
++         {
++            // denote the failure
++            node.setFrequencyChangeSuccessful(false);
++            // reset the frequency change event
++            node.setFrequencyChanging(LinkModel.NO_LINK);
++            logger.warn("Frequency change request was never responded from vehicle {}", node.getNodeName());
++
++         }
++
++      }// end of run
++
++   }// end of inner class (FrequencyChangeListener)
++
+ }// end of class
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/OIDTree.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/OIDTree.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/OIDTree.java	(working copy)
+@@ -639,7 +639,7 @@
+       node_vehicleLanBypassStatus_58.setMibNodeName("VehicleLanBypassStatus");
+       node_vehicleLanBypassStatus_58.setTableColumnNode(true);
+       node_vehicleLanBypassStatus_58.setRealSyntaxType((byte) 1);
+-      node_vehicleLanBypassStatus_58.setAccess(2);
++      node_vehicleLanBypassStatus_58.setAccess(3);
+       OIDTreeNode node_vehicleAntennaPosition_59 = (OIDTreeNode) node_vehicleEntry_30.addChild(".1.3.6.1.4.1.15001.1.10.1.1.29");
+       node_vehicleAntennaPosition_59.setMibNodeName("VehicleAntennaPosition");
+       node_vehicleAntennaPosition_59.setTableColumnNode(true);
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/VehicleTable.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/VehicleTable.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/VehicleTable.java	(working copy)
+@@ -9,8 +9,14 @@
+ import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
++import mil.navy.lcs.mvcs.iface.model.node.CommsType;
++import mil.navy.lcs.mvcs.iface.model.node.MvcsLinkType;
++import mil.navy.lcs.mvcs.sca.main.ShipState;
++import mil.navy.lcs.mvcs.sca.network.ScaNetworkManager;
+ import mil.navy.lcs.mvcs.sca.snmp.agent.workers.VehicleTableWorker;
+ 
++import org.slf4j.Logger;
++
+ import com.ireasoning.protocol.snmp.OIDTreeNode;
+ import com.ireasoning.protocol.snmp.SnmpRowStatus;
+ import com.ireasoning.protocol.snmp.SnmpTable;
+@@ -1546,8 +1552,14 @@
+     */
+    public void setVehicleLanBypassStatus(SnmpTableEntry vehicleEntry, String newValue)
+    {
+-
+-
++      synchronized (vehicleEntry)
++      {
++         if (ConfigManager.getInstance().getShip().getRouter().isTesting())
++         {
++            VehicleEntry entry = (VehicleEntry) vehicleEntry;
++            ShipState.model.getNode(entry.vehicleId).getFirstLinkByCommsType(CommsType.LAN).setConnected(Boolean.parseBoolean(newValue));
++         }
++      }
+    }
+ 
+ 
+@@ -1634,11 +1646,12 @@
+    {
+       synchronized (vehicleEntry)
+       {
+-         VehicleEntry entry = (VehicleEntry) vehicleEntry;
+-         entry.vehicleLOSRadioStatus = newValue;
++         if (ConfigManager.getInstance().getShip().getRouter().isTesting())
++         {
++            VehicleEntry entry = (VehicleEntry) vehicleEntry;
++            ShipState.model.getNode(entry.vehicleId).getFirstLinkByCommsType(CommsType.LOS).setConnected(Boolean.parseBoolean(newValue));
++         }
+       }
+-
+-
+    }
+ 
+ 
+@@ -1916,8 +1929,11 @@
+    {
+       synchronized (vehicleEntry)
+       {
+-         VehicleEntry entry = (VehicleEntry) vehicleEntry;
+-         entry.vehicleOTHRadioStatus = newValue;
++         if (ConfigManager.getInstance().getShip().getRouter().isTesting())
++         {
++            VehicleEntry entry = (VehicleEntry) vehicleEntry;
++            ShipState.model.getNode(entry.vehicleId).getFirstLinkByCommsType(CommsType.OTH).setConnected(Boolean.parseBoolean(newValue));
++         }
+       }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/RadioTableWorker.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/RadioTableWorker.java	(revision 9561)
++++ src/main/java/mil/navy/lcs/mvcs/sca/snmp/agent/workers/RadioTableWorker.java	(working copy)
+@@ -345,14 +345,14 @@
+ 
+ 
+    /**
+-    * Sets new radioFrequency value
++    * To set new radio frequency.
+     * 
+     * @param radioId table entry object
+-    * @param newValue new value to be set
++    * @param frequency new frequency to be set
+     */
+-   public void setRadioFrequency(String radioId, String newValue)
++   public void setRadioFrequency(String radioId, String frequency)
+    {
+-      ShipState.shipHandler.requestRadioFrequencyChange(radioId, newValue);
++      ShipState.shipHandler.requestConfigureRadio(radioId, frequency);
+    }
+ 
+ 
+Index: src/main/test/mil/navy/lcs/mvcs/sca/model/TestMvcsShipNodeHandler.java
+===================================================================
+--- src/main/test/mil/navy/lcs/mvcs/sca/model/TestMvcsShipNodeHandler.java	(revision 9561)
++++ src/main/test/mil/navy/lcs/mvcs/sca/model/TestMvcsShipNodeHandler.java	(working copy)
+@@ -136,4 +136,10 @@
+ 
+    }
+ 
++
++   @Override
++   public void requestConfigureRadio(String radioId, String freq)
++   {
++   }
++
+ }

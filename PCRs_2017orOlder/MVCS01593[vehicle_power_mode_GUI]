@@ -1,0 +1,37 @@
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9554)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -216,11 +216,11 @@
+ 									<tbody>
+ 										<tr>
+ 											<td class="dataLabel">SW Status</td>
+-											<td>UNAVAILABLE</td>
++											<td data-bind="text: softwareStatus">UNAVAILABLE</td>
+ 										</tr>
+ 										<tr>
+ 											<td class="dataLabel">HW Status</td>
+-											<td>UNAVAILABLE</td>
++											<td data-bind="text: hardwareStatus">UNAVAILABLE</td>
+ 										</tr>
+ 										<tr>
+ 											<td>&nbsp;</td>
+@@ -323,15 +323,15 @@
+ 											</tr>
+ 											<tr>
+ 												<td class="dataLabel">Power Mode</td>
+-												<td>UNAVAILABLE</td>
++												<td data-bind="text: powerConservationMode">UNAVAILABLE</td>
+ 											</tr>
+ 											<tr>
+ 												<td class="dataLabel">SW Status</td>
+-												<td>UNAVAILABLE</td>
++												<td data-bind="text: softwareStatus">UNAVAILABLE</td>
+ 											</tr>
+ 											<tr>
+ 												<td class="dataLabel">HW Status</td>
+-												<td>UNAVAILABLE</td>
++												<td data-bind="text: hardwareStatus">UNAVAILABLE</td>
+ 											</tr>
+ 											<tr>
+ 												<td>&nbsp;</td>

@@ -1,0 +1,448 @@
+### Eclipse Workspace Patch 1.0
+#P mvcs-common
+Index: src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/common/radios/interfaces/IRadioPlugin.java	(working copy)
+@@ -245,10 +245,10 @@
+ 
+    /**
+     * 
+-    * Method Description Set the SNMP parameters
++    * To set the SNMP parameters
+     * 
+-    * @param snmpParameters
+-    * @param sendOverToRim
++    * @param snmpParameters - SNMP parameters to set.
++    * @param sendOverToRim - If true, send over to RIM
+     */
+    public void setSnmpParameters(SnmpParameters snmpParameters, boolean sendOverToRim);
+ 
+#P mvcs-plugin-rt1944
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/radiocommands/RadioCommands.java	(working copy)
+@@ -35,7 +35,14 @@
+ import java.util.Vector;
+ import java.util.regex.Pattern;
+ 
+-import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.ireasoning.protocol.TimeoutException;
++import com.ireasoning.protocol.snmp.SnmpDataType;
++import com.ireasoning.protocol.snmp.SnmpTableModel;
++import com.ireasoning.protocol.snmp.SnmpVarBind;
++
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.graphics.util.SwingWorker;
+ import mil.navy.lcs.mvcs.plugins.rt1944.gui.interfaces.KeyEntryMethod;
+ import mil.navy.lcs.mvcs.plugins.rt1944.logger.Rt1944Logger;
+@@ -70,13 +77,14 @@
+       public boolean requestInProgress = false;
+    }
+ 
++   /** The logger for this class */
++   protected static Logger logger = LoggerFactory.getLogger(RadioCommands.class);
+ 
++
+    /** How long to wait before applying the changes to the radio */
+    private static final long APPLY_CHANGES_GRACE_PERIOD = 3000;
+ 
+-   /**
+-    * A map of the vehicle queue list and their dscp values.
+-    */
++   /** A map of the vehicle queue list and their dscp values. */
+    private static final Map<QueueList, LinkedList<Integer>> priorityList = new HashMap<QueueList, LinkedList<Integer>>();
+ 
+    private static final long RADIO_SET_GAURD = 10000;
+@@ -874,15 +882,7 @@
+ 
+    public void radioModifier(String Value) throws IOException
+    {
+-      try
+-      {
+-         SnmpCommands.snmpset("iciAppRssslRadioAction" + rt1944_Snmp_Suffix, "s", Value, this.ipAddress);
+-      }
+-      catch (TimeoutException e)
+-      {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
+-      }
++      SnmpCommands.snmpset("iciAppRssslRadioAction" + rt1944_Snmp_Suffix, "s", Value, this.ipAddress);
+    }
+ 
+ 
+@@ -1205,30 +1205,20 @@
+    /**
+     * This function is to set the frequency for the current radio.
+     *
+-    * @param frequency
+-    * @throws IOException
+-    * @throws TimeoutException
+-    * @throws IOException
++    * @param frequency - the frequency to set
++    * @throws Exception
+     */
+    public void setRadioFrequency(String frequency) throws IOException
+    {
+-      try
+-      {
+-         System.out.println("Setting radio Frequency " + this.ipAddress + " " + this.radioPort);
+-         getRequestState().requestedFrequency = frequency;
++      logger.info("Setting radio Frequency " + this.ipAddress + " " + this.radioPort);
++      getRequestState().requestedFrequency = frequency;
+ 
+-         SnmpCommands.snmpset("iciAppRssslRadioFrequency" + rt1944_Snmp_Suffix, "s", frequency, this.ipAddress);
+-         setAppFlags(true);
++      SnmpCommands.snmpset("iciAppRssslRadioFrequency" + rt1944_Snmp_Suffix, "s", frequency, this.ipAddress);
++      setAppFlags(true);
+ 
+-         // Save the frequency changes to the radio.
+-         saveChangesPermanently();
+-         this.frequency = frequency;
+-      }
+-      catch (TimeoutException e)
+-      {
+-         throw new TimeoutException("The system timed out while trying to set the frequency.");
+-
+-      }
++      // Save the frequency changes to the radio.
++      saveChangesPermanently();
++      this.frequency = frequency;
+    }
+ 
+ 
+@@ -1236,11 +1226,9 @@
+     * This function will allow the programmer to set the max allowable power for the radio.
+     *
+     * @param powerLevel
+-    * @throws IOException
+     * @throws TimeoutException
+-    * @throws IOException
+     */
+-   public void setRadioFullPower(String initialPowerLevel) throws IOException
++   public void setRadioFullPower(String initialPowerLevel) throws TimeoutException
+    {
+       try
+       {
+@@ -1248,7 +1236,7 @@
+          setAppFlags(true);
+          this.initialPowerLevel = initialPowerLevel;
+       }
+-      catch (TimeoutException e)
++      catch (Exception e)
+       {
+          Rt1944Logger.getInstance().getLogger().debug("The system timed out while trying to set the Power status.");
+          throw new TimeoutException("The system timed out while trying to set the Power status.");
+@@ -1526,14 +1514,8 @@
+       {
+          radioModifier("commit");
+       }
+-      catch (TimeoutException e)
+-      {
+-         // TODO Auto-generated catch block
+-         e.printStackTrace();
+-      }
+       catch (IOException e)
+       {
+-         // TODO Auto-generated catch block
+          e.printStackTrace();
+       }
+ 
+@@ -1547,7 +1529,6 @@
+     */
+    private void saveChanges(final boolean session)
+    {
+-
+       worker = new SwingWorker()
+       {
+          public Object construct()
+@@ -1554,12 +1535,6 @@
+          {
+             return doWork(session);
+          }
+-
+-
+-         public void finished()
+-         {
+-
+-         }
+       };
+       worker.start();
+ 
+@@ -1597,13 +1572,11 @@
+    {
+       appFlag = flag;
+       appSessionFlag = flag;
+-
+    }
+ 
+ 
+    private String setCosDscp(int dscpVal, int queueValue) throws IOException
+    {
+-
+       String oid = "iciAppRssslNpmConfigCosMark." + dscpVal;
+       try
+       {
+@@ -1667,7 +1640,6 @@
+ 
+    Object doWork(final boolean session)
+    {
+-      // System.out.println("_---------------------Doing work");
+       RequestState reqState = getRequestState();
+ 
+       // synchronize around reqState so that there can only be one request in
+@@ -1676,17 +1648,17 @@
+       {
+          try
+          {
+-            LoggingManager.getPrimaryLogger().debug("starting apply settings delay");
++            logger.debug("starting apply settings delay");
+ 
+             reqState.requestInProgress = true;
+             Thread.sleep(APPLY_CHANGES_GRACE_PERIOD);
+ 
+-            LoggingManager.getPrimaryLogger().debug("applying settings");
++            logger.debug("applying settings");
+             reqState.radioRebooting = false;
+             radioControlSaveChanges(session);
+             reqState.radioRebooting = true;
+             // make sure the radio has entered the reboot phase
+-            LoggingManager.getPrimaryLogger().debug("waiting for radio reboot");
++            logger.debug("waiting for radio reboot");
+             // add a guard here in case the radio never reboots so we don't lock up
+ 
+             long setStartTime = System.currentTimeMillis();
+@@ -1694,25 +1666,25 @@
+                Thread.sleep(200);
+ 
+             // wait for the radio to become available
+-            LoggingManager.getPrimaryLogger().debug("waiting for radio to become available");
++            logger.debug("waiting for radio to become available");
+             reqState.radioRebooting = true;
+             while (!isRadioResponding())
+                Thread.sleep(200);
+ 
+-            LoggingManager.getPrimaryLogger().debug("radio is available");
++            logger.debug("radio is available");
+             reqState.radioRebooting = false;
+          }
+          catch (InterruptedException e)
+          {
+-            LoggingManager.getPrimaryLogger().warn("Unexpected interrupt, exiting");
++            logger.warn("Unexpected interrupt, exiting");
+          }
+          catch (Exception e)
+          {
+-            LoggingManager.getSystemErrorLogger().error("Exception while saving radio settings: ", e);
++            logger.error("Exception while saving radio settings: ", e);
+          }
+          finally
+          {
+-            LoggingManager.getPrimaryLogger().debug("completed apply settings thread");
++            logger.debug("completed apply settings thread");
+             // make sure to cancel the request in progress status no matter
+             // how the request ends
+             reqState.requestInProgress = false;
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/Rt1944Plugin.java	(working copy)
+@@ -3,9 +3,6 @@
+ package mil.navy.lcs.mvcs.plugins.rt1944;
+ 
+ 
+-import gnu.cajo.utils.CodebaseServer;
+-import gnu.cajo.utils.ItemServer;
+-
+ import java.beans.PropertyChangeEvent;
+ import java.beans.PropertyChangeListener;
+ import java.io.IOException;
+@@ -14,6 +11,13 @@
+ import java.util.Timer;
+ import java.util.TimerTask;
+ 
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import com.ireasoning.protocol.TimeoutException;
++
++import gnu.cajo.utils.CodebaseServer;
++import gnu.cajo.utils.ItemServer;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin;
+ import mil.navy.lcs.mvcs.common.radios.interfaces.IRadioProperties;
+@@ -27,11 +31,6 @@
+ import mil.navy.lcs.mvcs.plugins.rt1944.radiocommands.RadioCommandsManager;
+ import mil.navy.lcs.mvcs.plugins.rt1944.snmp.trap.SnmpTrapd;
+ 
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-
+-import com.ireasoning.protocol.TimeoutException;
+-
+ /**
+  * Class Description
+  * <p>
+@@ -71,7 +70,10 @@
+ 
+    /** The m constant of quality = (log(snr) - log(b)) / log(m) */
+    private static final double EXP_M_CONSTANT = 1.226089994;
++
++   /** The logger for the plugin */
+    private static final Logger logger = LoggerFactory.getLogger(Rt1944Plugin.class);
++
+    /** Maximum post-scaling quality value */
+    private static final double MAX_QUAL_VAL = 100.0;
+ 
+@@ -90,28 +92,25 @@
+    private final long PATH_SET_INTERVAL = 10000;
+ 
+    private GuiServer guiServer = new GuiServer();
++
+    private RadioCommands RadioControl;
++
+    private RadioProperties radioProperties = new RadioProperties("");
+ 
+-   /**
+-    * The plugin keeps track of a radio by the name of the radio
+-    */
++   /** The plugin keeps track of a radio by the name of the radio */
+    private String myRadioName = "";
+ 
+    private Rt1944PluginWorker rt1944PluginWorker;
+-   /**
+-    * The SNMP trap listening object
+-    */
++
++   /** The SNMP trap listening object */
+    private SnmpTrapd snmpTrapd;
+-   /**
+-    * The SNMP trap listening thread
+-    */
+-   Thread snmpTrapThread;
+ 
++   /** The SNMP trap listening thread */
++   protected Thread snmpTrapThread;
+ 
+-   List<SnmpParameters> vehicleList;
++   protected List<SnmpParameters> vehicleList;
+ 
+-   // TimerTask object that will attempt to switch the radio antenna path.
++   /** TimerTask object that will attempt to switch the radio antenna path. */
+    private PathSwitcher pathThread = null;
+ 
+ 
+@@ -169,11 +168,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param destinationNodeId
+-    * @param destinationRadio
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#connectToRadio(java.lang.String,
+     *      java.lang.String)
+     */
+@@ -186,11 +180,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param destinationNodeId
+-    * @param destinationRadio
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#disconnectFromRadio(java.lang.String,
+     *      java.lang.String)
+     */
+@@ -210,10 +199,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param ipAddress
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getBitResult(java.lang.String)
+     */
+    @Override
+@@ -244,9 +229,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @return
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getLinkQuality()
+     */
+    @Override
+@@ -293,7 +275,6 @@
+ 
+ 
+    /**
+-    *
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#getRadioFrequency()
+     */
+    @Override
+@@ -618,9 +599,9 @@
+       {
+          RadioControl.setRadioFullPower(powerMode);
+       }
+-      catch (IOException e)
++      catch (Exception e)
+       {
+-         e.printStackTrace();
++         logger.error("Error setting radio power mode: " + e.getMessage());
+       }
+       return false;
+    }
+@@ -627,10 +608,6 @@
+ 
+ 
+    /**
+-    * Method Description
+-    *
+-    * @param snmpParameters
+-    * @param sendOverToRim
+     * @see mil.navy.lcs.mvcs.common.radios.interfaces.IRadioPlugin#setSnmpParameters(mil.navy.lcs.mvcs.common.radios.interfaces.SnmpParameters,
+     *      boolean)
+     */
+@@ -648,10 +625,10 @@
+       rt1944PluginWorker = new Rt1944PluginWorker(RadioControl, getRadioProperties());
+       rt1944PluginWorker.setRadioName(this.myRadioName);
+ 
+-      System.out.println("------------------In setSnmpParameters ");
+-      System.out.println("Plugin radio name is " + this.myRadioName);
+-      System.out.println("Agent IP address is " + snmpParameters.getSnmpIpAddress());
+-      System.out.println("Agent port is " + snmpParameters.getSnmpPort());
++      logger.info("------------------In setSnmpParameters ");
++      logger.info("Plugin radio name is " + this.myRadioName);
++      logger.info("Agent IP address is " + snmpParameters.getSnmpIpAddress());
++      logger.info("Agent port is " + snmpParameters.getSnmpPort());
+    }
+ 
+ 
+Index: src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/snmp/SnmpFunctions.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/snmp/SnmpFunctions.java	(revision 9779)
++++ src/main/java/mil/navy/lcs/mvcs/plugins/rt1944/snmp/SnmpFunctions.java	(working copy)
+@@ -192,7 +192,6 @@
+       SnmpSession session = null;
+       try
+       {
+-
+          SnmpVarBindList vbList = new SnmpVarBindList();
+          session = new SnmpSession(remoteIpAddress, port, readString, writeString, _version, transportType);
+ 
+@@ -213,7 +212,6 @@
+          SnmpVarBind vb = new SnmpVarBind(new SnmpOID(New_oid), t);
+          vbList.add(vb);
+ 
+-
+          pdu.addVarBinds(vbList);
+ 
+          SnmpPdu retPdu = session.snmpSetRequest(pdu);

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mission>
+	<title>Factory Mission Configuration</title>
+	<name>default-mission.xml</name>
+	<author>MVCS Administrator</author>
+	<description> This mission is responsible for managing the LCS1 and two
+		Vehicles: USV and MTV. Both
+		vehicles have similar configurations. The
+		radios on-board are the RT-1944 and the Iridium SCU.
+	</description>
+	<dateCreated>2009-08-26T14:32:00-06:00</dateCreated>
+	<ship>
+		<id>100</id>
+		<name>LCS1</name>
+		<typeId>lcs1</typeId>
+		<type>LCS</type>
+		<ipAddress>172.20.10.2</ipAddress>
+		<rmsDliIpAddress>10.30.28.219</rmsDliIpAddress>
+		<snmpAgentPort>1460</snmpAgentPort>
+		<snmpTrapPort>1462</snmpTrapPort>
+		<networkTimeout>300</networkTimeout>
+		<crossDomain>
+			<name>HAF100</name>
+			<ipAddress>172.20.10.3</ipAddress>
+		</crossDomain>
+		<othAmpController>
+			<ipAddress>172.20.10.3</ipAddress>
+			<port>4008</port>
+		</othAmpController>
+		<radio>
+			<id>rt1944-00</id>
+			<typeId>rt1944</typeId>
+			<linkType>RT-1944</linkType>
+			<networkId>1</networkId>
+			<lnrFrequency>2367</lnrFrequency>
+			<missionFrequency>2212</missionFrequency>
+			<relayFrequency>3000</relayFrequency>
+		</radio>
+		<radio>
+			<id>prc117-0</id>
+			<typeId>prc117</typeId>
+			<linkType>PRC-117</linkType>
+			<networkId>1</networkId>
+		</radio>
+		<radio>
+			<id>rt1988-0</id>
+			<typeId>iridium</typeId>
+			<linkType>RT-1988</linkType>
+			<networkId>1</networkId>
+		</radio>
+		<snmp>
+			<timeout>10000</timeout><!-- Units in milliseconds -->
+			<numberOfRetries>1</numberOfRetries>
+			<version>3</version>
+		</snmp>
+	</ship>
+	<vehicle>
+		<id>4</id>
+		<name>USV4</name>
+		<typeId>usv</typeId>
+		<type>USV</type>
+		<ipAddress>172.20.14.2</ipAddress>
+		<snmpAgentPort>1560</snmpAgentPort>
+		<mpsName>USV4</mpsName>
+		<networkTimeout>300</networkTimeout>
+		<depthLimit>-30.5</depthLimit>
+		<crossDomain>
+			<name>HAF100</name>
+			<ipAddress>172.20.14.3</ipAddress>
+		</crossDomain>
+		<router>
+			<id>router-75</id>
+			<typeId>router</typeId>
+			<type>Router</type>
+			<testing>true</testing>
+			<ipAddress>172.20.14.1</ipAddress>
+			<connectionType>SSH</connectionType>
+			<connectionPort>22</connectionPort>
+			<serialPort>/dev/ttyM0</serialPort>
+			<sysLogPort>13514</sysLogPort>
+			<lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+		</router>
+		<lanBypass>
+			<id>lanbypass-4</id>
+			<typeId>lanbypass</typeId>
+			<linkType>LAN Bypass</linkType>
+			<linkNumber>1</linkNumber>
+			<priority>1</priority>
+			<networkId>1</networkId>
+		</lanBypass>
+		<radio>
+			<id>rt1944-4</id>
+			<typeId>rt1944</typeId>
+			<linkType>RT-1944</linkType>
+			<linkNumber>2</linkNumber>
+			<priority>2</priority>
+			<networkId>1</networkId>
+			<encrypterTypeId>ips250</encrypterTypeId>
+			<encrypterRedIp>172.20.14.10</encrypterRedIp>
+			<ampId>rt1944Amp-4-0</ampId>
+			<secondaryAmpId>rt1944Amp-4-0</secondaryAmpId>
+			<sleepRadio>false</sleepRadio>
+			<heartbeatFrequency>1</heartbeatFrequency>
+			<heartbeatWindowSize>10</heartbeatWindowSize>
+			<goodPercentage>80</goodPercentage>
+			<warningPercentage>60</warningPercentage>
+			<losRange>20</losRange><!-- in nautical miles -->
+			<losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+			<lrRange>50</lrRange><!-- in nautical miles -->
+			<lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+			<slaTimeout>10</slaTimeout>
+			<snmpAgentIpAddress>172.20.14.3</snmpAgentIpAddress>
+			<snmpAgentPortNumber>5001</snmpAgentPortNumber>
+		</radio>
+		<matrixSwitch>
+			<id>ms-40</id>
+			<typeId>ms</typeId>
+			<type>Matrix Switch</type>
+			<testing>true</testing>
+			<serialPort>172.20.14.3:4002</serialPort>
+			<currentMode>dummy</currentMode>
+			<radioId>rt1944-4</radioId>
+		</matrixSwitch>
+		<power>
+			<id>power-4</id>
+			<typeId>psu</typeId>
+			<type>Power Supply</type>
+			<testing>true</testing>
+			<voltage>28</voltage>
+			<serialPort>/dev/ttyS1</serialPort>
+			<reverseLogicAdapter>true</reverseLogicAdapter>
+			<circuitBreaker>
+				<id>rt1944Amp-4-0</id>
+				<devNumber>1</devNumber>
+				<devName>RT-1944 Amplifier</devName>
+			</circuitBreaker>
+			<circuitBreaker>
+				<id>rt1944-4</id>
+				<devNumber>2</devNumber>
+				<devName>RT-1944</devName>
+			</circuitBreaker>
+		</power>
+		<snmpAgentTest>
+			<testing>false</testing>
+		</snmpAgentTest>
+	</vehicle>
+</mission>

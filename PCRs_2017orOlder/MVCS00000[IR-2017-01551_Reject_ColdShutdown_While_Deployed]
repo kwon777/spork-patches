@@ -1,0 +1,45 @@
+Index: WebContent/css/dash.css
+===================================================================
+--- WebContent/css/dash.css	(revision 9842)
++++ WebContent/css/dash.css	(working copy)
+@@ -16,6 +16,7 @@
+ 	border-style: solid;
+ 	border-radius: .3em;
+ 	cursor: pointer !important;
++	float: inline-start;
+ }
+ 
+ .node > * {
+Index: WebContent/js/Strings.js
+===================================================================
+--- WebContent/js/Strings.js	(revision 9842)
++++ WebContent/js/Strings.js	(working copy)
+@@ -35,6 +35,7 @@
+ 
+ 	alertEmconTimeValue: "Please enter a value between 1 and 120",
+ 	alertZeroizeCommandReceived: "Zeroization command will be sent to the vehicle.",
++	alertColdShutdownOffboard: "Not allowed a cold shutdown while vehicle is deployed!",
+ 	
+ 	promptEmconDuration: "Please enter the EMCON duration in minutes, between 1 and 120",
+ 	
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9842)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -379,11 +379,15 @@
+ //JavaScript function that is called when a node request shutdown(MVCSSRS0079 & MVCSSRS0075)
+ var requestColdShutdown = function(node)
+ {
++	//IR-2017-01551 & MVCSSRS0061 - Reject cold shutdown while vehicle is deployed.
++	if(node.state() == "DEPLOYED"){
++		alert(Strings.alertColdShutdownOffboard);
++		return;
++	}
+ 	requestShutdown(node, "COLD_SHUTDOWN");
+ };
+ var requestShutdown = function(node, shutdownType)
+ {
+-
+ 	//MVCS01368 & MVCSSRS0076 - Confirmation box for shutdown.
+ 	if (!confirm(Strings.confirmShutdown))
+ 		return;

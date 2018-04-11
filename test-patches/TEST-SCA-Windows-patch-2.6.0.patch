@@ -1,0 +1,91 @@
+diff --git a/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties b/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+index 886fdc3..cd3d439 100644
+--- a/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
++++ b/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
+@@ -5,7 +5,7 @@
+ app_version_debug=${app_version}-@revision_number@
+ app_build_date=@app_build_date@
+ 
+-vessel_type=@vessel_type@
++vessel_type=SHIP
+ 
+ parent_dir=..
+ 
+diff --git a/mvcs-sca/.classpath b/mvcs-sca/.classpath
+index 2c6b9aa..6c0c377 100644
+--- a/mvcs-sca/.classpath
++++ b/mvcs-sca/.classpath
+@@ -8,5 +8,9 @@
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-mission-builder"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-prc117"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-rt1944"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-mcg101"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
+ 	<classpathentry kind="output" path="bin"/>
+ </classpath>
+diff --git a/mvcs-sca/configs/credentials.xml b/mvcs-sca/configs/credentials.xml
+index e9b66ae..5b73cf2 100644
+--- a/mvcs-sca/configs/credentials.xml
++++ b/mvcs-sca/configs/credentials.xml
+@@ -7,8 +7,8 @@
+ 	</credential>
+ 	<credential>
+ 		<id>router-1</id>
+-		<userName>ENC(QW4epYniFgaFfAljheRQBQ==\r\n)</userName>
+-		<password>ENC(ui6sIUwAZ96GbgTUWk+NtQ==\r\n)</password>
++		<userName>mvcsadmin</userName>
++		<password>abc12345</password>
+ 	</credential>
+ 	<credential>
+ 		<id>haf</id>
+diff --git a/mvcs-sca/missions/default-mission.xml b/mvcs-sca/missions/default-mission.xml
+index 6a17432..7faa1a0 100644
+--- a/mvcs-sca/missions/default-mission.xml
++++ b/mvcs-sca/missions/default-mission.xml
+@@ -53,7 +53,7 @@
+          <id>router-1</id>
+          <typeId>router</typeId>
+          <type>Router</type>
+-         <testing>false</testing>
++         <testing>true</testing>
+          <configurable>true</configurable>
+          <ipAddress>172.20.10.1</ipAddress>
+          <connectionType>SSH</connectionType>
+@@ -124,7 +124,7 @@
+          <id>ms-00</id>
+          <typeId>ms</typeId>
+          <type>Matrix Switch</type>
+-         <testing>false</testing>
++         <testing>true</testing>
+          <configurable>true</configurable>
+          <serialPort>172.20.10.3:4002</serialPort>
+          <currentMode>dummy</currentMode>
+@@ -135,7 +135,7 @@
+          <id>power-0</id>
+          <typeId>psu</typeId>
+          <type>Power Supply</type>
+-         <testing>false</testing>
++         <testing>true</testing>
+          <configurable>true</configurable>
+          <voltage>28</voltage>
+          <serialPort>172.20.10.3:4001</serialPort>
+@@ -195,7 +195,7 @@
+          <primaryPort>8000</primaryPort>
+          <secondaryName>MPSCORBA2</secondaryName>
+          <secondaryPort>8001</secondaryPort>
+-         <testing>false</testing>
++         <testing>true</testing>
+          <proxyHost />
+          <proxyPort />
+          <clientHost />
+@@ -207,7 +207,7 @@
+          <version>3</version>
+       </snmp>
+       <security>
+-         <testing>false</testing>
++         <testing>true</testing>
+       </security>
+       <snmpAgentTest>
+          <testing>false</testing>

@@ -1,0 +1,233 @@
+Index: .classpath
+===================================================================
+--- .classpath	(revision 9607)
++++ .classpath	(working copy)
+@@ -3,7 +3,6 @@
+ 	<classpathentry kind="src" path="src/main/java"/>
+ 	<classpathentry kind="src" path="src/test/java"/>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+ 	<classpathentry kind="output" path="bin"/>
+ </classpath>
+Index: configs/taclanes.xml
+===================================================================
+--- configs/taclanes.xml	(revision 9607)
++++ configs/taclanes.xml	(working copy)
+@@ -1,24 +1,21 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <IPS250Configs>
+-   <ips250>
+-      <vehicleName>Ship Taclane</vehicleName><!-- The display name for these SNMP configurations. -->
+-      <ipAddress>192.168.14.2</ipAddress><!-- The Ip address of the device you would like to connect 
+-         to -->
+-      <port>161</port><!-- The port in which the SNMP Agent is running -->
+-      <heartbeatPort></heartbeatPort> <!-- port must be greater than 1024 -->
+-      <version>3</version> <!-- The Snmp version the agent is running -->
+-      <communityRead>mvcs</communityRead> <!-- The Community String to read from the agent. It does not matter if this is a SNMPv3 session -->
+-      <communityWrite>mvcs</communityWrite> <!-- The Community String to write to the agent. It does not matter if this is a SNMPv3 session -->
+-      <userName>mvcssnmpuser</userName> <!-- The User name for SNMP v3 Agents -->
+-      <authPassword>NewUser1!</authPassword> <!-- The Authentication Password (SNMP V3) -->
+-      <authAlgorithm>HMAC-SHA-1</authAlgorithm><!-- The Authentication Protocol(Snmp V3) [HMAC-MD5, HMAC-SHA-1] -->
+-      <privacyPassword>NewUser1!</privacyPassword><!-- Privacy Password (SNMP v3) -->
+-      <privacyAlgorithm>1</privacyAlgorithm><!-- Privacy Protocol (SNMP v3) [AES=1, DES=0, AES192=2, 
+-         AES256=3] -->
+-      <numberOfRetries>2</numberOfRetries><!-- The number of retries -->
+-      <timeout>5000</timeout><!-- Timeout for SNP functions -->
+-      <oid>.1</oid> <!-- The starting OID for the SNMP Walks -->
+-      <mibFile>configs/HAIPE-TRAFFIC-PROTECTION-MIB.txt,configs/HAIPE-FEATURE-HIERARCHY-MIB.txt,configs/HAIPE-MANAGEMENT-MIB.txt,configs/HAIPE-TC-MIB.txt
+-      </mibFile><!-- The MIB file used for the the SNMP Functions -->
+-   </ips250>
++    <ips250>
++        <port>161</port>
++        <heartbeatPort>0</heartbeatPort>
++        <numberOfRetries>2</numberOfRetries>
++        <version>3</version>
++        <privacyAlgorithm>1</privacyAlgorithm>
++        <timeout>5000</timeout>
++        <communityWrite>mvcs</communityWrite>
++        <oid>.1</oid>
++        <vehicleName>Ship Taclane</vehicleName>
++        <mibFile>configs/HAIPE-TRAFFIC-PROTECTION-MIB.txt,configs/HAIPE-FEATURE-HIERARCHY-MIB.txt,configs/HAIPE-MANAGEMENT-MIB.txt,configs/HAIPE-TC-MIB.txt</mibFile>
++        <privacyPassword>ENC(4g9pYojnsmbvmwbk0m0fbFpwk8h03dfW )</privacyPassword>
++        <authPassword>ENC(3BbTmqGHe5bD0REplD03iABt5hO7ARWF )</authPassword>
++        <authAlgorithm>HMAC-SHA-1</authAlgorithm>
++        <communityRead>mvcs</communityRead>
++        <ipAddress>192.168.14.2</ipAddress>
++        <userName>mvcssnmpuser</userName>
++    </ips250>
+ </IPS250Configs>
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250Plugin.java	(working copy)
+@@ -47,7 +47,7 @@
+ 
+ 
+    @Override
+-   public void startPlugin()
++   public void startPlugin(String ip)
+    {
+       LoggingManager.getPrimaryLogger().info("Starting IPS-250 plugin...");
+ 
+@@ -57,7 +57,11 @@
+       {
+          // obtain the IP and port from configurations.
+          String ipFromConfig = ConfigManager.getInstance().getRadioSelected().getIpAddress();
+-         if (ipFromConfig != null && ipFromConfig.length() > 1)
++         
++         // use IP if given
++         if(ip!=null && ip.length() > 3)
++            ipAddress = ip;
++         else if (ipFromConfig != null && ipFromConfig.length() > 1)
+             ipAddress = ipFromConfig;
+ 
+          heartbeatPort = ConfigManager.getInstance().getRadioSelected().getHeartbeatPort();
+Index: src/main/java/mil/navy/lcs/mvcs/ips250plugin/utils/IPS250HbTest.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/ips250plugin/utils/IPS250HbTest.java	(revision 9607)
++++ src/main/java/mil/navy/lcs/mvcs/ips250plugin/utils/IPS250HbTest.java	(working copy)
+@@ -89,12 +89,9 @@
+          if (ip == null || ip.trim().length() <= 1)
+             ip = "172.20.11.10";
+ 
+-         // set the ip
+-         ips250Plugin.setIPAddress(ip);
++         // start the plug-in
++         ips250Plugin.startPlugin(ip);
+ 
+-         // start the plugin
+-         ips250Plugin.startPlugin();
+-
+          while (true)
+          {
+             System.out.println("Listening for input...");
+Index: src/test/java/EncryptDecryptTest.java
+===================================================================
+--- src/test/java/EncryptDecryptTest.java	(revision 9607)
++++ src/test/java/EncryptDecryptTest.java	(working copy)
+@@ -1,29 +0,0 @@
+-import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
+-
+-/**
+- * Class Used to Test the Encryption and Decryption of the .xml configuration files.
+- * 
+- * Prior to running this test, go to /configs/taclanes.xml and modify the passwords. Run this test
+- * and verify that the passwords are encrypted afterwords.
+- * 
+- * @author Joshua.Nelson
+- * 
+- */
+-public class EncryptDecryptTest
+-{
+-   /**
+-    * @param args
+-    */
+-   public static void main(String[] args)
+-   {
+-      try
+-      {
+-         ConfigManager man = new ConfigManager();
+-      }
+-      catch (Exception ex)
+-      {
+-         System.out.println("An Exception Occured while creating the ConfigManager.");
+-         ex.printStackTrace();
+-      }
+-   }
+-}
+Index: src/test/java/mil/navy/lcs/mvcs/ips250plugin/configuration/ConfigManagerTest.java
+===================================================================
+--- src/test/java/mil/navy/lcs/mvcs/ips250plugin/configuration/ConfigManagerTest.java	(revision 0)
++++ src/test/java/mil/navy/lcs/mvcs/ips250plugin/configuration/ConfigManagerTest.java	(working copy)
+@@ -0,0 +1,30 @@
++package mil.navy.lcs.mvcs.ips250plugin.configuration;
++import mil.navy.lcs.mvcs.ips250plugin.configuration.ConfigManager;
++
++/**
++ * Class Used to Test the Encryption and Decryption of the .xml configuration files.
++ * 
++ * Prior to running this test, go to /configs/taclanes.xml and modify the passwords. Run this test
++ * and verify that the passwords are encrypted afterwords.
++ * 
++ * @author Joshua.Nelson
++ * 
++ */
++public class ConfigManagerTest
++{
++   /**
++    * @param args
++    */
++   public static void main(String[] args)
++   {
++      try
++      {
++         ConfigManager man = new ConfigManager();
++      }
++      catch (Exception ex)
++      {
++         System.out.println("An Exception Occured while creating the ConfigManager.");
++         ex.printStackTrace();
++      }
++   }
++}
+Index: src/test/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250PluginTest.java
+===================================================================
+--- src/test/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250PluginTest.java	(revision 9607)
++++ src/test/java/mil/navy/lcs/mvcs/ips250plugin/main/IPS250PluginTest.java	(working copy)
+@@ -6,9 +6,8 @@
+ package mil.navy.lcs.mvcs.ips250plugin.main;
+ 
+ 
+-import junit.framework.Assert;
+-
+ import org.junit.After;
++import org.junit.Assert;
+ import org.junit.Before;
+ import org.junit.Test;
+ 
+@@ -29,7 +28,7 @@
+    public void setUp() throws Exception
+    {
+       ips250Plugin = new IPS250Plugin();
+-      ips250Plugin.startPlugin();
++      ips250Plugin.startPlugin(null);
+    }
+ 
+ 
+@@ -90,11 +89,14 @@
+    public void testSanitize()
+    {
+       Assert.assertTrue(ips250Plugin.sanitize());
+-   } 
+-   
++   }
++
++
+    /**
+-    * Test method for {@link mil.navy.lcs.mvcs.ips250plugin.main.IPS250Plugin#setHeartbeatMonitoring(true)}.
+-    * @throws InterruptedException 
++    * Test method for
++    * {@link mil.navy.lcs.mvcs.ips250plugin.main.IPS250Plugin#setHeartbeatMonitoring(true)}.
++    * 
++    * @throws InterruptedException
+     */
+    @Test
+    public void testSetHeartbeatMonitoringEnable() throws InterruptedException
+@@ -101,10 +103,13 @@
+    {
+       ips250Plugin.setHeartbeatMonitoring(true);
+    }
+-   
++
++
+    /**
+-    * Test method for {@link mil.navy.lcs.mvcs.ips250plugin.main.IPS250Plugin#setHeartbeatMonitoring(true)}.
+-    * @throws InterruptedException 
++    * Test method for
++    * {@link mil.navy.lcs.mvcs.ips250plugin.main.IPS250Plugin#setHeartbeatMonitoring(true)}.
++    * 
++    * @throws InterruptedException
+     */
+    @Test
+    public void testSetHeartbeatMonitoringDisable() throws InterruptedException

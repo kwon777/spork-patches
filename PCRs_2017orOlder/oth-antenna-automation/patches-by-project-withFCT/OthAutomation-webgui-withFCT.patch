@@ -1,0 +1,265 @@
+Index: WebContent/nodeInfo.html
+===================================================================
+--- WebContent/nodeInfo.html	(revision 9563)
++++ WebContent/nodeInfo.html	(working copy)
+@@ -415,9 +415,8 @@
+ 												<tr>
+ 													<td>RF Outputs</td>
+ 												</tr>
+-												<!-- ko with: rfDevice -->
+-												<!-- ko if: rfOutputs().length > 0 -->
+-												<!-- ko foreach: rfOutputs -->
++												<!-- ko if: rfDevice.rfOutputs().length > 0 -->
++												<!-- ko foreach: rfDevice.rfOutputs -->
+ 												<tr>
+ 												<!-- PCR MVCS01445 - Convert LNR to L&R -->
+ 													<td class="dataLabel" data-bind="text: displayName" />
+@@ -424,28 +423,46 @@
+ 													<!--  PCR MVCS01482, remove off button for RF outputs -->
+ 													<td class="status" data-bind="css: { 'good': outputting}">
+ 														<button class="request true"
+-															data-bind="click: requestRF.bind($data, $parent, $parents[2], 'true'), css: { pressed: outputting, depressed:!outputting}">on</button>
++															data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'true'), css: { pressed: outputting, depressed:!outputting}">on</button>
+ 														<button class="request false shipOnly"
+-															data-bind="click: requestRF.bind($data, $parent, $parents[2], 'false')">off</button>
+-															
+-															<!-- We only want to show these buttons if it the ship, and for the main link. -->
+-															<button class="shipOnly request" data-bind="visible: displayName()=='MAIN', click: requestAmpAntenna.bind($data, $parent, $parents[2], 'true', 'PORT'), css: { on: ampAntenna() == 'PORT'}">Port</button>
+-															<button class="shipOnly request" data-bind="visible: displayName()=='MAIN', click: requestAmpAntenna.bind($data, $parent, $parents[2], 'true', 'STBD'), css: { on: ampAntenna() == 'STBD'}">Stbd</button>
+-															
+-													</td>
+-													<td />
++															data-bind="click: requestRF.bind($data, $parent.rfDevice, $parents[1], 'false')">off</button>
++                                                    </td>
+ 												</tr>
+-												<!-- /ko -->
+-												<!-- /ko -->
+-												<!-- ko ifnot: rfOutputs().length > 0 -->
+-												<tr>
+-													<td>NO RF ITEMS</td>
+-												</tr>
+-												<!-- /ko -->
+-												<!-- /ko -->
+-											</table>
+-											<!-- /ko -->
+-										</div>
++                        						<!-- We only want to show these buttons if it the ship, and for the main link. -->
++			                                    <!--  ko if: (displayName()=='MAIN' && $parents[1].isShip()) -->
++                                                <tr>
++                                                  <td class="othAntennaStatus" data-bind="css:{'overrideOnText': $parent.antennaOverride(), 'overrideOffText': !$parent.antennaOverride() }, text: $parent.antennaOverride()?' Manual ':'Automatic' " />
++                                                  <td class="status">
++                                                    <button class="overrideOnButton"
++                                                      data-bind="visible: !$parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent,'true')">&nbsp; Manual &nbsp;</button>
++                                                    <button class="overrideOffButton"
++                                                      data-bind="visible: $parent.antennaOverride(), click: requestOthAntennaOverride.bind($data, $parent, 'false')">Automatic</button>
++                                                  </td>
++                                                </tr>
++                                                <tr>
++                                                  <td class="othAntennaStatus" data-bind="css:{'statusGoodText': outputting(), 'statusBadText': !outputting()}, text: 'Antenna:  &nbsp;&nbsp;' + ampAntenna()" />
++                                                  <td class="status">
++                                                    <button class="shipOnly request"
++                                                      data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='PORT', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'PORT')">PORT</button>
++                                                    <button class="shipOnly request"
++                                                      data-bind="visible: outputting() && $parent.antennaOverride() && ampAntenna()!='STBD', click: requestAmpAntenna.bind($data, $parent.rfDevice, $parents[1], 'true', 'STBD')">STBD</button>
++                                                  </td>
++                                                </tr>
++                                                <!-- /ko -->
++                                                <!-- end of if MAIN and Ship -->
++                                                <!-- /ko -->
++                                                <!-- end of foreach output-->
++                                                <!-- /ko -->
++                                                <!-- end of if output less than 0-->
++                                                <!-- ko ifnot: rfDevice.rfOutputs().length > 0 -->
++                                                <tr>
++                                                  <td>NO RF ITEMS</td>
++                                                </tr>
++                                                <!-- /ko -->
++                                            </table>
++                                            <!-- /ko -->
++                                            <!-- end of if $data.rfDevice -->
++                                          </div>
+ 										<div class="clear"></div>
+ 									</div>
+ 									<div class="clear"></div>
+Index: WebContent/WEB-INF/web.xml
+===================================================================
+--- WebContent/WEB-INF/web.xml	(revision 9562)
++++ WebContent/WEB-INF/web.xml	(working copy)
+@@ -237,4 +237,14 @@
+     <servlet-name>AmpAntennaRequestServlet</servlet-name>
+     <url-pattern>/AmpAntennaRequest</url-pattern>
+   </servlet-mapping>
++  <servlet>
++    <description></description>
++    <display-name>OthAntennaOverrideRequestServlet</display-name>
++    <servlet-name>OthAntennaOverrideRequestServlet</servlet-name>
++    <servlet-class>mil.navy.lcs.mvcs.webgui.servlets.requests.OthAntennaOverrideRequestServlet</servlet-class>
++  </servlet>
++  <servlet-mapping>
++    <servlet-name>OthAntennaOverrideRequestServlet</servlet-name>
++    <url-pattern>/OthAntennaOverrideRequest</url-pattern>
++  </servlet-mapping>
+ </web-app>
+\ No newline at end of file
+Index: WebContent/css/nodeInfo.css
+===================================================================
+--- WebContent/css/nodeInfo.css	(revision 9562)
++++ WebContent/css/nodeInfo.css	(working copy)
+@@ -277,6 +277,29 @@
+ 	align-items: flex-end;
+ }
+ 
++.overrideOffButton {
++	color: rgb(48, 255, 24);
++	border-style: solid;
++}
++
++.overrideOnButton {
++	border-style: solid;
++	color: rgb(255, 165, 0);
++}
++
++.overrideOffText {
++	color: rgb(48, 255, 24);
++}
++
++.overrideOnText {
++	color: rgb(255, 165, 0);
++}
++
++.othAntennaStatus {
++	padding-left: 3em;
++	/* text-align: center;	*/
++}
++
+ .controlButton{
+ width: 11em;
+ margin-bottom:.3em;
+Index: WebContent/js/Strings.js
+===================================================================
+--- WebContent/js/Strings.js	(revision 9563)
++++ WebContent/js/Strings.js	(working copy)
+@@ -24,6 +24,7 @@
+ 	confirmDisableRF: "Are you sure you want to disable RF transmit.",
+ 	confirmDisableRFPath: "May lose comms. Disable Link?",
+ 	confirmFrequencyChange: "May lose comms. Change frequency to ",
++	confirmAntennaOverride: "Are you sure you want to manually select antenna?",
+ 
+ 	alertEmconTimeValue: "Please enter a value between 1 and 120",
+ 	alertZeroizeCommandReceived: "Zeroization command will be sent to the vehicle.",
+Index: WebContent/js/nodeInfo.js
+===================================================================
+--- WebContent/js/nodeInfo.js	(revision 9563)
++++ WebContent/js/nodeInfo.js	(working copy)
+@@ -248,6 +248,7 @@
+ 
+ var requestRF = function(device, node, on, output) {
+ 
++	//alert(node.nodeId()+" " + link.rfDevice.name() + " ");
+ 	//PCR MVCS01394 - Confirmation Box for disabling links.
+ 	if(on == "false" && !confirm(Strings.confirmDisableRFPath))
+ 	{
+@@ -348,6 +349,21 @@
+ 	});
+ };
+ 
++//JavaScript function called when the OTH antenna override is requested to be
++//changed.
++var requestOthAntennaOverride = function(link, on, output) {
++	if (on=='true' && !confirm(Strings.confirmAntennaOverride))
++		return;
++	$.ajax({
++		url : 'OthAntennaOverrideRequest',
++		type : 'post',
++		data : {
++			'linkId' : link.linkId(),
++			'requested' : on
++		}
++	});
++};
++
+ //JavaScript function that is called when a node request shutdown (MVCS01414)
+ var requestWarmShutdown = function(node)
+ {
+Index: src/mil/navy/lcs/mvcs/webgui/servlets/requests/OthAntennaOverrideRequestServlet.java
+===================================================================
+--- src/mil/navy/lcs/mvcs/webgui/servlets/requests/OthAntennaOverrideRequestServlet.java	(nonexistent)
++++ src/mil/navy/lcs/mvcs/webgui/servlets/requests/OthAntennaOverrideRequestServlet.java	(working copy)
+@@ -0,0 +1,63 @@
++package mil.navy.lcs.mvcs.webgui.servlets.requests;
++
++import java.io.IOException;
++import javax.servlet.ServletException;
++import javax.servlet.http.HttpServlet;
++import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletResponse;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import mil.navy.lcs.mvcs.webgui.app.AppState;
++import mil.navy.lcs.mvcs.webgui.servlets.MvcsServlet;
++import mil.navy.lcs.mvcs.webgui.servlets.ServletUtils;
++
++/**
++ * Servlet implementation class OthAntennaOverrideRequest
++ */
++public class OthAntennaOverrideRequestServlet extends MvcsServlet {
++	private static final long serialVersionUID = 1L;
++	 private static final Logger logger = LoggerFactory.getLogger(OthAntennaOverrideRequestServlet.class);
++       
++    /**
++     * @see HttpServlet#HttpServlet()
++     */
++    public OthAntennaOverrideRequestServlet() {
++        super();
++    }
++
++   @Override
++   protected void doAuthenticatedGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
++   {
++      //Nothing to do here for MVCS.
++   }
++
++   @Override
++   protected void doAuthenticatedPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
++   {
++      try
++      {
++         String linkId = ((String) request.getParameter("linkId"));
++         String requested = ((String) request.getParameter("requested"));
++         boolean on = "true".equalsIgnoreCase(requested);
++         
++         System.out.println("OTH Antenna Override: " + linkId + " " + requested);
++
++         logger.info("OthAntennaOverride request: {} {} ", new Object[] { linkId, requested });
++
++         AppState.instance.bi.getBackend().requestOthAntennaOverride(linkId, on);
++
++         response.setContentType("text/plain");
++      }
++      catch (Exception e)
++      {
++         logger.error("Failed Antenna Change Request: {} ", ServletUtils.parametersToString(request));
++         logger.error("Error: ", e);
++         throw new ServletException(e);
++      }
++
++      
++   }
++
++}
+Index: test.system/mil/navy/lcs/mvcs/webgui/app/BackendInterfaceTest.java
+===================================================================
+--- test.system/mil/navy/lcs/mvcs/webgui/app/BackendInterfaceTest.java	(revision 9562)
++++ test.system/mil/navy/lcs/mvcs/webgui/app/BackendInterfaceTest.java	(working copy)
+@@ -225,4 +225,9 @@
+       // TODO Auto-generated method stub
+       
+    }
++
++   @Override
++   public void requestOthAntennaOverride(String linkId, boolean manual) throws RemoteException
++   {
++   }
+ }

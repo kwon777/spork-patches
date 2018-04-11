@@ -1,0 +1,161 @@
+Index: src/main/java/mil/navy/lcs/mvcs/common/encryptor/EncryptorPluginManager.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/encryptor/EncryptorPluginManager.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/common/encryptor/EncryptorPluginManager.java	(working copy)
+@@ -55,9 +55,9 @@
+          try
+          {
+             IPS250EncryptionDevice encryptionDevice = radio.getEncryptionDevice();
+-            
+-            LoggingManager.getPrimaryLogger().info("Encryption device " +  encryptionDevice +" for radio: " + radio.getLinkId() );
+ 
++            LoggingManager.getPrimaryLogger().info("Encryption device " + encryptionDevice + " for radio: " + radio.getLinkId());
++
+             // Ensure the encryptor type is valid
+             if (encryptionDevice == null || encryptionDevice.getTypeId() == null)
+                continue;
+@@ -74,9 +74,9 @@
+ 
+             // Find the plug-in class name
+             String encryptorPlugin = encryptorPluginClassNames.get(encryptionDevice.getTypeId());
+-            
+-            LoggingManager.getPrimaryLogger().info("Encryptor redIp: " + redIp + ", className: " + encryptorPlugin );
+ 
++            LoggingManager.getPrimaryLogger().info("Encryptor redIp: " + redIp + ", className: " + encryptorPlugin);
++
+             // Ensure the plug-in class name is valid
+             if (encryptorPlugin == null)
+             {
+@@ -128,6 +128,17 @@
+ 
+       return null;
+    }
+-   
+ 
++
++   /**
++    * To get the runtime encryptor plugins
++    * 
++    * @return the encryptor plugins
++    */
++   public Hashtable<String, IEncryptorPlugin> getRuntimeEncryptorPlugins()
++   {
++      return this.runtimeEncryptorPlugins;
++   }
++
++
+ }
+\ No newline at end of file
+Index: src/main/java/mil/navy/lcs/mvcs/common/handler/IMvcsNodeHandler.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/handler/IMvcsNodeHandler.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/common/handler/IMvcsNodeHandler.java	(working copy)
+@@ -133,4 +133,8 @@
+     */
+    void setCourse(double course);
+ 
++
++   /** To request BIT to start. BIT likely take few minutes to complete. */
++   void requestBitStart();
++
+ }
+Index: src/main/java/mil/navy/lcs/mvcs/common/messages/BitMessage.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/messages/BitMessage.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/messages/BitMessage.java	(working copy)
+@@ -0,0 +1,30 @@
++
++
++package mil.navy.lcs.mvcs.common.messages;
++
++
++/**
++ * Message for BIT starting and stopping.
++ */
++public class BitMessage extends Message
++{
++   private static final long serialVersionUID = 1L;
++
++   private final boolean a1;
++
++
++   public BitMessage( boolean activate)
++   {
++      super(MessageCategory.BIT);
++
++      this.a1 = activate;
++   }
++
++
++   public boolean isActivate()
++   {
++      return a1;
++   }
++
++}
++
+Index: src/main/java/mil/navy/lcs/mvcs/common/messages/BitResultMessage.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/messages/BitResultMessage.java	(nonexistent)
++++ src/main/java/mil/navy/lcs/mvcs/common/messages/BitResultMessage.java	(working copy)
+@@ -0,0 +1,48 @@
++
++
++package mil.navy.lcs.mvcs.common.messages;
++
++import java.util.ArrayList;
++
++/**
++ * Message for BIT result.
++ */
++public class BitResultMessage extends Message
++{
++   private static final long serialVersionUID = 1L;
++
++   private final String nodeId;
++
++   public String haf100Status = "DOWN";
++
++   public String losRadioFrequency = "";
++   
++   public boolean rfSwitchStatus = false;
++   
++   public boolean powerModuleStatus = false;
++   
++   public ArrayList<Ips250Status> ips250s = new ArrayList<Ips250Status>();
++
++
++   public BitResultMessage( String nodeId)
++   {
++      super(MessageCategory.BIT);
++
++      this.nodeId = nodeId;
++   }
++
++
++   public String getNodeId()
++   {
++      return nodeId;
++   }
++
++   public static class Ips250Status
++   {
++      public String redIp = "";
++      public boolean reachable = false;
++      public boolean keyed = false;
++   }
++   
++}
++
+Index: src/main/java/mil/navy/lcs/mvcs/common/messages/MessageCategory.java
+===================================================================
+--- src/main/java/mil/navy/lcs/mvcs/common/messages/MessageCategory.java	(revision 9922)
++++ src/main/java/mil/navy/lcs/mvcs/common/messages/MessageCategory.java	(working copy)
+@@ -6,6 +6,7 @@
+ public enum MessageCategory {
+    ALERT, //
+    ARCHIVE, // Archiving Tool
++   BIT, //
+    CRYPTO, //
+    EMCON, //
+    INHIBIT, //
