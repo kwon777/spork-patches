@@ -174,7 +174,7 @@ index a774937..f4366d0 100644
                 keyInfo.setCheckUsageType(keymodel.getUsageType());
  
 diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
-index 653f0d0..88039d5 100644
+index 653f0d0..5763179 100644
 --- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
 +++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
 @@ -772,6 +772,9 @@
@@ -187,15 +187,6 @@ index 653f0d0..88039d5 100644
        int loop = 2;
        for (int i = 0; i < loop; i++)
        {
-@@ -779,7 +782,7 @@
-          IPS250BITInfo ipsBitInfo = new IPS250BITInfo();
- 
-          // add commsType
--         if (loop == 0)
-+         if (i == 0)
-          {
-             ipsBitInfo.setCommsType(CommsType.LOS);
-          }
 @@ -796,11 +799,11 @@
              // create bit model for IPS250 key info
  
