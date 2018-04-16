@@ -155,18 +155,10 @@ index fb98486..68a5970 100644
        if (status)
        {
 diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
-index a774937..af81955 100644
+index a774937..f4366d0 100644
 --- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
 +++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/cnc/NodeStatusUpdater.java
-@@ -49,6 +49,7 @@
- import mil.navy.lcs.mvcs.iface.status.Status;
- import mil.navy.lcs.mvcs.sca.link.ScaLinkManager;
- import mil.navy.lcs.mvcs.sca.main.ShipState;
-+import mil.navy.lcs.mvcs.sca.node.handler.ShipNodeHandler;
- 
- /**
-  * This class is responsible for updating vehicle nodes when messages are generated and received
-@@ -374,11 +375,11 @@
+@@ -374,11 +374,11 @@
                 IPS250KeyInfo keyInfo = new IPS250KeyInfo();
  
                 // Set the short title to BitStatus node
@@ -181,41 +173,21 @@ index a774937..af81955 100644
                 // Set the usage type to BitStatus node
                 keyInfo.setCheckUsageType(keymodel.getUsageType());
  
-@@ -409,7 +410,7 @@
-             // get Ship side LOS radio
-             String shipRadioFreq = ((RadioLink) ShipState.model.ship.getFirstLinkByCommsType(CommsType.LOS)).getFrequency();
-             // compare it return true if matches
--            if (shipRadioFreq != null && shipRadioFreq.equalsIgnoreCase(brm.losRadioFrequency))
-+            if (shipRadioFreq != null && shipRadioFreq.length() > 1 && shipRadioFreq.equalsIgnoreCase(brm.losRadioFrequency))
-                bit.setLosRadioFrequencyMatchStatus(true);
-             else
-                bit.setLosRadioFrequencyMatchStatus(false);
 diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
-index 653f0d0..93e8876 100644
+index 653f0d0..5763179 100644
 --- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
 +++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/node/handler/ShipNodeHandler.java
-@@ -772,14 +772,18 @@
+@@ -772,6 +772,9 @@
     // This is test dummy data. REMOVE THIS WHEN DONE TESTING.
     public static void populateDummyIPS(MvcsNode node)
     {
--      int loop = 2;
 +      // IPS250 BIT BEGINS - start with fresh List
 +      ArrayList<IPS250BITInfo> ipsBits = new ArrayList<IPS250BITInfo>();
-+
-+      // ship has two but vehicle has one IPS-250
-+      int loop = (node instanceof ShipNode) ? 2 : 1;
++      
+       int loop = 2;
        for (int i = 0; i < loop; i++)
        {
-          // create IPS bit info object
-          IPS250BITInfo ipsBitInfo = new IPS250BITInfo();
- 
-          // add commsType
--         if (loop == 0)
-+         if (i == 0)
-          {
-             ipsBitInfo.setCommsType(CommsType.LOS);
-          }
-@@ -796,11 +800,11 @@
+@@ -796,11 +799,11 @@
              // create bit model for IPS250 key info
  
              // Set the short title to BitStatus node
@@ -230,7 +202,7 @@ index 653f0d0..93e8876 100644
              // Set the usage type to BitStatus node
              keyInfo.setCheckUsageType(j + 1);
  
-@@ -809,10 +813,13 @@
+@@ -809,10 +812,13 @@
           } // end of for
  
           // add the IPS bit info to the parent BIT status
@@ -245,7 +217,7 @@ index 653f0d0..93e8876 100644
     }
  
  
-@@ -876,11 +883,11 @@
+@@ -876,11 +882,11 @@
                    logger.debug("Segment : {}", keymodel.getSegment());
  
                    // Set the short title to BitStatus node
@@ -260,7 +232,7 @@ index 653f0d0..93e8876 100644
                    // Set the usage type to BitStatus node
                    keyInfo.setCheckUsageType(keymodel.getUsageType());
  
-@@ -915,7 +922,7 @@
+@@ -915,7 +921,7 @@
        node.getBitStatus().setHaf100Status(haf100Data.pollHaf100OverallStatus(), haf100Data.haf100OverallGIF());
  
        // Sets the UPS to node model
@@ -269,7 +241,7 @@ index 653f0d0..93e8876 100644
        node.getBitStatus().setUpsInverterStatus(upsData.upsBatteryStatus());
        node.getBitStatus().setUpsBatteryStatus(upsData.upsBatteryStatus());
        node.getBitStatus().setUpsStatus(upsData.upsOverallStatus(), upsData.upsGIF());
-@@ -963,6 +970,8 @@
+@@ -963,6 +969,8 @@
        node.setBitDateStampHour(date.getHour());
        node.setBitDateStampMinute(date.getMinute());
  
@@ -279,7 +251,7 @@ index 653f0d0..93e8876 100644
  
  
 diff --git a/mvcs-webgui/WebContent/bit.html b/mvcs-webgui/WebContent/bit.html
-index 245f75e..b326c21 100644
+index 245f75e..d108a4e 100644
 --- a/mvcs-webgui/WebContent/bit.html
 +++ b/mvcs-webgui/WebContent/bit.html
 @@ -24,8 +24,7 @@
@@ -292,7 +264,7 @@ index 245f75e..b326c21 100644
  
  <!-- <link rel="stylesheet"
  	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"> -->
-@@ -45,826 +44,772 @@
+@@ -45,826 +44,794 @@
  
  </head>
  <body>
@@ -955,23 +927,9 @@ index 245f75e..b326c21 100644
 -										<div class="panel-body">
 +              <!--  Row 3 -->
 +              <div class="row equal">
- 
--											<table>
--												<!-- ko with: bitStatus -->
--												<!-- ko foreach: ips250BitInfo -->
--												<tbody>
--													<tr>
--														<th data-bind="text: commsType"></th>
--														<th
--															data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
--													</tr>
--													<tr style="background: #333; color: #FFF;">
--														<td>Short Title</td>
--														<td>Edition</td>
--														<td>Segment</td>
--														<td>Usage Type</td>
++              
 +                <div class="col-sm-8">
-+                  <!-- APR2018, MVCS-44: Separate the "Keyed" IPS for each radio COMMS  -->
++                  <!-- 20180418, MVCS-44: Separate the "Keyed" IPS for each radio COMMS  -->
 +                  <!-- ko foreach: bitStatus.ips250BitInfo -->
 +                  <div>
 +                    <div class="panel-heading">
@@ -1010,6 +968,21 @@ index 245f75e..b326c21 100644
 +                  <!-- /ko -->
 +                </div>
  
+-											<table>
+-												<!-- ko with: bitStatus -->
+-												<!-- ko foreach: ips250BitInfo -->
+-												<tbody>
+-													<tr>
+-														<th data-bind="text: commsType"></th>
+-														<th
+-															data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
+-													</tr>
+-													<tr style="background: #333; color: #FFF;">
+-														<td>Short Title</td>
+-														<td>Edition</td>
+-														<td>Segment</td>
+-														<td>Usage Type</td>
+-
 -													</tr>
 -
 -													<!-- ko foreach: keys -->
@@ -1094,20 +1067,82 @@ index 245f75e..b326c21 100644
 -									<!-- BAC -->
 -								</div>
 -								<!-- END of SRAC and BAC Status grouping -->
--
++                <!-- SRAC and Corba Section grouping -->
++                <div class="col-sm-4">
++                  <!-- SRAC -->
++                  <div class="col-sm-12">
++                    <div
++                      data-bind="css: RacStatus() === 'Pass' ? 'panel text-success' : 'panel text-danger'">
++                      <div class="panel-heading">
++                        <table>
++                          <tr>
++                            <td>SRAC</td>
++                            <td
++                              data-bind="text: RacStatus(), css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                      <div class="panel-body">
++                        <table>
++                          <tr>
++                            <td>Status:</td>
++                            <td
++                              data-bind="text: RacStatus, css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                    </div>
++                  </div>
++                  <!-- SRAC -->
++                  <!-- BAC -->
++                  <div class="col-sm-12">
++                    <div
++                      data-bind="css: BacStatus() === 'Ok' ? 'panel text-success' : 'panel text-danger'">
++                      <div class="panel-heading">
++                        <table>
++                          <tr>
++                            <td>BAC</td>
++                            <td
++                              data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                      <div class="panel-body">
++                        <table>
++                          <tr>
++                            <td>Status:</td>
++                            <td
++                              data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
++                          </tr>
++                        </table>
++                      </div>
++                    </div>
++                  </div>
++                  <!-- BAC -->
++                </div>
++                <!-- END of SRAC and BAC Status grouping -->
+ 
 -							</div>
 -						</div>
--
--
++              </div>
++            </div>
+ 
+ 
 -						<!--  Data NOT Fetched - Ship Side -->
 -						<div data-bind="visible: !dataFetched()">
--
++            <!--  Data NOT Fetched - Ship Side -->
++            <div data-bind="visible: !dataFetched()">
+ 
 -							<!-- Include SHIP default panels -->
 -							<div id="ShipBitDefaultPanels"></div>
--
++              <!-- Include SHIP default panels -->
++              <div id="ShipBitDefaultPanels"></div>
+ 
 -						</div>
 -						<!--  END Data NOT Fetched - Ship Side -->
--
++            </div>
++            <!--  END Data NOT Fetched - Ship Side -->
+ 
 -					</div>
 -					<!-- END isShipBit -->
 -				</div>
@@ -1117,7 +1152,16 @@ index 245f75e..b326c21 100644
 -			<!-- END selectedBitNode -->
 -			<!-- Selected Vehicle Bit Node - This may not work but worth a shot  -->
 -			<div data-bind="with: selectedVehicleBitNode()">
--
++          </div>
++          <!-- END isShipBit -->
++        </div>
++        <!-- END isShipBit -->
++        <!-- END selectedBitNode -->
++      </div>
++      <!-- END selectedBitNode -->
++      <!-- Selected Vehicle Bit Node - This may not work but worth a shot  -->
++      <div data-bind="with: selectedVehicleBitNode()">
+ 
 -				<!-- USV 1 -->
 -				<div data-bind="visible: isUsv1()"
 -					class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
@@ -1136,7 +1180,25 @@ index 245f75e..b326c21 100644
 -							</div>
 -							<div class="col-sm-6">
 -								<br />
--
++        <!-- USV 1 -->
++        <div data-bind="visible: isUsv1()"
++          class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
++          <br />
++          <div id="BitTool">
++            <!-- Vehicle Button Section -->
++            <div class="row">
++              <div class="col-sm-16">
++                <br />
++                <h1>
++                  BIT&nbsp;&nbsp;<span style="font-size: 23px;">(<span
++                    data-bind="text: nodeName"></span>)
++                  </span>&nbsp;&nbsp;<small>Built In Test Report</small>
++                </h1>
++                <hr />
++              </div>
++              <div class="col-sm-6">
++                <br />
+ 
 -								<table>
 -									<tr>
 -										<td>
@@ -1195,156 +1257,6 @@ index 245f75e..b326c21 100644
 -								<div class="col-sm-7">
 -									<!-- Format Panel Heading -->
 -									<div class="panel">
--
--										<div class="panel-heading">
--											<table>
--												<tr>
--													<td
--														data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
--													<!-- Format and Display IPS 250 overall -->
--													<td><strong
--														data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
--												</tr>
--											</table>
--										</div>
--
--										<div class="panel-body">
--
--											<table>
--												<!-- ko with: bitStatus -->
--												<!-- ko foreach: ips250BitInfo -->
--												<tbody>
--													<tr>
--														<th data-bind="text: commsType"></th>
--														<th
--															data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
--													</tr>
--													<tr style="background: #333; color: #FFF;">
--														<td>Short Title</td>
--														<td>Edition</td>
--														<td>Segment</td>
--														<td>Usage Type</td>
--
--													</tr>
--
--													<!-- ko foreach: keys -->
--
--													<tr>
--														<!-- Short Title -->
--														<td data-bind="text: checkShortTitle"></td>
-+                <!-- SRAC and Corba Section grouping -->
-+                <div class="col-sm-4">
-+                  <!-- SRAC -->
-+                  <div class="col-sm-12">
-+                    <div
-+                      data-bind="css: RacStatus() === 'Pass' ? 'panel text-success' : 'panel text-danger'">
-+                      <div class="panel-heading">
-+                        <table>
-+                          <tr>
-+                            <td>SRAC</td>
-+                            <td
-+                              data-bind="text: RacStatus(), css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
-+                          </tr>
-+                        </table>
-+                      </div>
-+                      <div class="panel-body">
-+                        <table>
-+                          <tr>
-+                            <td>Status:</td>
-+                            <td
-+                              data-bind="text: RacStatus, css: RacStatus() === 'Pass' ? 'text-success' : 'text-danger'"></td>
-+                          </tr>
-+                        </table>
-+                      </div>
-+                    </div>
-+                  </div>
-+                  <!-- SRAC -->
-+                  <!-- BAC -->
-+                  <div class="col-sm-12">
-+                    <div
-+                      data-bind="css: BacStatus() === 'Ok' ? 'panel text-success' : 'panel text-danger'">
-+                      <div class="panel-heading">
-+                        <table>
-+                          <tr>
-+                            <td>BAC</td>
-+                            <td
-+                              data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
-+                          </tr>
-+                        </table>
-+                      </div>
-+                      <div class="panel-body">
-+                        <table>
-+                          <tr>
-+                            <td>Status:</td>
-+                            <td
-+                              data-bind="text: BacStatus, css: BacStatus() === 'Ok' ? 'text-success' : 'text-danger'"></td>
-+                          </tr>
-+                        </table>
-+                      </div>
-+                    </div>
-+                  </div>
-+                  <!-- BAC -->
-+                </div>
-+                <!-- END of SRAC and BAC Status grouping -->
- 
--														<!-- Check Edition -->
--														<td data-bind="text: checkEdition"></td>
-+              </div>
-+            </div>
- 
--														<!-- Segment -->
--														<td data-bind="text: checkSegment"></td>
- 
--														<!-- Usage Type -->
--														<td data-bind="text: checkUsageType"></td>
-+            <!--  Data NOT Fetched - Ship Side -->
-+            <div data-bind="visible: !dataFetched()">
- 
--													</tr>
-+              <!-- Include SHIP default panels -->
-+              <div id="ShipBitDefaultPanels"></div>
- 
--													<!-- /ko -->
-+            </div>
-+            <!--  END Data NOT Fetched - Ship Side -->
- 
--												</tbody>
--												<!-- /ko -->
--												<!-- /ko -->
-+          </div>
-+          <!-- END isShipBit -->
-+        </div>
-+        <!-- END isShipBit -->
-+        <!-- END selectedBitNode -->
-+      </div>
-+      <!-- END selectedBitNode -->
-+      <!-- Selected Vehicle Bit Node - This may not work but worth a shot  -->
-+      <div data-bind="with: selectedVehicleBitNode()">
- 
--											</table>
-+        <!-- Vehicle -->
-+        <div data-bind="visible: isUissNode()"
-+          class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-+          <br />
-+          <div id="BitTool">
-+            <!-- Vehicle Button Section -->
-+            <div class="row">
-+              <div class="col-sm-16">
-+                <br />
-+                <h1>
-+                  BIT&nbsp;&nbsp;<span style="font-size: 23px;">(<span
-+                    data-bind="text: nodeName"></span>)
-+                  </span>&nbsp;&nbsp;<small>Built In Test Report</small>
-+                </h1>
-+                <hr />
-+              </div>
-+              <div class="col-sm-6">
-+                <br />
- 
--										</div>
--									</div>
--								</div>
--								<!-- END Grab IPS 250 Status -->
 +                <table>
 +                  <tr>
 +                    <td>
@@ -1401,43 +1313,112 @@ index 245f75e..b326c21 100644
 +                <!-- Grab IPS 250 Status -->
 +                <div class="col-sm-7">
 +                  <!-- Format Panel Heading -->
-+                  <!-- APR2018, MVCS-44: Separate the "Keyed" IPS for each radio COMMS  -->
-+                  <!-- ko foreach: bitStatus.ips250BitInfo -->
 +                  <div class="panel">
+ 
+-										<div class="panel-heading">
+-											<table>
+-												<tr>
+-													<td
+-														data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
+-													<!-- Format and Display IPS 250 overall -->
+-													<td><strong
+-														data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
+-												</tr>
+-											</table>
+-										</div>
 +                    <div class="panel-heading">
 +                      <table>
-+                        <tr data-bind="css: keyed() ? 'text-success' : 'text-danger'">
-+                          <td data-bind="text: 'IPS-250 ' + commsType()"></td>
-+                          <td data-bind="text: keyed() ? 'Loaded' : 'Not Loaded'"></td>
++                        <tr>
++                          <td data-bind="css: keyed() ? 'text-success' : 'text-danger'">IPS-250</td>
++                          <!-- Format and Display IPS 250 overall -->
++                          <td><strong
++                            data-bind="text: keyed() ? 'Keyed' : 'Not Keyed', css: keyed() ? 'text-success' : 'text-danger'"></strong></td>
 +                        </tr>
 +                      </table>
 +                    </div>
+ 
+-										<div class="panel-body">
 +                    <div class="panel-body">
+ 
+-											<table>
+-												<!-- ko with: bitStatus -->
+-												<!-- ko foreach: ips250BitInfo -->
+-												<tbody>
+-													<tr>
+-														<th data-bind="text: commsType"></th>
+-														<th
+-															data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
+-													</tr>
+-													<tr style="background: #333; color: #FFF;">
+-														<td>Short Title</td>
+-														<td>Edition</td>
+-														<td>Segment</td>
+-														<td>Usage Type</td>
 +                      <table>
++                        <!-- ko with: bitStatus -->
++                        <!-- ko foreach: ips250BitInfo -->
 +                        <tbody>
++                          <tr>
++                            <th data-bind="text: commsType"></th>
++                            <th
++                              data-bind="text: keyed() ? 'Loaded' : 'Not Loaded', css: keyed() ? 'text-success' : 'text-danger'"></th>
++                          </tr>
 +                          <tr style="background: #333; color: #FFF;">
 +                            <td>Short Title</td>
 +                            <td>Edition</td>
 +                            <td>Segment</td>
 +                            <td>Usage Type</td>
+ 
+-													</tr>
 +                          </tr>
+ 
+-													<!-- ko foreach: keys -->
 +                          <!-- ko foreach: keys -->
+ 
+-													<tr>
+-														<!-- Short Title -->
+-														<td data-bind="text: checkShortTitle"></td>
 +                          <tr>
 +                            <!-- Short Title -->
 +                            <td data-bind="text: truncatedShortTitle"></td>
+ 
+-														<!-- Check Edition -->
+-														<td data-bind="text: checkEdition"></td>
 +                            <!-- Check Edition -->
 +                            <td data-bind="text: edition"></td>
+ 
+-														<!-- Segment -->
+-														<td data-bind="text: checkSegment"></td>
 +                            <!-- Segment -->
 +                            <td data-bind="text: segment"></td>
+ 
+-														<!-- Usage Type -->
+-														<td data-bind="text: checkUsageType"></td>
 +                            <!-- Usage Type -->
 +                            <td data-bind="text: usageType"></td>
+ 
+-													</tr>
 +                          </tr>
+ 
+-													<!-- /ko -->
 +                          <!-- /ko -->
+ 
+-												</tbody>
+-												<!-- /ko -->
+-												<!-- /ko -->
 +                        </tbody>
++                        <!-- /ko -->
++                        <!-- /ko -->
+ 
+-											</table>
 +                      </table>
+ 
+-										</div>
+-									</div>
+-								</div>
+-								<!-- END Grab IPS 250 Status -->
 +                    </div>
 +                  </div>
-+                  <!-- /ko -->
 +                </div>
 +                <!-- END Grab IPS 250 Status -->
  
@@ -1831,27 +1812,3 @@ index 245f75e..b326c21 100644
  
  </body>
  </html>
-diff --git a/mvcs-webgui/WebContent/js/NodeTemplate/NodeTemplate.js b/mvcs-webgui/WebContent/js/NodeTemplate/NodeTemplate.js
-index 9c0a3f5..bcb540d 100644
---- a/mvcs-webgui/WebContent/js/NodeTemplate/NodeTemplate.js
-+++ b/mvcs-webgui/WebContent/js/NodeTemplate/NodeTemplate.js
-@@ -49,7 +49,7 @@
- 		selectedBitNode(self);
- 		self.selected(true);
- 	}
--	// Vehicle 3
-+	// UISS(USV) Vehicle 
- 	if (self.className() == 'UissNode') {
- 		// Use selectedVehicleBitNode loop on html to loop out model data on
- 		// ship side
-@@ -63,8 +63,8 @@
- 		return self.className() == 'ShipNode';
- 	});
- 
--	// Vehicle Three (Usv1) or (Uiss)
--	self.isUsv1 = ko.computed(function() {
-+	// UISS(USV) Vehicle 
-+	self.isUissNode = ko.computed(function() {
- 		return self.className() == 'UissNode';
- 	});
- 
