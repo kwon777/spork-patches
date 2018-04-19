@@ -1,0 +1,26 @@
+diff --git a/mvcs-webgui/WebContent/bit.html b/mvcs-webgui/WebContent/bit.html
+index f51bb85..97e6ad7 100644
+--- a/mvcs-webgui/WebContent/bit.html
++++ b/mvcs-webgui/WebContent/bit.html
+@@ -67,7 +67,7 @@
+           <li><a href="tools.html">Frequency Tools</a></li>
+ 
+           <li><a data-navId='BIT'
+-            onClick="window.open('http://localhost:8080/mvcs-webgui/bit.html?nodeId=' + nodeId , '_blank')">
++            onClick="window.open('bit.html?nodeId=' + nodeId , '_blank')">
+               BIT Tool</a></li>
+ 
+           <!-- Navigational elements displayed for ship side -->
+diff --git a/mvcs-webgui/WebContent/nodeInfo.html b/mvcs-webgui/WebContent/nodeInfo.html
+index 45212dc..2002831 100644
+--- a/mvcs-webgui/WebContent/nodeInfo.html
++++ b/mvcs-webgui/WebContent/nodeInfo.html
+@@ -114,7 +114,7 @@
+ 							onclick="window.location = 'tools.html';">Frequency Tool</button>
+ 
+              <button class="navButton viewButton" data-navId='BIT'
+-						onClick="window.open('http://sca:8080/mvcs/bit.html?nodeId=' + nodeId , '_blank')">
++						onClick="window.open('bit.html?nodeId=' + nodeId , '_blank')">
+ 							BIT Tool</button>					
+            
+               <!--  ko if: isShip -->
