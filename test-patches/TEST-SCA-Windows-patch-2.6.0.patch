@@ -12,19 +12,40 @@ index 886fdc3..cd3d439 100644
  parent_dir=..
  
 diff --git a/mvcs-sca/.classpath b/mvcs-sca/.classpath
-index 2c6b9aa..6c0c377 100644
+index 7464134..bcb4d72 100644
 --- a/mvcs-sca/.classpath
 +++ b/mvcs-sca/.classpath
-@@ -8,5 +8,9 @@
- 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
- 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-mission-builder"/>
- 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
+@@ -1,13 +1,17 @@
+-<?xml version="1.0" encoding="UTF-8"?>
+-<classpath>
+-	<classpathentry kind="src" path="src/main/resources"/>
+-	<classpathentry kind="src" path="src/main/test"/>
+-	<classpathentry kind="src" path="src/main/developmentTests"/>
+-	<classpathentry kind="src" path="src/main/java"/>
+-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+-	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+-	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-mission-builder"/>
+-	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
+-	<classpathentry kind="lib" path="/mvcs-common/lib/jpam-1.1.jar"/>
+-	<classpathentry kind="output" path="bin"/>
+-</classpath>
++<?xml version="1.0" encoding="UTF-8"?>
++<classpath>
++	<classpathentry kind="src" path="src/main/resources"/>
++	<classpathentry kind="src" path="src/main/test"/>
++	<classpathentry kind="src" path="src/main/developmentTests"/>
++	<classpathentry kind="src" path="src/main/java"/>
++	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-mission-builder"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
++	<classpathentry kind="lib" path="/mvcs-common/lib/jpam-1.1.jar"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
++	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-mcg101"/>
 +	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-prc117"/>
 +	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-rt1944"/>
-+	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-mcg101"/>
-+	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
- 	<classpathentry kind="output" path="bin"/>
- </classpath>
++	<classpathentry kind="output" path="bin"/>
++</classpath>
 diff --git a/mvcs-sca/configs/credentials.xml b/mvcs-sca/configs/credentials.xml
 index e9b66ae..5b73cf2 100644
 --- a/mvcs-sca/configs/credentials.xml
