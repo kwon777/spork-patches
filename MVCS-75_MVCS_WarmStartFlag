@@ -1,0 +1,1025 @@
+diff --git a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java
+index 3ed57d2..a0599b7 100644
+--- a/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java
++++ b/mvcs-sca/src/main/java/mil/navy/lcs/mvcs/sca/main/ShipMain.java
+@@ -124,537 +124,533 @@
+  */
+ public class ShipMain
+ {
+-	// Global Variables
++   // Global Variables
+ 
+-	/** Codebase server for ViewManager and plugins */
+-	public static CodebaseServer codebaseServer = null;
++   /** Codebase server for ViewManager and plugins */
++   public static CodebaseServer codebaseServer = null;
+ 
+-	public static MvcsRemoteEngine engine = new MvcsRemoteEngine();
++   public static MvcsRemoteEngine engine = new MvcsRemoteEngine();
+ 
+-	/**
+-	 * A reference to the Error log appender
+-	 */
+-	private static Logger errorLog = LoggingManager.getSystemErrorLogger();
++   /**
++    * A reference to the Error log appender
++    */
++   private static Logger errorLog = LoggingManager.getSystemErrorLogger();
+ 
+-	/**
+-	 * A reference to the Primary log appender
+-	 */
+-	private static Logger primaryLog = LoggingManager.getPrimaryLogger();
++   /**
++    * A reference to the Primary log appender
++    */
++   private static Logger primaryLog = LoggingManager.getPrimaryLogger();
+ 
+-	private static boolean shutdownInProgress = false;
++   private static boolean shutdownInProgress = false;
+ 
+-	private static PropertyChangeListener shutdownRequestListener = new PropertyChangeListener()
+-	{
++   private static PropertyChangeListener shutdownRequestListener = new PropertyChangeListener()
++   {
+ 
+-		@Override
+-		public void propertyChange(PropertyChangeEvent evt)
+-		{
+-			// Calls the shutdown method with the requested value.
+-			try
+-			{
+-				ExitAction exitAction = ExitAction.valueOf(evt.getNewValue().toString());
++      @Override
++      public void propertyChange(PropertyChangeEvent evt)
++      {
++         // Calls the shutdown method with the requested value.
++         try
++         {
++            ExitAction exitAction = ExitAction.valueOf(evt.getNewValue().toString());
+ 
+-				// Calls the shutdown function.
+-				Runtime.getRuntime().halt(exitAction.exitCode);
+-			}
+-			catch (Exception ex)
+-			{
+-				primaryLog.error("An invalid shutdown type was given.");
+-			}
++            // Calls the shutdown function.
++            Runtime.getRuntime().halt(exitAction.exitCode);
++         }
++         catch (Exception ex)
++         {
++            primaryLog.error("An invalid shutdown type was given.");
++         }
+ 
+-		}
+-	};
++      }
++   };
+ 
+-	private static PropertyChangeSupport haltReady = new PropertyChangeSupport(" ");
++   private static PropertyChangeSupport haltReady = new PropertyChangeSupport(" ");
+ 
+ 
+-	/**
+-	 * This method is responsible for putting the system in either COLD or WARM Maintenance Mode.
+-	 * 
+-	 * @param warmStart
+-	 */
+-	private static void enterMaintenanceMode(boolean warmStart)
+-	{
+-		managerCleanup(warmStart);
+-	}
++   /**
++    * This method is responsible for putting the system in either COLD or WARM Maintenance Mode.
++    * 
++    * @param warmStart
++    */
++   private static void enterMaintenanceMode(boolean warmStart)
++   {
++      managerCleanup(warmStart);
++   }
+ 
+ 
+-	/**
+-	 * Check whether the codebase server has been initialized or not.
+-	 * 
+-	 * @return
+-	 */
+-	public static boolean isCodebaseServerInitialized()
+-	{
+-		return (codebaseServer != null);
+-	}
++   /**
++    * Check whether the codebase server has been initialized or not.
++    * 
++    * @return
++    */
++   public static boolean isCodebaseServerInitialized()
++   {
++      return (codebaseServer != null);
++   }
+ 
+ 
+-	/**
+-	 * The main function
+-	 * 
+-	 * @param args
+-	 */
+-	public static void main(String[] args)
+-	{
++   /**
++    * The main function
++    * 
++    * @param args
++    */
++   public static void main(String[] args)
++   {
+ 
+ 
+-		Runnable shutdownHook = new Runnable()
+-		{
++      Runnable shutdownHook = new Runnable()
++      {
+ 
+-			@Override
+-			public void run()
+-			{
+-				if (ShipMain.shutdownInProgress)
+-				{
+-					// Shutdown was called internal to MVCS, there nothing that needs to be done
+-					primaryLog.debug("Ship MVCS is shutting down. Bye!");
+-				}
+-				else
+-				{
+-					// JVM was shutdown for an unknown reason. Shutting down the ship in a COLD State.
+-					primaryLog.debug("Shipboard MVCS system is shutting down. This call was made external to MVCS. Shutting Down in COLD Mode.");
++         @Override
++         public void run()
++         {
++            if (ShipMain.shutdownInProgress)
++            {
++               // Shutdown was called internal to MVCS, there nothing that needs to be done
++               primaryLog.debug("Ship MVCS is shutting down. Bye!");
++            }
++            else
++            {
++               // JVM was shutdown for an unknown reason. Shutting down the ship in a COLD State.
++               primaryLog.debug("Shipboard MVCS system is shutting down. This call was made external to MVCS. Shutting Down in COLD Mode.");
+ 
+-					// Perform a cleanup of all the managers, pass in false to indicate that it will be a
+-					// cold exit.
+-					managerCleanup(false);
++               // Perform a cleanup of all the managers, pass in false to indicate that it will be a
++               // cold exit.
++               managerCleanup(false);
+ 
+-					// Fires a property change on the shutdown method and then exits.
+-					haltReady.firePropertyChange("shutdown", " ", ExitAction.COLD_EXIT.toString());
++               // Fires a property change on the shutdown method and then exits.
++               haltReady.firePropertyChange("shutdown", " ", ExitAction.COLD_EXIT.toString());
+ 
+-				}
++            }
+ 
+-			}
+-		};
++         }
++      };
+ 
+-		// Catches
+-		Thread shutdownThread = new Thread(shutdownHook, "MVCS - ShipMain: Shutdown Thread");
++      // Catches
++      Thread shutdownThread = new Thread(shutdownHook, "MVCS - ShipMain: Shutdown Thread");
+ 
+-		// Catches Shutdown request from the system and JVM
+-		Runtime.getRuntime().addShutdownHook(shutdownThread);
++      // Catches Shutdown request from the system and JVM
++      Runtime.getRuntime().addShutdownHook(shutdownThread);
+ 
+-		// This Try...Catch will determine whether the managers started correctly or not.
+-		try
+-		{
+-			// If the managers cannot start up successfully, the system will be put into maintenance
+-			// mode.
+-			if (!(startup()))
+-			{
+-				throw new Exception("Startup failed to open all managers successfully.");
+-			}
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("Exception occurred during a startup. The system is going into COLD maintenance mode...,", e);
+-			shutdown(ExitAction.COLD_EXIT);
++      // This Try...Catch will determine whether the managers started correctly or not.
++      try
++      {
++         // If the managers cannot start up successfully, the system will be put into maintenance
++         // mode.
++         if (!(startup()))
++         {
++            throw new Exception("Startup failed to open all managers successfully.");
++         }
++      }
++      catch (Exception e)
++      {
++         errorLog.error("Exception occurred during a startup. The system is going into COLD maintenance mode...,", e);
++         shutdown(ExitAction.COLD_EXIT);
+ 
+-		}
+-	}
++      }
++   }
+ 
+ 
+-	/**
+-	 * This method is responsible for shutting down the Managers cleanly.
+-	 * 
+-	 * @param isWarmStop Warm Shutdown Flag. WARM shutdown is TRUE, COLD shutdown is FALSE
+-	 */
+-	private static void managerCleanup(boolean isWarmStop)
+-	{
+-		primaryLog.info("\n\n\nShipboard MVCS is shutting down...");
++   /**
++    * This method is responsible for shutting down the Managers cleanly.
++    * 
++    * @param isWarmStop Warm Shutdown Flag. WARM shutdown is TRUE, COLD shutdown is FALSE
++    */
++   private static void managerCleanup(boolean isWarmStop)
++   {
++      primaryLog.info("\n\n\nShipboard MVCS is shutting down...");
+ 
+-		// Calls the shutdown method of the Hardware manager.
+-		HardwareManager.shutdown();
++      // Calls the shutdown method of the Hardware manager.
++      HardwareManager.shutdown();
+ 
+-		try
+-		{
+-			primaryLog.info("Setting database flag to " + isWarmStop);
+-			DatabaseManager.getInstance().setWarmShutdownForShip(isWarmStop);
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the View Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Setting database flag to " + isWarmStop);
++         DatabaseManager.getInstance().setWarmShutdownForShip(isWarmStop);
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the View Manager", e);
++      }
+ 
+-		try
+-		{
+-			primaryLog.info("SNMP Manager is shutting down...");
+-			ScaSnmpManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the SNMP Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("SNMP Manager is shutting down...");
++         ScaSnmpManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the SNMP Manager", e);
++      }
+ 
+-		// try
+-		// {
+-		// primaryLog.info("Request Manager is shutting down...");
+-		// ScaRequestManager.staticShutdown();
+-		// }
+-		// catch (Exception e)
+-		// {
+-		// errorLog.error("An error occurred while attempting to shutdown the Request Manager", e);
+-		// }
++      // try
++      // {
++      // primaryLog.info("Request Manager is shutting down...");
++      // ScaRequestManager.staticShutdown();
++      // }
++      // catch (Exception e)
++      // {
++      // errorLog.error("An error occurred while attempting to shutdown the Request Manager", e);
++      // }
+ 
+-		try
+-		{
+-			primaryLog.info("Link Manager is shutting down...");
+-			ScaLinkManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Link Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Link Manager is shutting down...");
++         ScaLinkManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Link Manager", e);
++      }
+ 
+-		try
+-		{
+-			primaryLog.info("Network Manager is shutting down...");
+-			ScaNetworkManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Network Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Network Manager is shutting down...");
++         ScaNetworkManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Network Manager", e);
++      }
+ 
+-		try
+-		{
+-			primaryLog.info("Navigation Manager is shutting down...");
+-			ScaNavigationManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Navigation Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Navigation Manager is shutting down...");
++         ScaNavigationManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Navigation Manager", e);
++      }
+ 
+-		try
+-		{
+-			primaryLog.info("Radio Plugin Manager is shutting down...");
+-			ScaRadioPluginsManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Radio Plugin Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Radio Plugin Manager is shutting down...");
++         ScaRadioPluginsManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Radio Plugin Manager", e);
++      }
+ 
+-		try
+-		{
+-			primaryLog.info("Uninterruptible Power Supply (UPS) Manager is shutting down...");
+-			UpsManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Uninterruptible Power Supply (UPS) Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Uninterruptible Power Supply (UPS) Manager is shutting down...");
++         UpsManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Uninterruptible Power Supply (UPS) Manager", e);
++      }
+ 
+-		// try
+-		// {
+-		// primaryLog.info("Node Manager is shutting down...");
+-		// ScaNodeManager.staticShutdown();
+-		// }
+-		// catch (Exception e)
+-		// {
+-		// errorLog.error("An error occurred while attempting to shutdown the Node Manager", e);
+-		// }
++      // try
++      // {
++      // primaryLog.info("Node Manager is shutting down...");
++      // ScaNodeManager.staticShutdown();
++      // }
++      // catch (Exception e)
++      // {
++      // errorLog.error("An error occurred while attempting to shutdown the Node Manager", e);
++      // }
+ 
+-		try
+-		{
+-			primaryLog.info("Database Manager is shutting down...");
+-			DatabaseManager.shutdown(isWarmStop);
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Database Manager", e);
+-		}
++      try
++      {
++         primaryLog.info("Database Manager is shutting down...");
++         DatabaseManager.shutdown(isWarmStop);
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Database Manager", e);
++      }
+ 
+-		try
+-		{
+-			primaryLog.info("Config Manager is shutting down...");
+-			ConfigManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Config Manager", e);
+-		}
+-		try
+-		{
+-			CorbaManager.staticShutdown();
+-		}
+-		catch (Exception e)
+-		{
+-			errorLog.error("An error occurred while attempting to shutdown the Corba Manager", e);
+-		}
+-
+-		primaryLog.info("Shipboard MVCS has shutdown.\n\n\n");
+-	}
+-
++      try
++      {
++         primaryLog.info("Config Manager is shutting down...");
++         ConfigManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Config Manager", e);
++      }
++      try
++      {
++         CorbaManager.staticShutdown();
++      }
++      catch (Exception e)
++      {
++         errorLog.error("An error occurred while attempting to shutdown the Corba Manager", e);
++      }
+ 
+-	/**
+-	 * This method is responsible for accepting an exit status code, shutting down the managers and
+-	 * exiting with the exit code provide unless an error occurred. In the case of an error, the exit
+-	 * status code is changed to Cold Maintenance Mode before exiting.
+-	 * 
+-	 * @param exitStatus Exit Status Code
+-	 */
+-	public static void shutdown(ExitAction exitStatus)
+-	{
+-		primaryLog.info("Exit status code is: " + exitStatus);
+-		ShipMain.shutdownInProgress = true;
++      primaryLog.info("Shipboard MVCS has shutdown.\n\n\n");
++   }
+ 
+-		switch (exitStatus)
+-		{
+-		case WARM_SHUTDOWN:
+-			AlertsManager.getInstance().addAlert("", AlertType.MAIN_WARM_SHUTDOWN);
+-			managerCleanup(true);
+-			break;
+-		case COLD_SHUTDOWN:
+-			AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_SHUTDOWN);
+-			managerCleanup(false);
+-			break;
+-		case WARM_EXIT:
+-			AlertsManager.getInstance().addAlert("", AlertType.MAIN_WARM_EXIT);
+-			enterMaintenanceMode(true);
+-			break;
+-		case COLD_EXIT:
+-			AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_EXIT);
+-			enterMaintenanceMode(false);
+-			break;
+-		case RESTART:
+-			AlertsManager.getInstance().addAlert("", AlertType.MAIN_RESTART);
+-			managerCleanup(false);
+-			break;
+-		default:
+-			AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_UNKNOWN_EXIT);
+-			enterMaintenanceMode(false);
+-			break;
+-		}
+ 
+-		System.exit(exitStatus.exitCode);
++   /**
++    * This method is responsible for accepting an exit status code, shutting down the managers and
++    * exiting with the exit code provide unless an error occurred. In the case of an error, the exit
++    * status code is changed to Cold Maintenance Mode before exiting.
++    * 
++    * @param exitStatus Exit Status Code
++    */
++   public static void shutdown(ExitAction exitStatus)
++   {
++      primaryLog.info("Exit status code is: " + exitStatus);
++      ShipMain.shutdownInProgress = true;
+ 
+-	}
++      switch (exitStatus)
++      {
++         case WARM_SHUTDOWN:
++            AlertsManager.getInstance().addAlert("", AlertType.MAIN_WARM_SHUTDOWN);
++            managerCleanup(true);
++            break;
++         case COLD_SHUTDOWN:
++            AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_SHUTDOWN);
++            managerCleanup(false);
++            break;
++         case WARM_EXIT:
++            AlertsManager.getInstance().addAlert("", AlertType.MAIN_WARM_EXIT);
++            enterMaintenanceMode(true);
++            break;
++         case COLD_EXIT:
++            AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_EXIT);
++            enterMaintenanceMode(false);
++            break;
++         case RESTART:
++            AlertsManager.getInstance().addAlert("", AlertType.MAIN_RESTART);
++            managerCleanup(false);
++            break;
++         default:
++            AlertsManager.getInstance().addAlert("", AlertType.MAIN_COLD_UNKNOWN_EXIT);
++            enterMaintenanceMode(false);
++            break;
++      }
+ 
++      System.exit(exitStatus.exitCode);
+ 
+-	/**
+-	 * This method is responsible for starting the Cajo Codebase Server.
+-	 */
+-	private static void startCajoServer()
+-	{
+-		try
+-		{
+-			int appletPort = Integer.parseInt(AppConstants.getConstant(AppConstantsEnum.APPLET_PORT));
+-			Integer cajoPort = // ship.getCajoRmiPort();
+-					Integer.valueOf(AppConstants.getConstant(AppConstantsEnum.CAJO_RMI_PORT));
++   }
+ 
+-			// Creating the codebase server for GUI and plugins
+-			Ship ship = ConfigManager.getInstance().getShip();
+ 
+-			codebaseServer = new CodebaseServer(null, appletPort, "gnu.cajo.invoke.JClient", "MVCS GUI Client", null, null, null);
++   /**
++    * This method is responsible for starting the Cajo Codebase Server.
++    */
++   private static void startCajoServer()
++   {
++      try
++      {
++         int appletPort = Integer.parseInt(AppConstants.getConstant(AppConstantsEnum.APPLET_PORT));
++         Integer cajoPort = // ship.getCajoRmiPort();
++                  Integer.valueOf(AppConstants.getConstant(AppConstantsEnum.CAJO_RMI_PORT));
+ 
+-			String ipAddress = ship.getIpAddress();
++         // Creating the codebase server for GUI and plugins
++         Ship ship = ConfigManager.getInstance().getShip();
+ 
+-			primaryLog.info("Remote IP Address " + ipAddress);
+-			primaryLog.info("Remote Port " + cajoPort);
+-			Remote.config(ipAddress, cajoPort, null, 0);
++         codebaseServer = new CodebaseServer(null, appletPort, "gnu.cajo.invoke.JClient", "MVCS GUI Client", null, null, null);
+ 
+-			primaryLog.debug("Cajo server is running");
+-			primaryLog.debug("Using Local Host: " + Remote.getDefaultServerHost());
+-			primaryLog.debug("Using Local TCP port: " + Remote.getDefaultServerPort());
+-			primaryLog.debug("Using Client Host: " + Remote.getDefaultClientHost());
+-			primaryLog.debug("Using Client TCP port: " + Remote.getDefaultClientPort());
++         String ipAddress = ship.getIpAddress();
+ 
+-			// This logic is responsible for starting the Mission Builder GUI
+-			Server server = new Server();
+-			String url = AppConstants.getConstant(AppConstantsEnum.MISSION_BUILDER_APPLET_NAME);// "serverUrl";
+-			Object appletProxy = server.getProxy();
+-			ItemServer.bind(server, url, appletProxy);
++         primaryLog.info("Remote IP Address " + ipAddress);
++         primaryLog.info("Remote Port " + cajoPort);
++         Remote.config(ipAddress, cajoPort, null, 0);
+ 
+-		}
+-		catch (Exception ex)
+-		{
+-			errorLog.error("Failed to start the Cajo server.", ex);
+-		}
+-	}
++         primaryLog.debug("Cajo server is running");
++         primaryLog.debug("Using Local Host: " + Remote.getDefaultServerHost());
++         primaryLog.debug("Using Local TCP port: " + Remote.getDefaultServerPort());
++         primaryLog.debug("Using Client Host: " + Remote.getDefaultClientHost());
++         primaryLog.debug("Using Client TCP port: " + Remote.getDefaultClientPort());
+ 
++         // This logic is responsible for starting the Mission Builder GUI
++         Server server = new Server();
++         String url = AppConstants.getConstant(AppConstantsEnum.MISSION_BUILDER_APPLET_NAME);// "serverUrl";
++         Object appletProxy = server.getProxy();
++         ItemServer.bind(server, url, appletProxy);
+ 
+-	/**
+-	 * A method to start up the managers.
+-	 * 
+-	 * @return startupSucceeded
+-	 */
+-	public static boolean startup()
+-	{
+-		// Flag to determine whether any manager did not startup correctly
+-		boolean startupSucceeded = false;
+-		primaryLog.info("\n\n\nShipboard MVCS is starting up...");
++      }
++      catch (Exception ex)
++      {
++         errorLog.error("Failed to start the Cajo server.", ex);
++      }
++   }
+ 
+-		try
+-		{
+-			primaryLog.info("Starting the Configuration Manager...");
+-			if ((ConfigManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Config Manager.");
+-			}
+ 
+-			// Start the database before the model because it is used by model.
+-			primaryLog.info("Starting the Database Manager...");
+-			if (DatabaseManager.getInstance() == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Database Manager.");
+-			}
++   /**
++    * A method to start up the managers.
++    * 
++    * @return startupSucceeded
++    */
++   public static boolean startup()
++   {
++      primaryLog.info("\n\n\nShipboard MVCS is starting up...");
+ 
+-			ConfigManager cm = ConfigManager.getInstance();
++      try
++      {
++         primaryLog.info("Starting the Configuration Manager...");
++         if ((ConfigManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Config Manager.");
++         }
+ 
+-			NodeAddressLookup.initialize(cm.getShip(), cm.getListOfVehicles());
++         // Start the database before the model because it is used by model.
++         primaryLog.info("Starting the Database Manager...");
++         if (DatabaseManager.getInstance() == null)
++         {
++            throw new ManagerStartupException("Failed to start the Database Manager.");
++         }
+ 
+-			// the started flag should already be false
+-			ShipState.started = false;
++         ConfigManager cm = ConfigManager.getInstance();
+ 
+-			// create all models (running profile storage)
+-			ShipState.model = HostModelInitializer.createHostModel(cm.getShip(), cm.getListOfVehicles());
++         NodeAddressLookup.initialize(cm.getShip(), cm.getListOfVehicles());
+ 
+-			// initialize database updater for any changes
+-			DatabaseState.initializeListeners(ShipState.model);
++         // the started flag should already be false
++         ShipState.started = false;
+ 
+-			// initialize all node, device, power, message handlers and safety manager
+-			HandlerInitializer.initializeHandlers(ShipState.model.ship, ShipState.model.getVehicles().values());
++         // create all models (running profile storage)
++         ShipState.model = HostModelInitializer.createHostModel(cm.getShip(), cm.getListOfVehicles());
+ 
+-			ShipState.startupPercentage = 5.0f;
++         // initialize database updater for any changes
++         DatabaseState.initializeListeners(ShipState.model);
+ 
+-			// Start remote interface for GUI
+-			engine.start(MvcsRemoteInterface.RMI_NAME, MvcsRemoteInterface.RMI_PORT);
++         // initialize all node, device, power, message handlers and safety manager
++         HandlerInitializer.initializeHandlers(ShipState.model.ship, ShipState.model.getVehicles().values());
+ 
+-			primaryLog.info("Starting the Corba interface.");
+-			if ((CorbaManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Corba interface..");
+-			}
++         ShipState.startupPercentage = 5.0f;
+ 
+-			primaryLog.info("Starting the Alert Manager...");
+-			if ((AlertsManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Alert Manager.");
+-			}
++         // Start remote interface for GUI
++         engine.start(MvcsRemoteInterface.RMI_NAME, MvcsRemoteInterface.RMI_PORT);
+ 
+-			startCajoServer();
++         primaryLog.info("Starting the Corba interface.");
++         if ((CorbaManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Corba interface..");
++         }
+ 
+-			ShipState.startupPercentage = 10.0f;
++         primaryLog.info("Starting the Alert Manager...");
++         if ((AlertsManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Alert Manager.");
++         }
+ 
+-			primaryLog.info("Starting the Navigation Manager...");
+-			if ((ScaNavigationManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Navigation Manager.");
+-			}
++         startCajoServer();
+ 
+-			ShipState.startupPercentage = 25.0f;
++         ShipState.startupPercentage = 10.0f;
+ 
+-			primaryLog.info("Starting the Radio Plugin Manager...");
+-			if ((ScaRadioPluginsManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Radio Plugin Manager.");
+-			}
++         primaryLog.info("Starting the Navigation Manager...");
++         if ((ScaNavigationManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Navigation Manager.");
++         }
+ 
+-			ShipState.startupPercentage = 30.0f;
++         ShipState.startupPercentage = 25.0f;
+ 
+-			// Start the Threading section.
+-			primaryLog.info("Starting the Network Manager...");
+-			if ((ScaNetworkManager.getInstance()) == null)
+-			{
+-				primaryLog.info("Failed to start the Network Manager.");
+-				throw new ManagerStartupException("Failed to start the Network Manager.");
+-			}
++         primaryLog.info("Starting the Radio Plugin Manager...");
++         if ((ScaRadioPluginsManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Radio Plugin Manager.");
++         }
+ 
+-			ShipState.startupPercentage = 50.0f;
++         ShipState.startupPercentage = 30.0f;
+ 
+-			primaryLog.info("Starting the Uninterruptible Power Supply (UPS) Manager...");
+-			if ((UpsManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the UPS Manager.");
+-			}
++         // Start the Threading section.
++         primaryLog.info("Starting the Network Manager...");
++         if ((ScaNetworkManager.getInstance()) == null)
++         {
++            primaryLog.info("Failed to start the Network Manager.");
++            throw new ManagerStartupException("Failed to start the Network Manager.");
++         }
+ 
+-			ShipState.startupPercentage = 55.0f;
++         ShipState.startupPercentage = 50.0f;
+ 
+-			primaryLog.info("Starting the Hardware Configured Status...");
+-			if ((ScaHardwareConfiguredStatus.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Hardware Configured Status.");
+-			}
++         primaryLog.info("Starting the Uninterruptible Power Supply (UPS) Manager...");
++         if ((UpsManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the UPS Manager.");
++         }
+ 
+-			ShipState.startupPercentage = 60.0f;
++         ShipState.startupPercentage = 55.0f;
+ 
+-			primaryLog.info("Starting the Link Manager...");
+-			if ((ScaLinkManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the Link Manager.");
+-			}
++         primaryLog.info("Starting the Hardware Configured Status...");
++         if ((ScaHardwareConfiguredStatus.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Hardware Configured Status.");
++         }
+ 
+-			ShipState.startupPercentage = 80.0f;
++         ShipState.startupPercentage = 60.0f;
+ 
+-			primaryLog.info("Starting the SNMP Manager...");
+-			if ((ScaSnmpManager.getInstance()) == null)
+-			{
+-				throw new ManagerStartupException("Failed to start the SNMP Manager.");
+-			}
++         primaryLog.info("Starting the Link Manager...");
++         if ((ScaLinkManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the Link Manager.");
++         }
+ 
+-			primaryLog.info("Starting the Encryptor Manager...");
+-			if ((ScaEncryptorPluginManager.getInstance() == null))
+-			{
+-				throw new ManagerStartupException("Failed to start the Encryptor Plugin Manager.");
++         ShipState.startupPercentage = 80.0f;
+ 
+-			}
++         primaryLog.info("Starting the SNMP Manager...");
++         if ((ScaSnmpManager.getInstance()) == null)
++         {
++            throw new ManagerStartupException("Failed to start the SNMP Manager.");
++         }
+ 
+-			primaryLog.info("Starting the NTP Manager...");
+-			if ((ScaNtpManager.getInstance() == null))
+-			{
+-				startupSucceeded = false;
+-				throw new ManagerStartupException("Failed to start the NTP Manager.");
++         primaryLog.info("Starting the Encryptor Manager...");
++         if ((ScaEncryptorPluginManager.getInstance() == null))
++         {
++            throw new ManagerStartupException("Failed to start the Encryptor Plugin Manager.");
+ 
+-			}
+-			ShipState.startupPercentage = 95.0f;
++         }
+ 
+-			// Read data from database to restore nodes.
+-			DatabaseState.restoreFromDatabase(ShipState.model);
++         primaryLog.info("Starting the NTP Manager...");
++         if ((ScaNtpManager.getInstance() == null))
++         {
++            throw new ManagerStartupException("Failed to start the NTP Manager.");
+ 
+-			DatabaseManager.getInstance().setWarmShutdownForShip(startupSucceeded);
++         }
++         ShipState.startupPercentage = 95.0f;
+ 
+-			primaryLog.info("Starting the Snmp Agent...");
+-			try
+-			{
+-				ScaSnmpManager.startAgents();
+-			}
+-			catch (Exception error)
+-			{
+-				throw new ManagerStartupException("There was an error while starting the agent", error);
+-			}
++         // Read data from database to restore nodes.
++         DatabaseState.restoreFromDatabase(ShipState.model);
+ 
+-			/** Starts the Hardware Manager for the ship **/
+-			primaryLog.info("Starting Ship Hardware Device Manager");
+-			HardwareManager.addPowerHandler(ShipState.shipHandler.getPowerHandler());
+-			HardwareManager.addAmpHandler(ShipState.shipHandler.getOthAmplifierHandler());
+-			HardwareManager.addFilterHandler(ShipState.shipHandler.getFilterDeviceHandler());
+-			new HardwareManager(ShipState.model.getLocalNode()).start();
++         primaryLog.info("Starting the Snmp Agent...");
++         try
++         {
++            ScaSnmpManager.startAgents();
++         }
++         catch (Exception error)
++         {
++            throw new ManagerStartupException("There was an error while starting the agent", error);
++         }
+ 
+-			ShipState.startupPercentage = 100.0f;
++         /** Starts the Hardware Manager for the ship **/
++         primaryLog.info("Starting Ship Hardware Device Manager");
++         HardwareManager.addPowerHandler(ShipState.shipHandler.getPowerHandler());
++         HardwareManager.addAmpHandler(ShipState.shipHandler.getOthAmplifierHandler());
++         HardwareManager.addFilterHandler(ShipState.shipHandler.getFilterDeviceHandler());
++         new HardwareManager(ShipState.model.getLocalNode()).start();
+ 
+-			// PCR 1052
+-			String missionName = ConfigManager.getInstance().getCurrentMission().getName();
+-			AlertsManager.getInstance().addAlert("", AlertType.MISSON_LOADED_NAME, missionName);
++         ShipState.startupPercentage = 100.0f;
+ 
+-			AlertEvents.init(ShipState.model);
++         // PCR 1052
++         String missionName = ConfigManager.getInstance().getCurrentMission().getName();
++         AlertsManager.getInstance().addAlert("", AlertType.MISSON_LOADED_NAME, missionName);
+ 
+-			ShipState.started = true;
+-			startupSucceeded = true;
++         AlertEvents.init(ShipState.model);
+ 
+-			// Starts listening for external shutdown request.
+-			ShipMain.haltReady.addPropertyChangeListener(shutdownRequestListener);
++         ShipState.started = true;
+ 
+-		}
+-		catch (Exception x)
+-		{
+-			String msg = (x.getMessage() != null && !"".equals(x.getMessage())) ? x.getMessage() : "Unexpected Error occurred while starting up managers.";
++         // Set the warm start flag for unexpected shutdown
++         DatabaseManager.getInstance().setWarmShutdownForShip(true);
+ 
+-			errorLog.error(msg, x);
++         // Starts listening for external shutdown request.
++         ShipMain.haltReady.addPropertyChangeListener(shutdownRequestListener);
+ 
+-			// Indicates that an unknown Manager failed to startup successfully.
+-			startupSucceeded = false;
+-		}
++      }
++      catch (Exception x)
++      {
++         String msg = (x.getMessage() != null && !"".equals(x.getMessage())) ? x.getMessage() : "Unexpected Error occurred while starting up managers.";
++         errorLog.error(msg, x);
++         primaryLog.error(msg, x);
++         // Indicates that an unknown Manager failed to startup successfully.
++         return false;
++      }
+ 
+-		return startupSucceeded;
+-	}
++      return true;
++   }
+ }
+diff --git a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java
+index 1c28c3a..8b9c64b 100644
+--- a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java
++++ b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/main/VcaMain.java
+@@ -41,8 +41,7 @@
+  * <p>
+  * Date Created: Aug 24, 2009
+  * <p>
+- * $LastChangedBy: /C=US/O=U.S. Government/OU=DoD/OU=PKI/OU=USN/CN=KWON.DAE.AM.1160638016 $
+- * <br>
++ * $LastChangedBy: /C=US/O=U.S. Government/OU=DoD/OU=PKI/OU=USN/CN=KWON.DAE.AM.1160638016 $ <br>
+  * $LastChangedDate: 2017-04-19 19:04:31 -0500 (Wed, 19 Apr 2017) $ <br>
+  * $LastChangedRevision: 9754 $
+  * 
+@@ -170,8 +169,6 @@
+     */
+    private static boolean startup() throws Exception
+    {
+-      // Flag to determine whether any manager did not startup correctly
+-      boolean startupSucceeded = false;
+       primaryLog.info("\n\n\nVehicle MVCS is starting up...");
+ 
+       try
+@@ -263,7 +260,6 @@
+          primaryLog.info("Starting the NTP Manager...");
+          if ((VcaNtpManager.getInstance() == null))
+          {
+-            startupSucceeded = false;
+             throw new ManagerStartupException("Failed to start the NTP Manager.");
+          }
+ 
+@@ -292,16 +288,17 @@
+       catch (Exception x)
+       {
+          String msg = (x.getMessage() != null && !"".equals(x.getMessage())) ? x.getMessage() : "Unexpected Error occurred while starting up managers.";
+-
+          errorLog.error(msg, x);
+-
++         primaryLog.error(msg, x);
+          // Indicates that a Manager failed to startup successfully.
++         return false;
+       }
+-      DatabaseManager.getInstance().setWarmShutdownForVehicle(startupSucceeded);
++
++      // Set Warm start flag for unexpected shutdown.
++      DatabaseManager.getInstance().setWarmShutdownForVehicle(true);
+       VcaMain.haltReady.addPropertyChangeListener(shutdownRequestListener);
+ 
+-      startupSucceeded = true;
+-      return startupSucceeded;
++      return true;
+    }
+ 
+ 
