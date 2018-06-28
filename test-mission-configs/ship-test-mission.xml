@@ -1,0 +1,898 @@
+<mission>
+   <title>Factory Mission Configuration</title>
+   <name>default-mission.xml</name>
+   <author>MVCS Administrator</author>
+   <description> This mission is responsible for managing the LCS1 and two
+      Vehicles: USV and MTV. Both vehicles have similar configurations. The
+      radios on-board are the RT-1944 and the Iridium SCU.
+   </description>
+   <dateCreated>2009-08-26T14:32:00-06:00</dateCreated>
+   <ship>
+      <id>100</id>
+      <name>LCS1</name>
+      <typeId>lcs1</typeId>
+      <type>LCS</type>
+      <img>ship-image.jpg</img>
+      <ipAddress>172.20.10.2</ipAddress>
+      <rmsDliIpAddress>10.30.28.219</rmsDliIpAddress>
+      <appletName>mvcsGuiServer</appletName>
+      <appletPort>9000</appletPort>
+      <appletDefaultMessages>true</appletDefaultMessages>
+      <snmpAgentPort>1460</snmpAgentPort>
+      <snmpTrapPort>1462</snmpTrapPort>
+      <emconRequestTime>300</emconRequestTime>
+      <networkTimeout>300</networkTimeout>
+      <!-- Units in seconds -->
+      <cajoRmiPort>1198</cajoRmiPort>
+      <lrRange>2000</lrRange>
+      <!-- Units in yards -->
+      <mainMinRange>10</mainMinRange>
+      <!-- Units in yards -->
+      <lrBearingPort>60</lrBearingPort>
+      <!-- Units in degrees -->
+      <lrBearingStarboard>60</lrBearingStarboard>
+      <!-- Units in degrees -->
+      <gpsOffset>-65</gpsOffset>
+      <!-- Units in yards -->
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.10.3</ipAddress>
+      </crossDomain>
+      <othAmpController>
+         <ipAddress>172.20.10.3</ipAddress>
+         <port>4008</port>
+      </othAmpController>      
+      <sps>
+         <id>sps-1</id>
+         <typeId>sps</typeId>
+         <type>Serial Port Server</type>
+         <ipAddress>192.168.1.3</ipAddress>
+         <configurable>true</configurable>
+      </sps>
+      <router>
+         <id>router-1</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>true</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.10.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyS1</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>lanbypass-0</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>rt1944-00</id>
+         <typeId>rt1944</typeId>
+         <linkType>RT-1944</linkType>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.10.10</encrypterRedIp>
+         <ampId>rt1944Amp-00</ampId>
+         <secondaryAmpId>rt1944Amp-01</secondaryAmpId>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>1</heartbeatFrequency>
+         <heartbeatWindowSize>10</heartbeatWindowSize>
+         <lnrFrequency>2367</lnrFrequency>
+         <missionFrequency>2212</missionFrequency>
+         <relayFrequency>3000</relayFrequency>
+         <snmpAgentIpAddress>172.20.10.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5001</snmpAgentPortNumber>
+      </radio>
+      <radio>
+         <id>prc117-0</id>
+         <typeId>prc117</typeId>
+         <linkType>PRC-117</linkType>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId></encrypterTypeId>
+         <ampId>prc117Amp-0</ampId>
+         <sleepRadio>true</sleepRadio>
+         <heartbeatFrequency>10</heartbeatFrequency>
+         <heartbeatWindowSize>300</heartbeatWindowSize>
+         <snmpAgentIpAddress>172.20.10.2</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5161</snmpAgentPortNumber>
+         <!-- a whole number from 0 to 359 degree of a circle  -->
+		 <antennaCoverage side="stbd" forward="0" aft="179" />
+		 <antennaCoverage side="port" forward="359" aft="180" />
+      </radio>
+      <radio>
+         <id>SATCOM-0</id>
+         <typeId>mcg101</typeId>
+         <linkType>MCG-101</linkType>
+         <networkId>1</networkId>
+         <configurable>false</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.10.18</encrypterRedIp>
+         <telephoneNum>00881693630409</telephoneNum>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>10</heartbeatFrequency>
+         <heartbeatWindowSize>300</heartbeatWindowSize>
+         <snmpAgentIpAddress>172.20.10.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+      </radio>
+      <matrixSwitch>
+         <id>ms-00</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>true</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.10.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId>rt1944-00</radioId>
+         <radioId>prc117-0</radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-0</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>true</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>172.20.10.3:4001</serialPort>
+         <circuitBreaker>
+            <id>rt1944Amp-00</id>
+            <devNumber>1</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+            <safetyCheck>true</safetyCheck>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>prc117Amp-0</id>
+            <devNumber>2</devNumber>
+            <devName>PRC-117 Amplifier</devName>
+            <safetyCheck>false</safetyCheck>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944Amp-01</id>
+            <devNumber>3</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+            <safetyCheck>false</safetyCheck>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>prc117-0</id>
+            <devNumber>4</devNumber>
+            <devName>PRC-117</devName>
+            <safetyCheck>false</safetyCheck>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944-00</id>
+            <devNumber>5</devNumber>
+            <devName>RT-1944</devName>
+            <safetyCheck>false</safetyCheck>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>SATCOM-0</id>
+            <devNumber>7</devNumber>
+            <devName>MCG-101</devName>
+            <safetyCheck>true</safetyCheck>
+         </circuitBreaker>
+      </power>
+      <powerUps>
+         <id>ups-0</id>
+         <typeId>ups</typeId>
+         <type>Uninterruptible Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>/dev/ttyS0</serialPort>
+         <pollRate>60000</pollRate>
+         <shutdownTime>5</shutdownTime><!-- Units in minutes -->
+      </powerUps>
+      <gui>
+         <fontName>Helvetica</fontName>
+         <fontSize>10pt</fontSize>
+      </gui>
+      <corba>
+         <primaryName>MPSCORBA1</primaryName>
+         <primaryPort>8000</primaryPort>
+         <secondaryName>MPSCORBA2</secondaryName>
+         <secondaryPort>8001</secondaryPort>
+         <testing>true</testing>
+         <proxyHost />
+         <proxyPort />
+         <clientHost />
+         <clientPort />
+      </corba>
+      <snmp>
+         <timeout>10000</timeout><!-- Units in milliseconds -->
+         <numberOfRetries>1</numberOfRetries>
+         <version>3</version>
+      </snmp>
+      <security>
+         <testing>true</testing>
+      </security>
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </ship>
+   <vehicle>
+      <id>1</id>
+      <name>RMMV1</name>
+      <typeId>rmv</typeId>
+      <type>RMV</type>
+      <img>Asw1_shadowed_px60.jpg</img>
+      <priority>1</priority>
+      <ipAddress>172.20.11.2</ipAddress>
+      <rmsDliIpAddress>10.30.30.238</rmsDliIpAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>RMMV1</mpsName>
+      <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+      <switchoverModeDefault>MANUAL</switchoverModeDefault>
+      <depthLimit>-30.5</depthLimit>
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.11.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-45</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.11.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/1</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>lanbypass-1</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>rt1944-1</id>
+         <typeId>rt1944</typeId>
+         <linkType>RT-1944</linkType>
+         <linkNumber>2</linkNumber>
+         <priority>2</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.11.10</encrypterRedIp>
+         <ampId>rt1944Amp-1</ampId>
+         <secondaryAmpId>rt1944Amp-2</secondaryAmpId>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>1</heartbeatFrequency>
+         <heartbeatWindowSize>10</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>10</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>1</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>172.20.11.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5001</snmpAgentPortNumber>
+      </radio>
+      <radio>
+         <id>prc117-1</id>
+         <typeId>prc117</typeId>
+         <linkType>PRC-117</linkType>
+         <linkNumber>4</linkNumber>
+         <priority>4</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId></encrypterTypeId>
+         <ampId>prc117Amp-1</ampId>
+         <sleepRadio>true</sleepRadio>
+         <heartbeatFrequency>10</heartbeatFrequency>
+         <heartbeatWindowSize>300</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>2000</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <frequencyNetRange>1-4</frequencyNetRange>
+         <snmpAgentIpAddress>172.20.11.2</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5161</snmpAgentPortNumber>
+         <loopback>lo:1</loopback>
+         <channel id="1">
+            <frequency>31000000</frequency>
+         </channel>
+         <channel id="2">
+            <frequency>32000000</frequency>
+         </channel>
+      </radio>
+      <matrixSwitch>
+         <id>ms-10</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.11.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId>rt1944-1</radioId>
+         <radioId>prc117-1</radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-1</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>rt1944Amp-1</id>
+            <devNumber>0</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944Amp-2</id>
+            <devNumber>11</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944-1</id>
+            <devNumber>1</devNumber>
+            <devName>RT-1944</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>prc117-1</id>
+            <devNumber>2</devNumber>
+            <devName>PRC-117</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>prc117Amp-1</id>
+            <devNumber>3</devNumber>
+            <devName>PRC-117 Amplifier</devName>
+         </circuitBreaker>
+      </power>
+      <!-- <acl> <state>Launch</state> <priority>High</priority> <access>permit</access> <trafficType>tcp</trafficType> 
+         <sourceType>host</sourceType> <source>10.30.28.3</source> <destinationType>host</destinationType> <destination>10.30.30.3</destination> 
+         <portMatching>eq</portMatching> <port>1111</port> </acl> -->
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+   <vehicle>
+      <id>2</id>
+      <name>RMMV2</name>
+      <typeId>rmv</typeId>
+      <type>RMV</type>
+      <img>Asw1_shadowed_px60.jpg</img>
+      <priority>2</priority>
+      <ipAddress>172.20.12.2</ipAddress>
+      <rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>RMMV2</mpsName>
+      <networkTimeout>300</networkTimeout>
+      <!-- Units in seconds -->
+      <switchoverModeDefault>MANUAL</switchoverModeDefault>
+      <depthLimit>-30.5</depthLimit>
+            <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.12.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-55</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.12.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/1</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>lanbypass-2</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>rt1944-2</id>
+         <typeId>rt1944</typeId>
+         <linkType>RT-1944</linkType>
+         <linkNumber>2</linkNumber>
+         <priority>2</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.12.10</encrypterRedIp>
+         <ampId>rt1944Amp-1</ampId>
+         <secondaryAmpId>rt1944Amp-2</secondaryAmpId>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>1</heartbeatFrequency>
+         <heartbeatWindowSize>10</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>10</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>1</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>172.20.12.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5001</snmpAgentPortNumber>
+      </radio>
+      <radio>
+         <id>prc117-2</id>
+         <typeId>prc117</typeId>
+         <linkType>PRC-117</linkType>
+         <linkNumber>4</linkNumber>
+         <priority>4</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId></encrypterTypeId>
+         <ampId>prc117Amp-2</ampId>
+         <sleepRadio>true</sleepRadio>
+         <heartbeatFrequency>10</heartbeatFrequency>
+         <heartbeatWindowSize>300</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>2000</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <frequencyNetRange>5-8</frequencyNetRange>
+         <snmpAgentIpAddress>172.20.12.2</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5161</snmpAgentPortNumber>
+         <loopback>lo:2</loopback>
+         <channel id="3">
+            <frequency>33000000</frequency>
+         </channel>
+         <channel id="4">
+            <frequency>34000000</frequency>
+         </channel>
+      </radio>
+      <matrixSwitch>
+         <id>ms-20</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.12.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId>rt1944-2</radioId>
+         <radioId>prc117-2</radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-2</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>rt1944Amp-1</id>
+            <devNumber>0</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944Amp-2</id>
+            <devNumber>11</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944-2</id>
+            <devNumber>1</devNumber>
+            <devName>RT-1944</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>prc117-2</id>
+            <devNumber>2</devNumber>
+            <devName>PRC-117</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>prc117Amp-2</id>
+            <devNumber>3</devNumber>
+            <devName>PRC-117 Amplifier</devName>
+         </circuitBreaker>
+      </power>
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+   <vehicle>
+      <id>3</id>
+      <name>USV3</name>
+      <typeId>usv</typeId>
+      <type>USV</type>
+      <img>Asw1_shadowed_px60.jpg</img>
+      <priority>3</priority>
+      <ipAddress>172.20.13.2</ipAddress>
+      <rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>USV3</mpsName>
+      <networkTimeout>300</networkTimeout>
+      <!-- Units in seconds -->
+      <switchoverModeDefault>MANUAL</switchoverModeDefault>
+      <depthLimit>-30.5</depthLimit>
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.13.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-65</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.13.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>lanbypass-3</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>rt1944-3</id>
+         <typeId>rt1944</typeId>
+         <linkType>RT-1944</linkType>
+         <linkNumber>2</linkNumber>
+         <priority>2</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.13.10</encrypterRedIp>
+         <ampId>rt1944Amp-3-0</ampId>
+         <secondaryAmpId>rt1944Amp-3-0</secondaryAmpId>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>1</heartbeatFrequency>
+         <heartbeatWindowSize>10</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>20</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>172.20.13.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5001</snmpAgentPortNumber>
+      </radio>
+      <matrixSwitch>
+         <id>ms-30</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.13.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId>rt1944-3</radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-3</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>rt1944Amp-3-0</id>
+            <devNumber>1</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944-3</id>
+            <devNumber>2</devNumber>
+            <devName>RT-1944</devName>
+         </circuitBreaker>
+      </power>
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+   <vehicle>
+      <id>4</id>
+      <name>USV4</name>
+      <typeId>usv</typeId>
+      <type>USV</type>
+      <img>Asw1_shadowed_px60.jpg</img>
+      <priority>4</priority>
+      <ipAddress>172.20.14.2</ipAddress>
+      <rmsDliIpAddress>10.30.30.242</rmsDliIpAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>USV4</mpsName>
+      <networkTimeout>300</networkTimeout>
+      <!-- Units in seconds -->
+      <switchoverModeDefault>MANUAL</switchoverModeDefault>
+      <depthLimit>-30.5</depthLimit>
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.14.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-75</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.14.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>lanbypass-4</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>rt1944-4</id>
+         <typeId>rt1944</typeId>
+         <linkType>RT-1944</linkType>
+         <linkNumber>2</linkNumber>
+         <priority>2</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.14.10</encrypterRedIp>
+         <ampId>rt1944Amp-4-0</ampId>
+         <secondaryAmpId>rt1944Amp-4-0</secondaryAmpId>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>1</heartbeatFrequency>
+         <heartbeatWindowSize>10</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>20</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>172.20.14.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5001</snmpAgentPortNumber>
+      </radio>
+      <matrixSwitch>
+         <id>ms-40</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.14.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId>rt1944-4</radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-4</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>rt1944Amp-4-0</id>
+            <devNumber>1</devNumber>
+            <devName>RT-1944 Amplifier</devName>
+         </circuitBreaker>
+         <circuitBreaker>
+            <id>rt1944-4</id>
+            <devNumber>2</devNumber>
+            <devName>RT-1944</devName>
+         </circuitBreaker>
+      </power>
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+   <vehicle>
+      <id>5</id>
+      <name>UUV5</name>
+      <typeId>uuv</typeId>
+      <type>UUV</type>
+      <img>Asw1_shadowed_px60.jpg</img>
+      <priority>5</priority>
+      <ipAddress>172.20.15.2</ipAddress>
+      <rmsDliIpAddress>10.30.30.238</rmsDliIpAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>UUV5</mpsName>
+      <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+      <switchoverModeDefault>MANUAL</switchoverModeDefault>
+      <depthLimit>-30.5</depthLimit>
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.15.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-85</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.15.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>LAN</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>SATCOM</id>
+         <typeId>mcg101</typeId>
+         <linkType>MCG-101</linkType>
+         <linkNumber>3</linkNumber>
+         <priority>3</priority>
+         <networkId>1</networkId>
+         <configurable>false</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.15.18</encrypterRedIp>
+         <telephoneNum>00881693630409</telephoneNum>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>30</heartbeatFrequency>
+         <heartbeatWindowSize>600</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>2000</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>172.20.15.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+      </radio>
+      <matrixSwitch>
+         <id>ms-50</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.15.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId></radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-5</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>SATCOM</id>
+            <devNumber>1</devNumber>
+            <devName>MCG-101</devName>
+         </circuitBreaker>
+      </power>
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+      <vehicle>
+      <id>6</id>
+      <name>UUV6</name>
+      <typeId>uuv</typeId>
+      <type>UUV</type>
+      <img>Asw1_shadowed_px60.jpg</img>
+      <priority>6</priority>
+      <ipAddress>172.20.16.2</ipAddress>
+      <rmsDliIpAddress>10.30.30.238</rmsDliIpAddress>
+      <snmpAgentPort>1560</snmpAgentPort>
+      <mpsName>UUV6</mpsName>
+      <networkTimeout>300</networkTimeout><!-- Units in seconds -->
+      <switchoverModeDefault>MANUAL</switchoverModeDefault>
+      <depthLimit>-30.5</depthLimit>
+      <crossDomain>
+         <name>HAF100</name>
+         <ipAddress>172.20.16.3</ipAddress>
+      </crossDomain>
+      <router>
+         <id>router-95</id>
+         <typeId>router</typeId>
+         <type>Router</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <ipAddress>172.20.16.1</ipAddress>
+         <connectionType>SSH</connectionType>
+         <connectionPort>22</connectionPort>
+         <serialPort>/dev/ttyM0</serialPort>
+         <sysLogPort>13514</sysLogPort>
+         <lanBypassEthernetPortName>FastEthernet0/0</lanBypassEthernetPortName>
+      </router>
+      <lanBypass>
+         <id>LAN</id>
+         <typeId>lanbypass</typeId>
+         <linkType>LAN Bypass</linkType>
+         <linkNumber>1</linkNumber>
+         <priority>1</priority>
+         <networkId>1</networkId>
+         <configurable>true</configurable>
+      </lanBypass>
+      <radio>
+         <id>SATCOM</id>
+         <typeId>mcg101</typeId>
+         <linkType>MCG-101</linkType>
+         <linkNumber>3</linkNumber>
+         <priority>3</priority>
+         <networkId>1</networkId>
+         <configurable>false</configurable>
+         <encrypterTypeId>ips250</encrypterTypeId>
+         <encrypterRedIp>172.20.16.18</encrypterRedIp>
+         <telephoneNum>00881693630409</telephoneNum>
+         <sleepRadio>false</sleepRadio>
+         <heartbeatFrequency>30</heartbeatFrequency>
+         <heartbeatWindowSize>600</heartbeatWindowSize>
+         <goodPercentage>80</goodPercentage>
+         <warningPercentage>60</warningPercentage>
+         <losRange>2000</losRange><!-- in nautical miles -->
+         <losLowerGuardLine>2</losLowerGuardLine><!-- in nautical miles -->
+         <lrRange>50</lrRange><!-- in nautical miles -->
+         <lrLowerGuardLine>2</lrLowerGuardLine><!-- in nautical miles -->
+         <slaTimeout>10</slaTimeout>
+         <snmpAgentIpAddress>172.20.16.3</snmpAgentIpAddress>
+         <snmpAgentPortNumber>5002</snmpAgentPortNumber>
+      </radio>
+      <matrixSwitch>
+         <id>ms-60</id>
+         <typeId>ms</typeId>
+         <type>Matrix Switch</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <serialPort>172.20.16.3:4002</serialPort>
+         <currentMode>dummy</currentMode>
+         <radioId></radioId>
+      </matrixSwitch>
+      <power>
+         <id>power-6</id>
+         <typeId>psu</typeId>
+         <type>Power Supply</type>
+         <testing>false</testing>
+         <configurable>true</configurable>
+         <voltage>28</voltage>
+         <serialPort>/dev/ttyS1</serialPort>
+         <reverseLogicAdapter>true</reverseLogicAdapter>
+         <circuitBreaker>
+            <id>SATCOM</id>
+            <devNumber>1</devNumber>
+            <devName>MCG-101</devName>
+         </circuitBreaker>
+      </power>
+      <snmpAgentTest>
+         <testing>false</testing>
+      </snmpAgentTest>
+   </vehicle>
+</mission>
