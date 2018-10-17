@@ -1,0 +1,536 @@
+diff --git a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java
+index abcfe68..b85c614 100644
+--- a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java
++++ b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatus.java
+@@ -26,10 +26,8 @@
+    public RadioStatus()
+    {
+       radioStatusData = new HashMap<MCG101Command, String>();
+-      for (MCG101Command command : MCG101Command.values())
+-      {
+-         radioStatusData.put(command, "");
+-      }
++      // initialize the status with empty string
++      initializeStatus();
+    }
+ 
+ 
+@@ -81,4 +79,13 @@
+    }
+ 
+ 
++   /** To initialize all status to empty string value */
++   public void initializeStatus()
++   {
++      for (MCG101Command command : MCG101Command.values())
++      {
++         radioStatusData.put(command, "");
++      }
++   }
++
+ }
+diff --git a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java
+index 7325515..0b7d4c5 100644
+--- a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java
++++ b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/radioStatus/RadioStatusMonitor.java
+@@ -11,6 +11,7 @@
+ 
+ import mil.navy.lcs.mvcs.plugins.mcg101.MCG101Plugin;
+ import mil.navy.lcs.mvcs.plugins.mcg101.snmp.SnmpOperation;
++import mil.navy.lcs.mvcs.plugins.mcg101.snmp.SnmpOperation.SnmpError;
+ import mil.navy.lcs.mvcs.plugins.mcg101.utils.Constants.MCG101Command;
+ 
+ 
+@@ -128,23 +129,31 @@
+    {
+       for (MCG101Command command : commandsToRadio)
+       {
++
+          String snmpResponse = snmp_op.getItem(command.snmpOid);
+ 
+          logger.debug("MCG-101 polling status: " + command + " " + snmpResponse);
+ 
+-         // error getting SNMP
+-         if (snmp_op.hasSnmpGetError())
+-         {
+-            radioStatus.put(command, "");
+-            radioStatus.setLastStatusCheck(false);
+-         }
+          // successful getting SNMP
+-         else
++         if (snmp_op.getSnmpError() == SnmpError.NONE)
+          {
+             logger.debug("Status has updated: " + command + " " + snmpResponse);
+             radioStatus.put(command, snmpResponse);
+             radioStatus.setLastStatusCheck(true);
+          }
++         // SNMP IO Exception
++         else if (snmp_op.getSnmpError() == SnmpError.SNMP_IOE)
++         {
++            // reset all of the radio status with empty value
++            radioStatus.initializeStatus();
++            radioStatus.setLastStatusCheck(false);
++         }
++         // OTHER SNMP errors
++         else
++         {
++            radioStatus.put(command, "");
++            radioStatus.setLastStatusCheck(false);
++         }
+ 
+       } // end of for
+ 
+diff --git a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java
+index 34726b9..be4fdbb 100644
+--- a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java
++++ b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpFunctions.java
+@@ -22,6 +22,7 @@
+ 
+ import mil.navy.lcs.mvcs.plugins.mcg101.configuration.ConfigStore;
+ import mil.navy.lcs.mvcs.plugins.mcg101.configuration.ConfigurationManager;
++import mil.navy.lcs.mvcs.plugins.mcg101.snmp.SnmpOperation.SnmpError;
+ 
+ /**
+  * This class will perform basic SNMP functions.
+@@ -32,7 +33,7 @@
+    protected boolean _isSnmpV3 = false;
+ 
+    /** Denotes the SNMP error has occurred */
+-   protected boolean snmpError;
++   private SnmpError snmpError;
+ 
+    /** Denotes SNMP read string */
+    private String readString = "";
+@@ -44,15 +45,15 @@
+    protected int _version = SnmpConst.SNMPV2;
+ 
+    /** Denotes SNMP error string */
+-   private String errorString;
++   // private String errorString;
+ 
+    /** Denotes SNMP authentication protocol */
+    private String strAuthProtocol;
+ 
+    /** Denotes SNMP private protocol */
+    private int intPrivProtocol;
+-   
+-   /** Denotes transport (TCP/UDP) protocol.  Defaults to TCP */
++
++   /** Denotes transport (TCP/UDP) protocol. Defaults to TCP */
+    private int transProtocol = Session.TCP;
+ 
+    /** The logger for this class */
+@@ -62,8 +63,6 @@
+    /** Default Constructor */
+    public SnmpFunctions()
+    {
+-      SnmpUtils su = new SnmpUtils();
+-
+       try
+       {
+          ConfigStore config = ConfigurationManager.getInstance().getConfigStore();
+@@ -78,8 +77,8 @@
+          {
+             logger.error("Error getting SNMP version: " + config.getSnmpVersion());
+          }
+-         strAuthProtocol = su.getAuthenticationProtocol(config.getAuthAlg());
+-         intPrivProtocol = su.getPrivacyProtocol(config.getPrivAlg());
++         strAuthProtocol = SnmpUtils.getAuthenticationProtocol(config.getAuthAlg());
++         intPrivProtocol = SnmpUtils.getPrivacyProtocol(config.getPrivAlg());
+ 
+          logger.debug("SNMP version = " + _version);
+ 
+@@ -98,37 +97,21 @@
+       {
+          logger.error("Error in SNMPFunctions: ", ex);
+       }
+-      finally
+-      {
+-         su = null;
+-      }
+-
+    }
+ 
+ 
+    /**
+     * This function will notify the web pages if an error has occurred
+     * 
+-    * @return true if an error has occurred, false otherwise
++    * @return SnmpError to denote an error
+     */
+-   public synchronized boolean getSnmpError()
++   public synchronized SnmpError getSnmpError()
+    {
+       return snmpError;
+    }
+ 
+ 
+    /**
+-    * This function will return the nature of the SNMP error
+-    * 
+-    * @return a string containing the SNMP error
+-    */
+-   public synchronized String getSnmpErrorString()
+-   {
+-      return errorString;
+-   }
+-
+-
+-   /**
+     * This function performs snmpset using the iReasoning library
+     * 
+     * @param _host the IP address of the SNMP agent
+@@ -150,13 +133,13 @@
+       SnmpSession session = null;
+       SnmpPdu pdu;
+       SnmpVarBind vb;
+-      errorString = "";
+-      snmpError = false;
++      snmpError = SnmpError.NONE;
+ 
+       try
+       {
+          vbList = new SnmpVarBindList();
+          session = new SnmpSession(_host, _port, readString, writeString, _version, transProtocol);
++         session.setTimeout(3000); // timeout set
+ 
+          if (_isSnmpV3)
+          {
+@@ -182,8 +165,7 @@
+       catch (Exception ex)
+       {
+          logger.error("Error in snmpset: " + ex.getMessage());
+-         errorString = "Error setting SNMP";
+-         snmpError = true;
++         snmpError = SnmpError.SNMP_MIB;
+          return false;
+       }
+       finally
+@@ -218,19 +200,16 @@
+    {
+       String[][] stuff = new String[1][1];
+       SnmpSession session = null;
+-      errorString = "";
+-      snmpError = false;
++      snmpError = SnmpError.NONE;
+ 
+       try
+       {
+          session = new SnmpSession(_host, _port, readString, writeString, _version, transProtocol);
+-         session.setTimeout(5000); // sets timeout to be 5 seconds
++         session.setTimeout(3000); // TIMEOUT seems work only on UDP. We use TCP so this is mute
+          session.setRetries(0); // no retry after timeout
+ 
+          SnmpTableModel table = session.snmpGetTable(_oids);
+ 
+-         SnmpUtils su = new SnmpUtils();
+-
+          if (_isSnmpV3)
+          {
+             session.setV3Params(_user, strAuthProtocol, _authPassword, intPrivProtocol, _privPassword);
+@@ -242,7 +221,7 @@
+          {
+             SnmpVarBind[] s = table.getRow(i);
+ 
+-            String[] temp = su.getVarBindValues(s);
++            String[] temp = SnmpUtils.getVarBindValues(s);
+             for (int j = 0; j < temp.length; j++)
+             {
+                stuff[i][j] = temp[j];
+@@ -254,19 +233,18 @@
+       catch (TimeoutException e)
+       {
+          logger.error("SNMP Table Get Timed-out " + _oids + " " + e.toString());
+-         snmpError = true;
++         snmpError = SnmpError.SNMP_TIMEOUT;
+          return stuff;
+       }
+       catch (IOException e)
+       {
+-         errorString = "Snmp get error  Please try again";
+-         snmpError = true;
++         snmpError = SnmpError.SNMP_IOE;
+          logger.error("SNMP Get Table I/O exception " + _oids + " " + e.toString());
+          return stuff;
+       }
+       catch (Exception e)
+       {
+-         snmpError = true;
++         snmpError = SnmpError.SNMP_MIB;
+          logger.error("SNMP Table Get Error " + _oids + " " + e.toString());
+          return stuff;
+       }
+@@ -296,19 +274,15 @@
+     */
+    public synchronized String[] snmpget(String _host, int _port, String _oids, String _user, String _authPassword, String _privPassword)
+    {
+-      String[] stuff = new String[1];
+-      SnmpUtils su = new SnmpUtils();
++      String[] stuff = new String[] { "" };
+       SnmpSession session = null;
+-      errorString = "";
+-      snmpError = false;
++      snmpError = SnmpError.NONE;
+ 
+       try
+       {
+-
+-         logger.debug("MCG-101 SNMP Get (" + _host + ":" + _port + " readString:" + readString + " OID:" + _oids + ")");
+-
++         logger.debug("MCG-101 SNMP Get (" + _host + ":" + _port + " READ:" + readString + " OID:" + _oids + ")");
+          session = new SnmpSession(_host, _port, readString, writeString, _version, transProtocol);
+-         session.setTimeout(5000); // sets timeout to be 5 seconds
++         session.setTimeout(3000); // TIMEOUT seems work only on UDP. We use TCP so this is mute
+          session.setRetries(0); // no retry after timeout
+ 
+          if (_version == SnmpConst.SNMPV3)
+@@ -317,24 +291,21 @@
+          }
+ 
+          SnmpPdu retPdu = session.snmpGetRequest(_oids);
+-         stuff = su.getOIDValue(retPdu);
++         stuff = SnmpUtils.getOIDValue(retPdu);
+ 
+          return stuff;
+       }
+       catch (TimeoutException toe)
+       {
+-         snmpError = true;
+-         errorString = "SNMP request timed out";
++         snmpError = SnmpError.SNMP_TIMEOUT;
+       }
+       catch (IOException ioe)
+       {
+-         errorString = "SNMP IO error";
+-         snmpError = true;
++         snmpError = SnmpError.SNMP_IOE;
+       }
+       catch (Exception e)
+       {
+-         snmpError = true;
+-         errorString = "SNMP MIB parse error";
++         snmpError = SnmpError.SNMP_MIB;
+       }
+       finally
+       {
+@@ -342,8 +313,8 @@
+             session.close();
+       }
+ 
+-      if (snmpError)
+-         logger.debug("SNMP operation has failed: " + errorString);
++      if (snmpError != SnmpError.NONE)
++         logger.debug("SNMP operation has failed: " + snmpError.errorString);
+ 
+       return stuff;
+    }
+@@ -371,14 +342,12 @@
+       String[] stuff = new String[1];
+       String[] oidArray = new String[1];
+       oidArray[0] = _oids;
+-      SnmpUtils su = new SnmpUtils();
+       Vector<String[]> snmpReturn = new Vector<String[]>();
+ 
+       SnmpSession session = null;
+       SnmpOID orgOID;
+       SnmpOID newOID;
+-      errorString = "";
+-      snmpError = false;
++      snmpError = SnmpError.NONE;
+ 
+       try
+       {
+@@ -390,7 +359,7 @@
+          }
+          SnmpPdu retPdu = session.snmpGetNextRequest(oidArray[0]);
+ 
+-         String[] org = su.getOIDValue(retPdu);
++         String[] org = SnmpUtils.getOIDValue(retPdu);
+          snmpReturn.add(org);
+          orgOID = new SnmpOID(oidArray[0]);
+ 
+@@ -402,7 +371,7 @@
+                break;
+             }
+ 
+-            stuff = su.getOIDValue(retPdu);
++            stuff = SnmpUtils.getOIDValue(retPdu);
+             newOID = new SnmpOID(stuff[0]);
+ 
+             if (orgOID.compareTo(newOID) > 0)
+@@ -414,8 +383,7 @@
+       }
+       catch (Exception ex)
+       {
+-         errorString = "Snmp get error.  Please try again.";
+-         snmpError = true;
++         snmpError = SnmpError.SNMP_MIB;
+          logger.error("SNMP Walk error " + _oids + " " + ex.toString());
+       }
+       finally
+diff --git a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpOperation.java b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpOperation.java
+index 7360e99..87cd435 100644
+--- a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpOperation.java
++++ b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpOperation.java
+@@ -17,6 +17,7 @@
+    /** The logger for this class */
+    private static Logger logger = LoggerFactory.getLogger(SnmpOperation.class);
+ 
++   /** SNMP functions */
+    private SnmpFunctions sf;
+ 
+    /** The IP address of the SNMP agent */
+@@ -34,6 +35,23 @@
+    /** The SNMPv3 privacy password */
+    private String _privPassword;
+ 
++   /** SNMP ERROR object */
++   public enum SnmpError {
++
++      NONE("No error"), //
++      SNMP_TIMEOUT("SNMP timed out"), //
++      SNMP_IOE("SNMP IO error"), //
++      SNMP_MIB("SNMP MIB error");
++
++      public String errorString = "";
++
++
++      private SnmpError( String errorStr)
++      {
++         this.errorString = errorStr;
++      }
++   }
++
+ 
+    /** Creates a new instance of SnmpFunctionManager */
+    public SnmpOperation()
+@@ -72,16 +90,13 @@
+    /**
+     * Get a particular SNMP item
+     * 
+-    * @param _oids The OID of the SNMP 
++    * @param _oids The OID of the SNMP
+     * @return an array containing the SNMP GET response
+     */
+    public String getItem(String _oids)
+    {
+       String[] stuff = sf.snmpget(ipAddress, port, _oids, _user, _authPassword, _privPassword);
+-      if (hasSnmpGetError())
+-         return "";
+-      else
+-         return stuff[0];
++      return stuff[0];
+    }
+ 
+ 
+@@ -107,20 +122,9 @@
+     * 
+     * @return True if there is an error, false otherwise
+     */
+-   public boolean hasSnmpGetError()
++   public SnmpError getSnmpError()
+    {
+       return sf.getSnmpError();
+    }
+ 
+-
+-   /**
+-    * Get the SNMP error string
+-    * 
+-    * @return The SNMP error string if an error has occurred.
+-    */
+-   public String getSnmpErrorString()
+-   {
+-      return sf.getSnmpErrorString();
+-   }
+-
+ }
+\ No newline at end of file
+diff --git a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpUtils.java b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpUtils.java
+index 7d4ea85..f3aa396 100644
+--- a/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpUtils.java
++++ b/mvcs-plugin-mcg101/src/main/java/mil/navy/lcs/mvcs/plugins/mcg101/snmp/SnmpUtils.java
+@@ -28,15 +28,13 @@
+ public class SnmpUtils
+ {
+ 
+-   boolean _numericalOID = true;
+-
+    /**
+     * Return the authentication protocol string. Default protocol is MD5
+     * 
+     * @param strAuthProto the user input protocol string
+     * @return a string containing the iReasoning equivalent of the protocol
+     */
+-   public String getAuthenticationProtocol(String strAuthProto)
++   public static String getAuthenticationProtocol(String strAuthProto)
+    {
+       if (strAuthProto.equalsIgnoreCase("sha"))
+          return SnmpConst.SHA;
+@@ -52,7 +50,7 @@
+     * @param strPrivProto the string protocol entered by the user
+     * @return an integer containing the iReasoning equivalent number for the protocol
+     */
+-   public int getPrivacyProtocol(String strPrivProto)
++   public static int getPrivacyProtocol(String strPrivProto)
+    {
+       if (strPrivProto.equalsIgnoreCase("aes"))
+          return SnmpConst.AES;
+@@ -67,7 +65,7 @@
+     * @param pdu the SnmpPdu
+     * @return a string array containing the values of the pdu
+     */
+-   public String[] getOIDValue(SnmpPdu pdu)
++   public static String[] getOIDValue(SnmpPdu pdu)
+    {
+       String[] oidValue = new String[1];
+ 
+@@ -93,7 +91,7 @@
+     * @param varbinds an array containing varbinds
+     * @return a string array containing the values of the varbinds
+     */
+-   public String[] getVarBindValues(SnmpVarBind[] varbinds)
++   public static String[] getVarBindValues(SnmpVarBind[] varbinds)
+    {
+       String[] oidValue = new String[varbinds.length];
+       for (int i = 0; i < varbinds.length; i++)
+@@ -104,7 +102,7 @@
+    }
+ 
+ 
+-   private void printAuthFailReason(SnmpPdu pdu)
++   public static void printAuthFailReason(SnmpPdu pdu)
+    {
+       SnmpVarBind vb = pdu.getFirstVarBind();
+       if (vb != null)
+@@ -145,7 +143,7 @@
+     * @return the value of the object. Note that it is possible to extract the Snmp OID, the data
+     *         type and the value. This function only returns the value.
+     */
+-   protected String getValue(SnmpVarBind var)
++   public static String getValue(SnmpVarBind var)
+    {
+       String oidValue = "";
+ 
+@@ -171,10 +169,6 @@
+          NameValue nv = MibUtil.translate(oid, value, true);
+          if (nv != null)
+          {
+-            if (!_numericalOID)
+-            {
+-               oid = nv.getName();
+-            }
+             value = nv.getValue();
+          }
+       }
+@@ -207,8 +201,8 @@
+     * Translates to SnmpDataType object. Used in snmptrap and snmpset classes
+     * 
+     * @param type one of i, u, t, a, o, s, c i: INTEGER, u: unsigned INTEGER, t: TIMETICKS, a:
+-    *           IPADDRESS, o: OBJID, s: STRING, c: counter32, g: gauge, x: hex data (in
+-    *           "0x1B 0xAC ..." format)
++    *           IPADDRESS, o: OBJID, s: STRING, c: counter32, g: gauge, x: hex data (in "0x1B 0xAC
++    *           ..." format)
+     * @param value value
+     */
+    public static SnmpDataType translate(String type, String value)

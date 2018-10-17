@@ -12,7 +12,7 @@ index 886fdc3..cd3d439 100644
  parent_dir=..
  
 diff --git a/mvcs-sca/missions/default-mission.xml b/mvcs-sca/missions/default-mission.xml
-index 6a17432..b99bcd9 100644
+index 6a17432..a839150 100644
 --- a/mvcs-sca/missions/default-mission.xml
 +++ b/mvcs-sca/missions/default-mission.xml
 @@ -53,7 +53,7 @@
@@ -94,6 +94,15 @@ index 6a17432..b99bcd9 100644
              <id>rt1944-00</id>
              <devNumber>5</devNumber>
              <devName>RT-1944</devName>
+@@ -180,7 +150,7 @@
+          <id>ups-0</id>
+          <typeId>ups</typeId>
+          <type>Uninterruptible Power Supply</type>
+-         <testing>false</testing>
++         <testing>true</testing>
+          <configurable>true</configurable>
+          <serialPort>/dev/ttyS0</serialPort>
+          <pollRate>60000</pollRate>
 @@ -195,7 +165,7 @@
           <primaryPort>8000</primaryPort>
           <secondaryName>MPSCORBA2</secondaryName>
