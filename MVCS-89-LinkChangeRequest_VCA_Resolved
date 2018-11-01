@@ -1,0 +1,108 @@
+diff --git a/mvcs-common/src/main/java/mil/navy/lcs/mvcs/common/messages/LinkSwitchMessage.java b/mvcs-common/src/main/java/mil/navy/lcs/mvcs/common/messages/LinkSwitchMessage.java
+index 2aeae2a..9370cf4 100644
+--- a/mvcs-common/src/main/java/mil/navy/lcs/mvcs/common/messages/LinkSwitchMessage.java
++++ b/mvcs-common/src/main/java/mil/navy/lcs/mvcs/common/messages/LinkSwitchMessage.java
+@@ -18,6 +18,13 @@
+       this.l1 = linkId;
+    }
+ 
++   
++   public LinkSwitchMessage( String linkId, AcknowledgmentCategory ackCategory)
++   {
++      super(MessageCategory.LINK_ACTION, ackCategory);
++      this.l1 = linkId;
++   }
++
+ 
+    public String getLinkId()
+    {
+diff --git a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java
+index 35ae68d..6784d36 100644
+--- a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java
++++ b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/VehicleTable.java
+@@ -1269,7 +1269,6 @@
+     */
+    public void setVehicleRequestStartRadio(SnmpTableEntry vehicleEntry, String newValue)
+    {
+-      LoggingManager.getPrimaryLogger().debug("Received request to start radio " + newValue);
+       VehicleTableWorker.getInstance().setVehicleRequestStartRadio(newValue);
+ 
+    }
+@@ -1296,7 +1295,6 @@
+     */
+    public void setVehicleRequestStopRadio(SnmpTableEntry vehicleEntry, String newValue)
+    {
+-      LoggingManager.getPrimaryLogger().debug("Received request to stop radio " + newValue);
+       VehicleTableWorker.getInstance().setVehicleRequestStopRadio(newValue);
+ 
+    }
+diff --git a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java
+index 9e87169..30b6e06 100644
+--- a/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java
++++ b/mvcs-vca/src/main/java/mil/navy/lcs/mvcs/vca/snmp/agent/workers/VehicleTableWorker.java
+@@ -12,6 +12,7 @@
+ import mil.navy.lcs.mvcs.common.config.model.Radio;
+ import mil.navy.lcs.mvcs.common.config.model.Vehicle;
+ import mil.navy.lcs.mvcs.common.log.LoggingManager;
++import mil.navy.lcs.mvcs.common.messages.AcknowledgmentCategory;
+ import mil.navy.lcs.mvcs.common.messages.LinkSwitchMessage;
+ import mil.navy.lcs.mvcs.common.misc.ConstantValues;
+ import mil.navy.lcs.mvcs.common.utils.VehicleTableUtil;
+@@ -134,12 +135,16 @@
+ 
+ 
+    /**
+-    * To request new active link for the vehicle that is initialized from VMS.
++    * To request new active link for the vehicle that is initialized from VMS. This request shall be
++    * re-directed to the host system (SCA) for a confirmation. The request message should only be
++    * attempted to transmit to the host system once without any further retransmit to avoid delayed
++    * unexpected behavior.
+     * 
+     * @param linkChangeValue - the link name. It may be "LOS", "OTH", "LAN" for RMS vehicle.
+     */
+    public void setVehicleRequestLinkChange(String linkChangeValue)
+    {
++      logger.debug("External request to change link to [Link:{}]", linkChangeValue);
+       SnmpParameterParser spp = new SnmpParameterParser("setVehicleRequestLinkChange", linkChangeValue);
+       if (spp.hasError())
+       {
+@@ -167,7 +172,8 @@
+       }
+ 
+       // re-route the request to SCA so the SCA can decide to proceed or not.
+-      VehicleState.handler.getMessageQueue().add(new LinkSwitchMessage(radioName));
++      // Should not be re-transmitted after initial attempt to avoid delayed action
++      VehicleState.handler.getMessageQueue().add(new LinkSwitchMessage(radioName, AcknowledgmentCategory.NO_ACK_NO_RETRY));
+    }
+ 
+ 
+@@ -439,6 +445,7 @@
+     */
+    public void setVehicleRequestStartRadio(String radio)
+    {
++      logger.debug("External request to start radio [Radio:{}]" + radio);
+       if (radio == null)
+          return;
+ 
+@@ -466,6 +473,7 @@
+     */
+    public void setVehicleRequestStopRadio(String radio)
+    {
++      logger.debug("External request to stop radio [Radio:{}]" + radio);
+       if (radio == null)
+          return;
+ 
+@@ -964,10 +972,10 @@
+    {
+       try
+       {
+-         logger.debug("External request to set RF switch [Mode:{}]");
+-         
++         logger.debug("External request to set RF switch [Mode:{}]", radioRfoutput);
++
+          // IR-2017-0176 Block external commands during LOCR
+-         if(VcaLinkManager.getInstance().getVcaNodeBean().isInAutoLocRecovery())
++         if (VcaLinkManager.getInstance().getVcaNodeBean().isInAutoLocRecovery())
+          {
+             // Not allow antenna change. Let the LOCR do the work.
+             logger.info("External command is blocked because the LOC-recovery is in progress.");
