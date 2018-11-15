@@ -1,5 +1,13 @@
+diff --git a/mvcs-common/.settings/oracle.eclipse.tools.webtier.ui.prefs b/mvcs-common/.settings/oracle.eclipse.tools.webtier.ui.prefs
+deleted file mode 100644
+index d8a93f2..0000000
+--- a/mvcs-common/.settings/oracle.eclipse.tools.webtier.ui.prefs
++++ /dev/null
+@@ -1,2 +0,0 @@
+-_hiddenCategory_\:HTML=false
+-eclipse.preferences.version=1
 diff --git a/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties b/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
-index 886fdc3..cd3d439 100644
+index 93d07e3..8aedfe3 100644
 --- a/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
 +++ b/mvcs-common/src/main/resources/mil/navy/lcs/mvcs/common/constants/application-constants.properties
 @@ -5,7 +5,7 @@
@@ -12,40 +20,18 @@ index 886fdc3..cd3d439 100644
  parent_dir=..
  
 diff --git a/mvcs-sca/.classpath b/mvcs-sca/.classpath
-index 7464134..bcb4d72 100644
+index d306290..4738ebb 100644
 --- a/mvcs-sca/.classpath
 +++ b/mvcs-sca/.classpath
-@@ -1,13 +1,17 @@
--<?xml version="1.0" encoding="UTF-8"?>
--<classpath>
--	<classpathentry kind="src" path="src/main/resources"/>
--	<classpathentry kind="src" path="src/main/test"/>
--	<classpathentry kind="src" path="src/main/developmentTests"/>
--	<classpathentry kind="src" path="src/main/java"/>
--	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
--	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
--	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-mission-builder"/>
--	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
--	<classpathentry kind="lib" path="/mvcs-common/lib/jpam-1.1.jar"/>
--	<classpathentry kind="output" path="bin"/>
--</classpath>
-+<?xml version="1.0" encoding="UTF-8"?>
-+<classpath>
-+	<classpathentry kind="src" path="src/main/resources"/>
-+	<classpathentry kind="src" path="src/main/test"/>
-+	<classpathentry kind="src" path="src/main/developmentTests"/>
-+	<classpathentry kind="src" path="src/main/java"/>
-+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-+	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
-+	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-mission-builder"/>
-+	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
-+	<classpathentry kind="lib" path="/mvcs-common/lib/jpam-1.1.jar"/>
+@@ -8,5 +8,8 @@
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-common"/>
+ 	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-interface"/>
+ 	<classpathentry kind="lib" path="/mvcs-common/lib/jpam-1.1.jar"/>
 +	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-ips250"/>
 +	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-mcg101"/>
-+	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-prc117"/>
 +	<classpathentry combineaccessrules="false" kind="src" path="/mvcs-plugin-rt1944"/>
-+	<classpathentry kind="output" path="bin"/>
-+</classpath>
+ 	<classpathentry kind="output" path="bin"/>
+ </classpath>
 diff --git a/mvcs-sca/configs/credentials.xml b/mvcs-sca/configs/credentials.xml
 index e9b66ae..5b73cf2 100644
 --- a/mvcs-sca/configs/credentials.xml
@@ -62,10 +48,10 @@ index e9b66ae..5b73cf2 100644
  	<credential>
  		<id>haf</id>
 diff --git a/mvcs-sca/missions/default-mission.xml b/mvcs-sca/missions/default-mission.xml
-index 6a17432..7faa1a0 100644
+index 8e6e3df..6cda256 100644
 --- a/mvcs-sca/missions/default-mission.xml
 +++ b/mvcs-sca/missions/default-mission.xml
-@@ -53,7 +53,7 @@
+@@ -48,7 +48,7 @@
           <id>router-1</id>
           <typeId>router</typeId>
           <type>Router</type>
@@ -74,7 +60,7 @@ index 6a17432..7faa1a0 100644
           <configurable>true</configurable>
           <ipAddress>172.20.10.1</ipAddress>
           <connectionType>SSH</connectionType>
-@@ -124,7 +124,7 @@
+@@ -102,7 +102,7 @@
           <id>ms-00</id>
           <typeId>ms</typeId>
           <type>Matrix Switch</type>
@@ -83,7 +69,7 @@ index 6a17432..7faa1a0 100644
           <configurable>true</configurable>
           <serialPort>172.20.10.3:4002</serialPort>
           <currentMode>dummy</currentMode>
-@@ -135,7 +135,7 @@
+@@ -112,7 +112,7 @@
           <id>power-0</id>
           <typeId>psu</typeId>
           <type>Power Supply</type>
@@ -92,7 +78,16 @@ index 6a17432..7faa1a0 100644
           <configurable>true</configurable>
           <voltage>28</voltage>
           <serialPort>172.20.10.3:4001</serialPort>
-@@ -195,7 +195,7 @@
+@@ -145,7 +145,7 @@
+          <id>ups-0</id>
+          <typeId>ups</typeId>
+          <type>Uninterruptible Power Supply</type>
+-         <testing>false</testing>
++         <testing>true</testing>
+          <configurable>true</configurable>
+          <serialPort>/dev/ttyS0</serialPort>
+          <pollRate>60000</pollRate>
+@@ -160,7 +160,7 @@
           <primaryPort>8000</primaryPort>
           <secondaryName>MPSCORBA2</secondaryName>
           <secondaryPort>8001</secondaryPort>
@@ -101,7 +96,7 @@ index 6a17432..7faa1a0 100644
           <proxyHost />
           <proxyPort />
           <clientHost />
-@@ -207,7 +207,7 @@
+@@ -172,7 +172,7 @@
           <version>3</version>
        </snmp>
        <security>
